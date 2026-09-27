@@ -1,0 +1,3081 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="dark" />
+<title>Pixel Studio · WLED 像素放映室</title>
+<style>
+:root{--bg:#101917;--panel:#17231f;--line:#2d3d36;--text:#ecf3ee;--muted:#93a69b;--brand:#86efc2;--danger:#ff8990;--ok:#86efc2;--amber:#f8c68b}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;color:var(--text);background:radial-gradient(ellipse at 5% 0%,#29443866,transparent 45%),radial-gradient(ellipse at 95% 55%,#27463f30,transparent 45%),var(--bg);font-family:"Bahnschrift","Microsoft YaHei UI","PingFang SC",sans-serif;min-height:100vh}
+button,input,select{font:inherit}button{cursor:pointer}button:disabled,input:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--brand);outline-offset:4px}
+.wrap{max-width:1440px;margin:auto;padding:30px 36px 26px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-bottom:24px;border-bottom:1px solid var(--line)}.brand{display:flex;gap:13px;align-items:center}.brand-mark{width:38px;height:38px;color:var(--brand);flex:none}.brand-name{font-size:17px;font-weight:700;letter-spacing:3px}.brand-sub{color:var(--muted);font-size:11px;margin-top:5px;letter-spacing:1px}.top-tags{display:flex;gap:9px}.tag{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:30px;padding:7px 11px;color:#bccdc2;font-size:11px;white-space:nowrap}.tag-dot{width:6px;height:6px;border-radius:50%;background:var(--brand)}
+.intro{display:flex;justify-content:space-between;align-items:end;gap:20px;padding:30px 0 25px}.eyebrow{font:10px "Cascadia Code","Consolas",monospace;color:var(--muted);letter-spacing:2px}h1{margin:9px 0 8px;font-size:clamp(25px,3.1vw,38px);letter-spacing:1px;font-weight:600}.intro p{margin:0;color:var(--muted);font-size:13px;line-height:1.8}.intro-count{text-align:right;color:var(--muted);font-size:12px;white-space:nowrap}.intro-count strong{font:35px "Bahnschrift",sans-serif;color:var(--brand);margin-right:7px}
+.workspace{display:grid;grid-template-columns:minmax(320px,.86fr) minmax(0,1.45fr);gap:22px;align-items:start}.card{background:linear-gradient(140deg,#1b2924aa,#17231ff0);border:1px solid var(--line);border-radius:18px;overflow:hidden}.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:21px 22px 17px}h2{font-size:16px;font-weight:600;margin:0}.section-index{color:var(--brand);font:11px "Consolas",monospace;margin-right:8px}.card-head p{color:var(--muted);margin:7px 0 0;font-size:12px;line-height:1.6}.mono{font-family:"Cascadia Code","Consolas",monospace}.badge{font:10px "Consolas",monospace;color:var(--brand);background:#86efc20c;border:1px solid #86efc231;border-radius:5px;padding:5px 7px;white-space:nowrap}
+.dimension-bar{margin:0 22px 13px;display:flex;align-items:end;gap:10px}.dimension-field{min-width:0;flex:1}label{display:block;color:#bfd0c5;font-size:11px;margin-bottom:7px}input,select{width:100%;min-width:0;color:var(--text);background:#111b17;border:1px solid var(--line);padding:10px 11px;border-radius:8px;font-size:13px;outline:none}input[type=number]{font-family:"Consolas",monospace}input[type=checkbox]{width:16px;height:16px;accent-color:var(--brand);padding:0}input[type=file]{font-size:12px;padding:10px;border-style:dashed;color:var(--muted)}input[type=file]::file-selector-button{color:#d9e9e0;background:#293d32;border:0;border-radius:5px;padding:8px 10px;margin-right:10px;cursor:pointer}.dimension-times{color:#577364;padding-bottom:10px;font-size:19px}.pixel-total{align-self:center;padding:17px 0 0 6px;color:var(--muted);font-size:11px;white-space:nowrap}.presets{display:flex;gap:7px;margin:0 22px 15px;align-items:center}.presets span{font-size:10px;color:var(--muted);margin-right:2px}.chip{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:10px}.chip.is-active{color:var(--brand);border-color:#86efc25a;background:#86efc20b}
+.preview-stage{margin:0 16px;padding:25px 20px;min-height:360px;display:flex;align-items:center;justify-content:center;position:relative;border:1px solid #314337;border-radius:12px;background:radial-gradient(circle,#8fb5a41b .7px,transparent 1px) 0 0/12px 12px,#0c1511;overflow:hidden}.preview-stage:before,.preview-stage:after{content:"";position:absolute;width:15px;height:15px;color:#6b8c7b;opacity:.7;pointer-events:none}.preview-stage:before{top:11px;left:11px;border-left:1px solid;border-top:1px solid}.preview-stage:after{bottom:11px;right:11px;border-right:1px solid;border-bottom:1px solid}#preview{display:block;background:#000;image-rendering:pixelated;object-fit:contain;border:1px solid #476c584a;box-shadow:0 0 0 7px #040a06,0 12px 40px #0009;max-width:100%}.now-playing{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px 15px}.now-playing small{color:var(--muted);font-size:9px;letter-spacing:1.5px;display:block;margin-bottom:5px}#nowPlaying{font-size:14px;font-weight:500}.speed-control{display:flex;align-items:center;gap:7px}.speed-control label{margin:0;white-space:nowrap}.speed-control select{font-size:11px;padding:7px;width:85px}.playback-actions{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:0 22px}
+button.primary{border:1px solid var(--brand);background:var(--brand);color:#10291d;font-weight:700;border-radius:8px;padding:12px 15px;font-size:13px}button.secondary{border:1px solid var(--line);background:#213329;color:#c6d7cd;border-radius:8px;padding:10px 13px;font-size:12px}button.ghost{border:1px solid var(--line);background:transparent;color:#b9cbbf;border-radius:8px;padding:9px 12px;font-size:11px;white-space:nowrap}button:hover:not(:disabled){filter:brightness(1.12)}.status{margin:14px 22px 0;font-size:11px;color:var(--muted);min-height:30px;line-height:1.65;overflow-wrap:anywhere}.status.ok{color:var(--ok)}.status.err{color:var(--danger)}progress{display:block;width:calc(100% - 44px);margin:0 22px 20px;height:3px;border:0;accent-color:var(--brand);border-radius:4px;background:#25382e}progress::-webkit-progress-bar{background:#25382e;border-radius:4px}progress::-webkit-progress-value{background:var(--brand);border-radius:4px}
+.right-column{display:grid;gap:18px;min-width:0}.filters{display:flex;gap:7px;flex-wrap:wrap;padding:0 22px 17px}.filter{border:1px solid transparent;border-radius:30px;color:var(--muted);background:transparent;padding:7px 13px;font-size:11px}.filter.is-active{background:#86efc216;color:var(--brand);border-color:#86efc238}.animation-gallery{padding:0 22px 18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;max-height:515px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#496451 transparent;align-content:start}.animation-card{display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:0;background:#111c16;border:1px solid #2a3c30;border-radius:10px;overflow:hidden;color:var(--text);position:relative;min-width:0}.animation-card[aria-pressed=true]{border-color:var(--brand);background:#243d2d;box-shadow:0 0 0 1px #86efc233}.animation-card[aria-pressed=true]:after{content:"";position:absolute;top:9px;right:9px;width:7px;height:7px;background:var(--brand);border-radius:50%;box-shadow:0 0 8px #86efc288}.animation-thumb{height:88px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse,#1d322566,#070e0a 80%);padding:8px}.animation-thumb img{width:40px;height:72px;image-rendering:pixelated;display:block}.animation-title{padding:9px 9px 10px;font-size:11px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.new-label{position:absolute;top:8px;left:8px;font:8px "Consolas",monospace;letter-spacing:.6px;color:var(--amber)}.animation-detail{margin:0;padding:16px 22px 18px;border-top:1px solid var(--line);background:#111b163d;min-height:70px;color:#a5baad;font-size:12px;line-height:1.8}
+.settings-body{padding:0 22px 21px}.device-row{display:grid;grid-template-columns:140px minmax(0,1fr) auto;gap:10px;align-items:end}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.row{display:flex;gap:8px;align-items:center}.row>*{min-width:0}.output-settings{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:12px;margin-top:17px;padding-top:17px;border-top:1px solid var(--line)}.check-label{display:flex;gap:7px;align-items:center;margin:0;min-height:38px;font-size:11px}.hint{color:var(--muted);font-size:11px;line-height:1.8;margin-top:9px}.media-settings{display:grid;grid-template-columns:1.2fr 1fr;gap:15px;align-items:end}
+details.card{overflow:visible}details>summary{list-style:none;cursor:pointer;padding:19px 22px;font-size:12px;color:#b8cbc0}details>summary::-webkit-details-marker{display:none}details>summary:after{content:"+";float:right;font-size:16px;color:var(--muted)}details[open]>summary:after{content:"−"}.advanced-grid{padding:0 22px 22px}.color-tests{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0}.swatch{border:1px solid var(--line);border-radius:6px;padding:7px 10px;background:#142219;color:#bed1c4;font-size:10px;display:flex;align-items:center;gap:6px}.swatch:before{content:"";width:7px;height:7px;background:var(--swatch);border-radius:2px;border:1px solid #ffffff30}#log{white-space:pre-wrap;overflow-wrap:anywhere;font:10px/1.8 "Consolas",monospace;color:var(--muted);background:#0c1710;padding:12px;border:1px solid var(--line);border-radius:8px;max-height:180px;overflow:auto;margin:0}
+footer{display:flex;justify-content:space-between;gap:12px;color:#647e6e;font-size:10px;letter-spacing:.6px;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}.card{animation:arrive .45s ease-out both}.library-card{animation-delay:.07s}.device-card{animation-delay:.12s}@keyframes arrive{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:1150px){.wrap{padding:24px}.workspace{gap:16px;grid-template-columns:minmax(300px,.85fr) minmax(0,1.3fr)}.animation-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}.device-row{grid-template-columns:1fr 1.4fr}.device-row>button{grid-column:1/-1}}
+@media(max-width:820px){.workspace{grid-template-columns:1fr}.wrap{max-width:680px}.animation-gallery{grid-template-columns:repeat(4,minmax(0,1fr));max-height:480px}.top-tags .tag:last-child{display:none}.preview-stage{min-height:0}}
+@media(max-width:480px){.wrap{padding:18px 13px}.topbar{padding-bottom:18px}.brand-name{font-size:14px}.brand-sub{font-size:9px}.intro{padding:23px 2px}.intro-count{display:none}.card-head{padding:18px 17px 15px}.animation-gallery{padding-left:16px;padding-right:16px;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.filters{padding-left:14px;gap:2px}.filter{padding:7px 10px}.settings-body{padding-left:17px;padding-right:17px}.device-row,.media-settings{grid-template-columns:1fr}.output-settings{gap:8px}.pixel-total{font-size:9px}.playback-actions{padding:0 17px}.playback-actions button{padding:11px 9px}footer{flex-direction:column}}
+@media(prefers-reduced-motion:reduce){.card{animation:none}}
+.stream-stats{font:10px/1.8 "Consolas",monospace;color:#a7c6b6;padding:0 22px 18px;min-height:34px}.color-settings{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;border-top:1px solid var(--line);margin-top:16px;padding-top:16px}.device-detection{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px}.device-detection span{font-size:10px;color:var(--muted);line-height:1.8}@media(max-width:480px){.device-detection{align-items:start;flex-direction:column}}
+
+.clock-styling{margin:0 22px 22px;padding:16px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(135deg,rgba(140,242,200,.055),rgba(246,217,157,.035));display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.clock-styling[hidden]{display:none}.clock-style-title{grid-column:1/-1;font:11px/1.5 Consolas,monospace;letter-spacing:1.6px;color:#a6d5bf}.clock-style-title span{display:block;font:10px/1.7 "Microsoft YaHei UI",sans-serif;letter-spacing:0;color:var(--muted);margin-top:3px}.clock-styling p{grid-column:1/-1;color:var(--muted);font-size:10px;margin:0;line-height:1.8}.clock-styling select{width:100%;min-width:0}.clock-styling label{font-size:10px}.new-label{white-space:nowrap}
+@media(max-width:380px){.clock-styling{grid-template-columns:1fr}.clock-style-title,.clock-styling p{grid-column:auto}}
+
+.serial-lab{grid-column:1/-1;flex-basis:100%;width:100%;margin-top:12px;padding:14px 16px;border:1px solid #345448;border-radius:12px;background:#10231d;color:#a9c2b7;font-size:12px;line-height:1.7}
+.serial-lab summary{cursor:pointer;color:#91e7c1;font-weight:600}
+.serial-lab p{margin:9px 0}
+.serial-lab output{display:block;margin-top:12px;padding:12px;border-radius:8px;background:#091811;white-space:pre-wrap;color:#c4dace}
+.serial-lab output[data-state="error"]{color:#efb695}
+.serial-lab output[data-state="ok"]{color:#96edc5}
+/* Front aperture proportions from the user's 15 x 27 STEP drawing. */
+#preview.cad-pixels {
+  border: 0;
+  -webkit-mask-image: var(--cad-pixel-mask);
+  mask-image: var(--cad-pixel-mask);
+  -webkit-mask-size: var(--cad-pixel-width) var(--cad-pixel-height);
+  mask-size: var(--cad-pixel-width) var(--cad-pixel-height);
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
+  -webkit-mask-origin: content-box;
+  mask-origin: content-box;
+  -webkit-mask-clip: content-box;
+  mask-clip: content-box;
+  mask-mode: alpha;
+}
+.preview-stage.cad-stage { background: #050907; }
+.pixel-appearance {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  margin: 10px 0 16px; padding: 0 4px;
+}
+.pixel-appearance-label { margin-right: 3px; color: #a4b9ae; font-size: 11px; }
+.pixel-appearance .pixel-appearance-button {
+  min-height: 30px; padding: 5px 10px; border: 1px solid #314b3e;
+  border-radius: 7px; background: #122019; color: #9fbaaa;
+  font: inherit; font-size: 11px; cursor: pointer;
+}
+.pixel-appearance .pixel-appearance-button[aria-pressed="true"] {
+  color: #9de7c2; background: #203e30; border-color: #58896e;
+}
+.pixel-appearance .pixel-appearance-button:focus-visible {
+  outline: 2px solid #9de7c2; outline-offset: 3px;
+}
+.pixel-appearance-hint { flex-basis: 100%; color: #819a8b; font-size: 10px; line-height: 1.6; }
+
+</style>
+<style>
+  .transport-source-select{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
+  .transport-field{grid-column:1/-1!important;min-width:0;width:100%}
+  .transport-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-column:1/-1;width:100%;gap:10px;margin:8px 0 14px}
+  .transport-choice{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:11px;min-width:0;min-height:72px;padding:12px 14px;border:1px solid rgba(126,235,191,.18);border-radius:14px;background:linear-gradient(145deg,rgba(12,35,29,.88),rgba(7,22,19,.94));color:#b8c9c2;text-align:left;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease,box-shadow .18s ease}
+  .transport-choice:hover{border-color:rgba(126,235,191,.42);transform:translateY(-1px)}
+  .transport-choice.is-active{border-color:#7eebbf;background:linear-gradient(145deg,rgba(24,66,53,.98),rgba(9,34,28,.98));box-shadow:inset 0 0 0 1px rgba(126,235,191,.16),0 8px 24px rgba(0,0,0,.18);color:#effff8}
+  .transport-choice.is-limited small{color:#e4aa75}
+  .transport-choice__icon{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(126,235,191,.24);border-radius:11px;background:rgba(2,16,13,.52);color:#7eebbf;font:700 11px/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.04em}
+  .transport-choice strong,.transport-choice small{display:block}.transport-choice strong{font-size:14px;letter-spacing:.02em}.transport-choice small{margin-top:3px;color:#7f9e92;font-size:11px}.transport-choice.is-active small{color:#a7c9bc}
+  .transport-choice::after{content:'';position:absolute;right:12px;top:12px;width:7px;height:7px;border-radius:50%;background:#314940;box-shadow:0 0 0 3px rgba(49,73,64,.18)}
+  .transport-choice.is-active::after{background:#7eebbf;box-shadow:0 0 0 3px rgba(126,235,191,.14),0 0 12px rgba(126,235,191,.65)}
+  @media(max-width:620px){.transport-switch{grid-template-columns:1fr}.transport-choice{min-height:64px}}
+</style>
+<style>
+  /* Pixel Studio desktop edition: the web app follows the OpenRGB panel. */
+  :root{--bg:#303030;--panel:#414141;--line:#585858;--text:#f7f8fa;--muted:#adb8bf;--brand:#8bd9f4;--ok:#9ce7cb;--danger:#ed907f;--amber:#e7caa0}
+  body{background:#303030;color:var(--text)}
+  .wrap{max-width:2040px;padding:0 20px 22px}
+  .topbar{min-height:108px;padding:16px 26px;border-bottom:0;background:#404040;gap:20px}
+  .brand{gap:22px}.brand-mark{width:65px;height:65px;padding:5px;color:#9bdfff;background:#10212b;border:3px solid #111c24;border-radius:9px;box-shadow:0 0 0 3px #608aa0,0 0 13px #8bd9f488}
+  .brand-mark>path{fill:#fff}.brand-name{font-size:clamp(25px,3vw,43px);font-weight:800;letter-spacing:1px;color:#fff}.brand-sub,.top-tags,.intro{display:none}
+  #webSettingsToggle{margin-left:auto;flex:none;width:66px;height:66px;font-size:36px;line-height:1;border:1px solid #666;border-radius:5px;color:#fff;background:linear-gradient(#505050,#3f3f3f);box-shadow:inset 0 0 0 2px #333}
+  #webSettingsToggle[aria-expanded=true]{border-color:var(--brand);color:var(--brand)}
+  .workspace{display:block}.studio-stage{display:grid;grid-template-columns:minmax(240px,340px) minmax(0,1fr);gap:32px;align-items:stretch;padding:28px 30px;background:#343434;min-height:630px}
+  .card{animation:none;background:#414141;border:1px solid #565656;border-radius:0;box-shadow:none}.preview-card,.library-card{min-width:0;background:transparent;border:0;overflow:visible}
+  .preview-card{display:flex;flex-direction:column;align-items:stretch}.preview-card>.card-head{display:none}
+  .preview-stage{margin:8px 0 0;flex:1;min-height:540px;padding:16px 10px;border:4px solid #7fc9e4;border-radius:13px;background:#080d12;box-shadow:0 0 0 3px #49585e,0 0 18px #8bd9f466}
+  .preview-stage:before,.preview-stage:after{display:none}.preview-stage.cad-stage{background:#080d12}
+  #preview{border:0;box-shadow:none}.pixel-appearance{justify-content:center;margin:13px 0 0;padding:0;gap:7px}.pixel-appearance-label{font-size:12px}.pixel-appearance-hint{display:none}
+  .pixel-appearance .pixel-appearance-button{min-height:32px;background:#494949;border:1px solid #666;border-radius:4px;color:#eee;font-size:11px}
+  .pixel-appearance .pixel-appearance-button[aria-pressed=true]{background:#314f5b;color:#c8f1ff;border-color:#8bd9f4}
+  .library-card{display:flex;flex-direction:column;min-height:0}.library-card>.card-head{display:none}.library-card>.filters{display:none}
+  .library-toolbar{display:grid;grid-template-columns:minmax(130px,215px) minmax(0,1fr) auto;gap:12px;align-items:center;margin:0 0 12px}
+  .library-toolbar select,.library-toolbar input,.library-toolbar button{height:48px;min-width:0;border-radius:5px;font-size:17px}
+  .library-toolbar input{background:#353535}.library-toolbar button{padding:0 17px;white-space:nowrap}
+  input,select{background:#363636;color:#fff;border:1px solid #595959;border-radius:5px;min-height:42px;font-size:15px}input::placeholder{color:#a7a7a7}
+  .animation-gallery{flex:1;min-height:0;max-height:575px;padding:15px;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px;background:#101a20;border:2px solid #40647a;border-radius:15px;scrollbar-color:#656565 #303030}
+  .animation-card{background:#111b20;border:2px solid #3e6478;border-radius:12px;color:#fff;text-align:center;align-items:center;min-height:220px}
+  .animation-card[aria-pressed=true]{background:#2d5063;border-color:#8bd9f4;box-shadow:none}.animation-card[aria-pressed=true]:after{display:none}
+  .animation-thumb{width:100%;height:169px;padding:12px 8px;background:transparent}.animation-thumb img{width:86px;height:152px;object-fit:contain}
+  .animation-title{font-size:16px;line-height:1.4;padding:5px 9px 12px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:58px}
+  .new-label{font-size:9px;left:9px;top:8px}.animation-detail{display:none}
+  .studio-controls{position:relative;margin:14px 0 0;padding:18px 22px;border:2px solid #40647a;border-radius:15px;background:#414141}
+  .adjustments{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;row-gap:12px}
+  .adjustments>div{display:grid;grid-template-columns:86px minmax(0,1fr) 120px;align-items:center;gap:12px;min-width:0}
+  .adjustments label{margin:0;font-size:18px;color:#fff;white-space:nowrap}.adjustments input[type=number],.adjustments output{width:100%;min-width:0;text-align:center;font-size:16px}
+  .adjustments output{display:grid;place-items:center;height:42px;background:#363636;border:1px solid #595959;border-radius:5px}
+  input[type=range]{appearance:none;-webkit-appearance:none;height:8px;min-height:8px;padding:0;border:1px solid #333;border-radius:3px;background:#242424;accent-color:var(--brand)}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:19px;height:24px;background:#6d6d6d;border:2px solid #303030;border-radius:5px;box-shadow:0 0 0 1px #777}
+  input[type=range]::-moz-range-thumb{width:17px;height:22px;background:#6d6d6d;border:2px solid #303030;border-radius:5px}
+  .now-playing{padding:12px 0 2px;justify-content:flex-start}.now-playing small{display:inline;margin:0 8px 0 0;letter-spacing:0;font-size:11px}.now-playing #nowPlaying{font-size:13px}
+  .playback-actions{display:flex;gap:9px;padding:14px 0 0}.playback-actions button{min-width:104px;height:54px;border-radius:7px;font-size:15px}.playback-actions .primary{min-width:150px;background:var(--brand);color:#102c38;border:0}.playback-actions .secondary{background:#da5a60;border-color:#da5a60;color:#fff}
+  .status{margin:10px 0 0;min-height:0;font-size:12px}.stream-stats{padding:5px 0 0;min-height:0;color:#dce9ef;font-size:12px}
+  progress{width:100%;margin:10px 0 0;height:4px}progress::-webkit-progress-value{background:var(--brand)}
+  .clock-styling{margin:16px 0 0;padding:13px 15px;border:1px solid #496c7f;border-radius:7px;background:#353d42;grid-template-columns:1fr 1fr}
+  .clock-style-title{color:var(--brand)}.clock-styling label{font-size:12px}.clock-styling p{font-size:11px}
+  .right-column{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(290px,1fr);gap:16px;padding:18px 0 0}.right-column>.device-card{grid-column:1/-1}.right-column>details{grid-column:1/-1}
+  .right-column .card{border:1px solid #555;border-radius:9px}.card-head{padding:19px 22px 14px}.card-head h2{font-size:19px}.card-head p{font-size:12px}.section-index{color:var(--brand)}
+  .dimension-bar{margin:0 0 12px;max-width:550px}.dimension-field{max-width:120px}.dimension-times{color:#ddd}.pixel-total{padding-top:19px}.presets{margin:0 0 18px}.chip{background:#4a4a4a;color:#eee}.chip.is-active{color:#d9f5ff;background:#345563;border-color:var(--brand)}
+  .settings-body{padding:0 22px 22px}.device-row{grid-template-columns:minmax(160px,1fr) minmax(220px,1.4fr) auto auto}.output-settings{grid-template-columns:1fr 1fr}.media-settings{grid-template-columns:1.2fr 1fr}
+  .transport-choice{border-radius:7px;background:#383838}.transport-choice.is-active{border-color:var(--brand);background:#345263}.transport-choice__icon{color:var(--brand);border-color:#668698;background:#24343d}
+  button.primary{background:var(--brand);border-color:var(--brand);color:#102c38;border-radius:5px}button.secondary,button.ghost{background:#4b4b4b;color:#fff;border-color:#666;border-radius:5px}
+  footer{margin-top:18px;padding-top:12px;color:#969696}
+  @media(max-width:1100px){.studio-stage{grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:18px;padding:20px}.animation-gallery{grid-template-columns:repeat(auto-fill,minmax(125px,1fr))}.animation-card{min-height:198px}.animation-thumb{height:145px}.animation-thumb img{width:72px;height:128px}.animation-title{font-size:14px}.device-row{grid-template-columns:1fr 1fr}.device-row>button{grid-column:auto}}
+  @media(max-width:780px){.wrap{padding:0 12px 20px}.topbar{min-height:78px;padding:12px 14px}.brand-mark{width:48px;height:48px}.brand-name{font-size:24px}#webSettingsToggle{width:48px;height:48px;font-size:26px}.studio-stage{grid-template-columns:1fr;gap:22px;padding:16px}.preview-stage{min-height:430px}.animation-gallery{max-height:480px;grid-template-columns:repeat(auto-fill,minmax(125px,1fr))}.right-column{grid-template-columns:1fr}.adjustments{grid-template-columns:1fr}.studio-controls{padding:16px}.library-toolbar{grid-template-columns:145px minmax(0,1fr)}.library-toolbar button{grid-column:1/-1}}
+  @media(max-width:480px){.brand{gap:11px}.brand-name{font-size:19px}.studio-stage{padding:12px}.preview-stage{min-height:370px}.library-toolbar{grid-template-columns:112px minmax(0,1fr);gap:7px}.library-toolbar select,.library-toolbar input,.library-toolbar button{height:42px;font-size:13px}.animation-gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:9px}.animation-card{min-height:190px}.animation-thumb{height:139px}.animation-title{font-size:13px}.adjustments>div{grid-template-columns:48px minmax(0,1fr) 68px;gap:6px}.adjustments label{font-size:14px}.adjustments input[type=number],.adjustments output{font-size:12px}.playback-actions{flex-wrap:wrap}.playback-actions button{flex:1;min-width:93px}.device-row,.output-settings,.media-settings{grid-template-columns:1fr}.device-row>button{grid-column:auto}.clock-styling{grid-template-columns:1fr}.clock-style-title,.clock-styling p{grid-column:auto}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+<style>
+  /* Theme colors keep the original web atmosphere; only the panel layout is new. */
+  :root,[data-theme="ice"]{--bg:#0c1921;--panel:#172a35;--surface:#10212b;--surface-deep:#0b1720;--surface-raised:#203844;--line:#3b6477;--text:#effaff;--muted:#9ebbc8;--brand:#83d5f2;--brand-rgb:131,213,242;--logo-bg:#0c161d;--logo-center:#12212c;--glow-a:#2b7596;--glow-b:#214f6d;--ok:#91e4cc;--danger:#ff9c9c;--amber:#ffe1ad}
+  [data-theme="mint"]{--bg:#101917;--panel:#172b23;--surface:#11231b;--surface-deep:#0b1711;--surface-raised:#244331;--line:#3b6650;--text:#effff6;--muted:#a2c4b0;--brand:#8ee6ba;--brand-rgb:142,230,186;--logo-bg:#0b1510;--logo-center:#112018;--glow-a:#276e4e;--glow-b:#305f58;--ok:#8ee6ba;--danger:#ff9c9c;--amber:#ffe1ad}
+  [data-theme="amber"]{--bg:#1b1713;--panel:#30251b;--surface:#241b15;--surface-deep:#17110d;--surface-raised:#493322;--line:#7b5940;--text:#fff8ec;--muted:#d1b69f;--brand:#ffbd75;--brand-rgb:255,189,117;--logo-bg:#19130d;--logo-center:#261d14;--glow-a:#8d5730;--glow-b:#64432a;--ok:#a8e4b7;--danger:#ffa6a0;--amber:#ffcf8d}
+  [data-theme="rose"]{--bg:#1b151b;--panel:#32232c;--surface:#261a23;--surface-deep:#181017;--surface-raised:#493044;--line:#79536b;--text:#fff4fa;--muted:#d5afc5;--brand:#efabc6;--brand-rgb:239,171,198;--logo-bg:#1b1118;--logo-center:#291a24;--glow-a:#844963;--glow-b:#5c4065;--ok:#a9e3c4;--danger:#ffaaa7;--amber:#f7d6aa}
+  body{background:radial-gradient(ellipse at 4% 0%,var(--glow-a) 0,transparent 47%),radial-gradient(ellipse at 97% 68%,var(--glow-b) 0,transparent 44%),var(--bg);color:var(--text)}
+  .wrap{background:transparent}.topbar{background:linear-gradient(110deg,var(--surface-raised),var(--panel) 58%,var(--surface));border-bottom:1px solid var(--line)}
+  .brand-mark{width:72px;height:72px;padding:0;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;flex:none;filter:drop-shadow(0 0 7px rgba(var(--brand-rgb),.43))}
+  .brand-mark .logo-halo{fill:none;stroke:var(--brand)}.brand-mark .logo-back{fill:var(--logo-bg)}.brand-mark .logo-tile{fill:var(--brand)}.brand-mark .logo-center{fill:var(--logo-center)}.brand-mark .logo-white{fill:#fff}
+  .brand-name{color:var(--text);text-shadow:0 1px 12px rgba(var(--brand-rgb),.12)}
+  .theme-switch{display:flex;align-items:center;gap:9px;margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}.theme-switch select{width:132px;min-height:40px;background:var(--surface-raised);border-color:var(--line);color:var(--text);font-size:14px}
+  #webSettingsToggle{margin-left:0;background:linear-gradient(var(--surface-raised),var(--surface));color:var(--text);border-color:var(--line);box-shadow:inset 0 0 0 1px rgba(var(--brand-rgb),.1)}
+  #webSettingsToggle[aria-expanded=true]{border-color:var(--brand);color:var(--brand)}
+  .studio-stage{background:linear-gradient(135deg,rgba(var(--brand-rgb),.055),transparent 38%),var(--surface);border-bottom:1px solid var(--line)}
+  .preview-stage,.preview-stage.cad-stage{background:var(--surface-deep);border-color:var(--brand);box-shadow:0 0 0 3px var(--line),0 0 24px rgba(var(--brand-rgb),.48)}
+  .pixel-appearance .pixel-appearance-button{background:var(--surface-raised);border-color:var(--line);color:var(--text)}
+  .pixel-appearance .pixel-appearance-button[aria-pressed=true]{background:rgba(var(--brand-rgb),.2);border-color:var(--brand);color:var(--brand)}
+  .library-toolbar select,.library-toolbar input{background:var(--surface-deep);border-color:var(--line);color:var(--text)}
+  .library-toolbar input::placeholder{color:var(--muted)}
+  .animation-gallery{background:var(--surface-deep);border-color:var(--line);scrollbar-color:var(--line) var(--surface-deep)}
+  .animation-card{background:var(--surface);border-color:var(--line);color:var(--text)}
+  .animation-card:hover:not(:disabled){border-color:var(--brand);background:var(--surface-raised)}
+  .animation-card[aria-pressed=true]{background:rgba(var(--brand-rgb),.24);border-color:var(--brand)}
+  .studio-controls{background:linear-gradient(115deg,rgba(var(--brand-rgb),.07),transparent 48%),var(--panel);border-color:var(--line)}
+  input,select,.adjustments output{background:var(--surface-deep);border-color:var(--line);color:var(--text)}
+  input[type=range]{background:var(--surface-deep);border-color:var(--line)}
+  input[type=range]::-webkit-slider-thumb{background:var(--brand);border-color:var(--surface);box-shadow:0 0 0 1px var(--line)}
+  input[type=range]::-moz-range-thumb{background:var(--brand);border-color:var(--surface)}
+  .clock-styling{background:var(--surface);border-color:var(--line)}
+  .right-column .card{background:var(--panel);border-color:var(--line)}
+  .transport-choice{background:var(--surface);border-color:var(--line)}.transport-choice.is-active{background:rgba(var(--brand-rgb),.18);border-color:var(--brand)}
+  .transport-choice__icon{background:var(--surface-deep);border-color:var(--line);color:var(--brand)}
+  button.secondary,button.ghost{background:var(--surface-raised);border-color:var(--line);color:var(--text)}
+  .playback-actions .secondary{background:#d95762;border-color:#d95762;color:#fff}
+  .chip{background:var(--surface-raised);border-color:var(--line);color:var(--text)}.chip.is-active{background:rgba(var(--brand-rgb),.18);border-color:var(--brand);color:var(--brand)}
+  .badge{color:var(--brand);background:rgba(var(--brand-rgb),.1);border-color:var(--line)}
+  .color-settings,.output-settings{border-color:var(--line)}footer{border-color:var(--line);color:var(--muted)}
+  @media(max-width:780px){.brand-mark{width:50px;height:50px}.theme-switch{gap:4px}.theme-switch span{display:none}.theme-switch select{width:100px;font-size:12px}}
+  @media(max-width:480px){.brand-mark{width:42px;height:42px}.brand-name{font-size:17px}.theme-switch select{width:79px;min-height:36px;font-size:11px}#webSettingsToggle{width:42px;height:42px}}
+</style>
+<style>
+  /* Keep the glow on the actual screen, not on its spacious layout slot. */
+  .preview-stage,.preview-stage.cad-stage{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;overflow:visible}
+  .preview-frame{display:inline-block;flex:none;line-height:0;border:4px solid var(--brand);border-radius:10px;overflow:hidden;box-shadow:0 0 0 3px var(--line),0 0 18px 4px rgba(var(--brand-rgb),.42)}
+  .preview-frame #preview,.preview-frame #preview.cad-pixels{display:block;border:0;border-radius:0;box-shadow:none;max-width:100%}
+  .adjustments input[type=range]{width:100%;min-width:0}
+  .studio-controls,.animation-gallery,.animation-card,.right-column .card,.clock-styling,.transport-choice,.preview-frame{border-radius:9px}
+  .library-toolbar select,.library-toolbar input,.library-toolbar button,input:not([type=checkbox]):not([type=range]),select,.adjustments output,button.primary,button.secondary,button.ghost,.chip,.pixel-appearance .pixel-appearance-button{border-radius:7px}
+  #webSettingsToggle{width:66px;height:66px;border-radius:7px;display:grid;place-items:center;padding:0}
+  #webSettingsToggle svg{width:34px;height:34px;display:block;fill:currentColor}
+  .theme-settings{grid-column:1/-1;padding:18px 22px}.theme-settings h2{margin:0 0 16px;font-size:19px}
+  .theme-settings .theme-switch{margin:0;display:grid;grid-template-columns:minmax(100px,190px) minmax(180px,340px);justify-content:start;align-items:center;gap:14px;font-size:15px;color:var(--text)}
+  .theme-settings .theme-switch span{display:block}.theme-settings .theme-switch select{width:100%;min-height:42px;font-size:15px}
+  @media(max-width:780px){#webSettingsToggle{width:48px;height:48px}#webSettingsToggle svg{width:27px;height:27px}}
+  @media(max-width:480px){#webSettingsToggle{width:42px;height:42px}.theme-settings .theme-switch{grid-template-columns:70px minmax(0,1fr)}}
+</style>
+<link rel="stylesheet" href="./pixel-studio-web-ui.css">
+</head>
+<body>
+<div class="wrap">
+<header class="topbar"><div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><g fill="currentColor"><path d="M2 2h8v8H2zm10 0h8v8h-8zm10 0h8v8h-8zM2 12h8v8H2zm20 0h8v8h-8zM2 22h8v8H2zm10 0h8v8h-8z"/></g><path fill="#f8c68b" d="M22 22h8v8h-8z"/></svg><div><div class="brand-name">PIXEL STUDIO</div><div class="brand-sub">WLED / 本地像素放映室</div></div></div><div class="top-tags"><span class="tag"><span class="tag-dot"></span>本地运行</span><span class="tag">为小像素屏设计</span></div></header>
+<div class="intro"><div><div class="eyebrow">SMALL PIXELS. ENDLESS POSSIBILITIES.</div><h1>小屏幕，也有大想象。</h1><p>挑一段动画，调一个节奏，把喜欢的画面点亮。</p></div><div class="intro-count"><strong>66</strong>种像素动画<br />新增吉伊与星星小团子</div></div>
+<main class="workspace">
+<section class="card preview-card" aria-labelledby="previewHeading">
+<div class="card-head"><h2 id="previewHeading"><span class="section-index">01</span>屏幕预览</h2><span id="screenResolution" class="badge">15 × 27</span></div>
+<div class="dimension-bar"><div class="dimension-field"><label for="matrixW">宽度 / PX</label><input id="matrixW" type="number" min="1" max="512" value="15" /></div><span class="dimension-times" aria-hidden="true">×</span><div class="dimension-field"><label for="matrixH">高度 / PX</label><input id="matrixH" type="number" min="1" max="512" value="27" /></div><div id="pixelCount" class="pixel-total mono">405 PIXELS</div></div>
+<div class="presets"><span>常用尺寸</span><button class="chip is-active" data-resolution="15,27">15 × 27</button><button class="chip" data-resolution="14,26">14 × 26</button></div>
+<div class="preview-stage"><img id="preview" alt="像素屏实时预览" /></div>
+<div class="now-playing"><div><small>ON THE CANVAS</small><span id="nowPlaying">流动彩虹</span></div><div class="speed-control"><label for="animationSpeed">节奏</label><input id="animationSpeed" type="range" min="0.25" max="3" step="0.05" value="1" style="width:130px" /><output id="animationSpeedValue" for="animationSpeed" class="mono">1.00×</output></div></div>
+<div class="playback-actions"><button id="startBtn" class="primary">开始发送</button><button id="stopBtn" class="secondary">停止</button><button id="previewOnlyBtn" class="ghost">仅预览</button></div>
+<div id="status" class="status" role="status" aria-live="polite">本地预览就绪</div><div id="runtimeNotice" class="status" role="status"></div><progress id="progress" value="0" max="1" aria-label="发送进度"></progress><div id="streamStats" class="stream-stats" aria-live="off">仅本地预览 · 尚未发送</div><div id="clockStyling" class="clock-styling" hidden><div class="clock-style-title">CLOCK ATELIER <span>大字 · 纯像素 · 无抗锯齿</span></div><div><label for="clockFont">时钟字体</label><select id="clockFont"><option value="rounded">圆角粗像素</option><option value="classic">经典点阵</option><option value="segment">七段电子</option></select></div><div><label for="clockPalette">时钟配色</label><select id="clockPalette"><option value="ice">雪白 / 冰蓝</option><option value="mint">奶油 / 薄荷</option><option value="amber">暖白 / 琥珀</option><option value="rose">奶白 / 樱粉</option><option value="violet">奶白 / 紫晶</option></select></div><p>上面小时，下面分钟。按实际像素尺寸居中排版。</p></div>
+</section>
+<div class="right-column">
+<section class="card library-card" aria-labelledby="libraryHeading">
+<div class="card-head"><div><h2 id="libraryHeading"><span class="section-index">02</span>动画片库 <span class="badge">82 LOOPS</span></h2><p>点选一张卡片，看看像素会发生什么。手绘作品素材来自你和朋友。</p></div><button id="randomAnimationBtn" class="ghost">随机来一个</button></div>
+<div class="filters" aria-label="动画分类"><button class="filter is-active" data-filter="all" aria-pressed="true">全部</button><button class="filter" data-filter="new" aria-pressed="false">新增</button><button class="filter" data-filter="handmade" aria-pressed="false">手绘作品</button><button class="filter" data-filter="ambience" aria-pressed="false">氛围</button><button class="filter" data-filter="nature" aria-pressed="false">自然</button><button class="filter" data-filter="playful" aria-pressed="false">趣味</button><button class="filter" data-filter="utility" aria-pressed="false">时钟</button></div>
+<select id="animationMode" aria-label="动画模式" hidden><option value="pocket_fox">林间小狐狸</option><option value="pocket_capybara">水豚泡温泉</option><option value="pocket_owl">猫头鹰守夜</option><option value="pocket_axolotl">六角龙小池</option><option value="pocket_snail">雨后小蜗牛</option><option value="pocket_bees">蜂蜜小花园</option><option value="pocket_ferris">星光摩天轮</option><option value="pocket_cablecar">雪山缆车</option><option value="pocket_windmill">麦田小风车</option><option value="pocket_telescope">屋顶观星台</option><option value="pocket_submarine">深海小潜艇</option><option value="pocket_castle">浮岛小城堡</option><option value="pocket_mushrooms">蘑菇夜光林</option><option value="pocket_pumpkin">南瓜小夜灯</option><option value="pocket_gyroscope">霓虹陀螺</option><option value="pocket_circuit">星际电路</option><option value="file">文件模式</option><option value="clock">动态时钟</option><option value="wave">简单波浪</option><option value="rainbow" selected>流动彩虹</option><option value="fire">像素火焰</option><option value="rain">绿色数字雨</option><option value="meteors">流星夜空</option><option value="fireworks">像素烟花</option><option value="heart">心跳爱心</option><option value="ripples">水波涟漪</option><option value="snake">彩色贪吃蛇</option><option value="lava">熔岩灯</option><option value="jellyfish">像素水母</option><option value="aurora">北境极光</option><option value="snow">像素飘雪</option><option value="sunset">海面日落</option><option value="bubbles">气泡上升</option><option value="butterfly">彩翼蝴蝶</option><option value="hourglass">像素沙漏</option><option value="galaxy">旋转星云</option><option value="checker">跳动棋盘</option><option value="equalizer">节奏光柱</option><option value="bloom">像素花开</option><option value="koi">锦鲤游弋</option><option value="lanterns">天灯夜游</option><option value="city">雨夜城市</option><option value="mountains">远山流云</option><option value="rocket">火箭旅行</option><option value="fish">海底鱼群</option><option value="cat">像素猫咪</option><option value="candle">烛光摇曳</option><option value="waterfall">蓝色瀑布</option><option value="orbit">行星轨道</option><option value="dna">双螺旋</option><option value="tunnel">彩虹隧道</option><option value="tiny_train">黄昏小列车</option><option value="rainy_umbrella">雨天小红伞</option><option value="moon_lighthouse">月光灯塔</option><option value="little_vinyl">像素唱片机</option><option value="paper_flight">纸飞机旅行</option><option value="tiny_greenhouse">口袋温室</option><option value="portrait_fireflies">萤火夜花园</option>
+
+
+
+<option value="pocket_strawberry">草莓小盆栽</option>
+<option value="pocket_starwhale">星海小鲸</option>
+<option value="pocket_windbell">晚风风铃</option>
+<option value="portrait_balloon">热气球旅行</option>
+<option value="portrait_penguin">企鹅踏雪</option>
+<option value="portrait_bamboo">听雨竹林</option>
+<option value="portrait_sakura">樱花小溪</option>
+<option value="portrait_whale">星海蓝鲸</option>
+<option value="portrait_portal">霓虹时空门</option>
+<option value="portrait_coffee">咖啡小憩</option>
+<option value="portrait_prism">棱彩流光</option>
+<option value="portrait_dancer">像素小舞者</option>
+<option value="portrait_rose">夜色玫瑰</option>
+<option value="portrait_moonrabbit">月下小兔</option>
+</select>
+<div id="animationGallery" class="animation-gallery" role="group" aria-label="选择像素动画"></div><p id="animationHint" class="animation-detail" aria-live="polite">柔和的彩虹色带沿对角线流动，铺满整个屏幕。</p>
+</section>
+<section class="card device-card" aria-labelledby="deviceHeading"><div class="card-head"><div><h2 id="deviceHeading"><span class="section-index">03</span>连接你的屏幕</h2><p>选择高速网络或 USB 有线控制；串口由每位用户自行授权。</p></div><span class="badge">IP + WIRED</span></div><div class="settings-body">
+<div class="device-row"><div><label for="controlMode">控制方式</label><select id="controlMode"><option value="ddp">IP / DDP 后台动画 · 60 FPS</option><option value="auto" selected>IP / 自动加速</option><option value="http">IP / HTTP</option><option value="ws">IP / WebSocket</option><option value="serial">USB / Adalight 有线</option></select></div><div><label for="wledHost">WLED 地址</label><input id="wledHost" type="text" value="http://192.168.1.100" spellcheck="false" /></div><button id="testHttpBtn" class="secondary">测试 IP</button><button id="quickSerialBtn" class="primary">选择 USB / Adalight</button></div>
+<div class="output-settings"><div><label for="brightness">亮度 / 0–255</label><input id="brightness" type="number" min="0" max="255" value="255" /></div><div><label for="fps">发送帧率 / FPS</label><input id="fps" type="number" min="1" max="60" value="60" /></div><div><label for="safeMode">稳定优先</label><label class="check-label"><input type="checkbox" id="safeMode" checked />自动限制帧率</label></div></div>
+<div class="color-settings"><div><label for="colorMode">颜色还原</label><select id="colorMode"><option value="match">匹配网页颜色（推荐）</option><option value="raw">保留 WLED 调色</option></select></div><div><label for="colorGamma">设备 Gamma / 自动读取</label><input id="colorGamma" type="number" min="1" max="4" step="0.05" value="2.8" /></div></div><div class="device-detection"><span id="deviceInfo">开始发送时读取设备颜色配置</span><button id="readDeviceSizeBtn" class="ghost">读取设备尺寸</button></div><p class="hint">颜色补偿不修改设备设置。DDP 内置动画在独立后台线程运行，切换标签页不降速。统计为后台实际发送速率，不代表灯板实测帧率。<br>高速入口：双击 Start-Pixel-DDP.cmd，或打开 <a href="http://127.0.0.1:8766/" target="_blank" rel="noopener">本地 DDP 服务</a>。默认目标 60 FPS；只保留一个发送页面。<br>导入图片/视频仍由浏览器供帧，需保持前台。内置动画可后台播放。</p></div></section>
+<section class="card"><div class="card-head"><div><h2><span class="section-index">04</span>也可以，播放自己的画面。</h2><p>导入图片或视频，按当前屏幕尺寸采样。</p></div></div><div class="settings-body media-settings"><div><label for="mediaFile">本地图片 / 视频</label><input type="file" id="mediaFile" accept="image/*,video/*" /></div><div><label for="scaleMode">画面适配</label><select id="scaleMode"><option value="stretch">拉伸到屏幕</option><option value="fit">保持比例，居中补边</option></select></div></div></section>
+<details class="card"><summary>高级设置、测试色与运行日志</summary><div class="advanced-grid"><div class="grid">
+<div><label for="mapping">像素排列</label><select id="mapping"><option value="row">逐行，从左到右</option><option value="serpentine">蛇形 / Z 字</option></select></div>
+<div><label for="httpPath">HTTP API 路径</label><input id="httpPath" value="/json/state" spellcheck="false" /></div>
+<div><label for="protocol">发送协议</label><select id="protocol"><option value="adalight">Adalight RGB（WLED 原生，先诊断）</option>
+<option value="wled-json">WLED JSON（兼容模式）</option></select></div>
+<div><label for="baudRate">串口波特率</label><select id="baudRate"><option value="115200">115200</option><option value="921600">921600</option><option value="460800">460800</option><option value="230400">230400</option></select></div></div>
+<div class="row" style="margin-top:15px;flex-wrap:wrap"><button id="connectBtn" class="secondary">连接所选通道</button><button id="disconnectBtn" class="ghost">断开</button><button id="testSerialBtn" class="ghost">串口诊断</button><details class="serial-lab"><summary>串口实验室 · Adalight / USB CDC</summary><p>先停止播放，再连接 ESP32 串口并运行诊断。只有收到 WLED 回包，才会开放 Adalight 发送。</p><p>点击“选择 USB / Adalight”后，由 Chrome 或 Edge 显示系统串口选择窗口；网页不会保存或替别人决定 COM 端口。</p><p>UART 两端波特率必须一致，115200 对 15 × 27 RGB 理论约 9 FPS。PixelStudio-C3-USB-60 定制固件的原生 USB CDC 支持 60 FPS；网络 DDP 同样支持 60 FPS。</p><p>Adalight 没有设备端逐帧确认。颜色与走线受 WLED 实时接收设置影响，请保留现有电流限制；不要同时运行 IP/DDP 播放。</p><output id="serialDiagnostic" aria-live="polite">尚未诊断。先确认固件命令通道，再判断像素输出。</output></details><button id="clearPreviewBtn" class="ghost">清空预览</button></div><div class="hint">IP / HTTP 无需串口连接。USB / Adalight 请使用支持 Web Serial 的桌面版 Chrome 或 Edge，并由用户亲自选择设备。</div>
+<div class="color-tests" aria-label="发送测试颜色"><button id="testRedBtn" class="swatch" style="--swatch:#ff5a65">红色</button><button id="testGreenBtn" class="swatch" style="--swatch:#67d9a0">绿色</button><button id="testBlueBtn" class="swatch" style="--swatch:#679af0">蓝色</button><button id="testWhiteBtn" class="swatch" style="--swatch:#eee">白色</button><button id="testBlackBtn" class="swatch" style="--swatch:#000">黑屏</button></div><pre id="log" aria-label="运行日志"></pre>
+</div></details>
+</div>
+</main>
+<footer><span>PIXEL STUDIO / 每一颗像素，都有自己的位置。</span><span>本地处理 · 无需上传 · WLED</span></footer>
+</div>
+
+
+<script>
+(() => {
+  // Exact 3x3 geometry from PixelStudioLogo.h; the corner pixel stays white.
+  document.querySelector('.brand-mark').outerHTML = `<svg class="brand-mark" viewBox="0 0 32 32" role="img" aria-label="Pixel Studio">
+    <g class="logo-halo"><rect x="3" y="3" width="26" height="26" rx="2.4938" stroke-width="6" stroke-opacity=".06275"/><rect x="3" y="3" width="26" height="26" rx="2.4938" stroke-width="5" stroke-opacity=".06275"/><rect x="3" y="3" width="26" height="26" rx="2.4938" stroke-width="4" stroke-opacity=".06275"/><rect x="3" y="3" width="26" height="26" rx="2.4938" stroke-width="3" stroke-opacity=".06275"/><rect x="3" y="3" width="26" height="26" rx="2.4938" stroke-width="2" stroke-opacity=".06275"/><rect x="3" y="3" width="26" height="26" rx="2.4938" stroke-width="1" stroke-opacity=".7451"/></g>
+    <rect class="logo-back" x="3.8" y="3.8" width="24.4" height="24.4" rx="1.6938"/>
+    <g class="logo-tile"><rect x="4.6" y="4.6" width="7.0667" height="7.0667" rx=".8938"/><rect x="12.4667" y="4.6" width="7.0667" height="7.0667" rx=".8938"/><rect x="20.3333" y="4.6" width="7.0667" height="7.0667" rx=".8938"/><rect x="4.6" y="12.4667" width="7.0667" height="7.0667" rx=".8938"/><rect class="logo-center" x="12.4667" y="12.4667" width="7.0667" height="7.0667" rx=".8938"/><rect x="20.3333" y="12.4667" width="7.0667" height="7.0667" rx=".8938"/><rect x="4.6" y="20.3333" width="7.0667" height="7.0667" rx=".8938"/><rect x="12.4667" y="20.3333" width="7.0667" height="7.0667" rx=".8938"/><rect class="logo-white" x="20.3333" y="20.3333" width="7.0667" height="7.0667" rx=".8938"/></g>
+  </svg>`;
+  const workspace = document.querySelector('.workspace');
+  const previewCard = document.querySelector('.preview-card');
+  const libraryCard = document.querySelector('.library-card');
+  const settingsColumn = document.querySelector('.right-column');
+  const stage = document.createElement('div');
+  stage.className = 'studio-stage';
+  workspace.insertBefore(stage, previewCard);
+  stage.append(previewCard, libraryCard);
+
+  const controls = document.createElement('section');
+  controls.className = 'studio-controls';
+  controls.setAttribute('aria-label', '播放控制');
+  workspace.insertBefore(controls, settingsColumn);
+  const adjustments = document.createElement('div');
+  adjustments.className = 'adjustments';
+  const brightnessField = document.getElementById('brightness').parentElement;
+  const brightness = document.getElementById('brightness');
+  const brightnessRange = document.createElement('input');
+  brightnessRange.type = 'range';
+  brightnessRange.id = 'brightnessRange';
+  brightnessRange.min = '0';
+  brightnessRange.max = '255';
+  brightnessRange.value = brightness.value;
+  brightnessRange.setAttribute('aria-label', '亮度');
+  brightnessField.querySelector('label').textContent = '亮度';
+  brightnessField.querySelector('label').after(brightnessRange);
+  brightnessRange.addEventListener('input', () => {
+    brightness.value = brightnessRange.value;
+    brightness.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  brightness.addEventListener('input', () => { brightnessRange.value = brightness.value; });
+  const speedControl = document.querySelector('.speed-control');
+  speedControl.querySelector('label').textContent = '速度';
+  document.getElementById('animationSpeed').style.width = '100%';
+  adjustments.append(brightnessField, speedControl);
+  controls.append(adjustments);
+  for (const selector of ['#clockStyling', '.now-playing', '.playback-actions', '#status', '#runtimeNotice', '#progress', '#streamStats']) {
+    controls.append(document.querySelector(selector));
+  }
+  const settingsBody = document.querySelector('.device-card .settings-body');
+  settingsBody.prepend(document.querySelector('.presets'));
+  settingsBody.prepend(document.querySelector('.dimension-bar'));
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'library-toolbar';
+  const category = document.createElement('select');
+  category.id = 'libraryCategory';
+  category.setAttribute('aria-label', '动画分类');
+  for (const [value, label] of [['all','全部'],['new','新增'],['handmade','手绘作品'],['ambience','氛围'],['nature','自然'],['playful','趣味'],['utility','时钟']]) {
+    category.add(new Option(label, value));
+  }
+  const search = document.createElement('input');
+  search.id = 'librarySearch';
+  search.type = 'search';
+  search.placeholder = '搜索动画、时钟或手绘角色';
+  search.setAttribute('aria-label', '搜索动画');
+  toolbar.append(category, search, document.getElementById('randomAnimationBtn'));
+  libraryCard.insertBefore(toolbar, libraryCard.querySelector('.filters'));
+
+  const settingsButton = document.createElement('button');
+  settingsButton.id = 'webSettingsToggle';
+  settingsButton.type = 'button';
+  settingsButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.1 7.1 0 0 0-1.63-.94l-.36-2.54a.49.49 0 0 0-.49-.42h-3.84a.49.49 0 0 0-.49.42l-.36 2.54a7.1 7.1 0 0 0-1.63.94l-2.39-.96a.49.49 0 0 0-.61.22L2.64 8.84a.49.49 0 0 0 .12.64l2.03 1.58c-.04.3-.07.62-.07.94s.03.64.07.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.61.22l2.39-.96c.49.38 1.03.69 1.63.94l.36 2.54c.04.24.24.42.49.42h3.84c.25 0 .45-.18.49-.42l.36-2.54c.6-.25 1.14-.56 1.63-.94l2.39.96c.23.08.49 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>';
+  settingsButton.setAttribute('aria-label', '打开设置');
+  settingsButton.setAttribute('aria-expanded', 'false');
+  document.querySelector('.topbar').append(settingsButton);
+  settingsColumn.hidden = true;
+  settingsButton.addEventListener('click', () => {
+    settingsColumn.hidden = !settingsColumn.hidden;
+    settingsButton.setAttribute('aria-expanded', String(!settingsColumn.hidden));
+    settingsButton.setAttribute('aria-label', settingsColumn.hidden ? '打开设置' : '收起设置');
+    if (!settingsColumn.hidden) settingsColumn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  const themeWrap = document.createElement('label');
+  themeWrap.className = 'theme-switch';
+  themeWrap.innerHTML = '<span>主题</span><select id="webTheme" aria-label="网页主题"><option value="ice">冰蓝</option><option value="mint">薄荷</option><option value="amber">琥珀</option><option value="rose">樱粉</option></select>';
+  const themePanel = document.createElement('section');
+  themePanel.className = 'card theme-settings';
+  const themeHeading = document.createElement('h2');
+  themeHeading.textContent = '界面设置';
+  themePanel.append(themeHeading, themeWrap);
+  settingsColumn.prepend(themePanel);
+  const themeSelect = themeWrap.querySelector('select');
+  let savedTheme = 'ice';
+  try { savedTheme = localStorage.getItem('pixelStudioWebTheme') || 'ice'; } catch (_) {}
+  if (!['ice', 'mint', 'amber', 'rose'].includes(savedTheme)) savedTheme = 'ice';
+  themeSelect.value = savedTheme;
+  document.documentElement.dataset.theme = savedTheme;
+  themeSelect.addEventListener('change', () => {
+    document.documentElement.dataset.theme = themeSelect.value;
+    try { localStorage.setItem('pixelStudioWebTheme', themeSelect.value); } catch (_) {}
+  });
+})();
+</script>
+<script>
+
+(() => {
+  const ui = {
+    connectBtn: document.getElementById('connectBtn'),
+    disconnectBtn: document.getElementById('disconnectBtn'),
+    controlMode: document.getElementById('controlMode'),
+    wledHost: document.getElementById('wledHost'),
+    httpPath: document.getElementById('httpPath'),
+    baudRate: document.getElementById('baudRate'),
+    matrixW: document.getElementById('matrixW'),
+    matrixH: document.getElementById('matrixH'),
+    scaleMode: document.getElementById('scaleMode'),
+    brightness: document.getElementById('brightness'),
+    fps: document.getElementById('fps'),
+    mapping: document.getElementById('mapping'),
+    protocol: document.getElementById('protocol'),
+    status: document.getElementById('status'),
+    progress: document.getElementById('progress'),
+    mediaFile: document.getElementById('mediaFile'),
+    animationMode: document.getElementById('animationMode'),
+    previewOnlyBtn: document.getElementById('previewOnlyBtn'),
+    testHttpBtn: document.getElementById('testHttpBtn'),
+    quickSerialBtn: document.getElementById('quickSerialBtn'),
+    testSerialBtn: document.getElementById('testSerialBtn'),
+    startBtn: document.getElementById('startBtn'),
+    stopBtn: document.getElementById('stopBtn'),
+    preview: document.getElementById('preview'),
+    log: document.getElementById('log'),
+    testRedBtn: document.getElementById('testRedBtn'),
+    testGreenBtn: document.getElementById('testGreenBtn'),
+    testBlueBtn: document.getElementById('testBlueBtn'),
+    testBlackBtn: document.getElementById('testBlackBtn'),
+    testWhiteBtn: document.getElementById('testWhiteBtn'),
+    clearPreviewBtn: document.getElementById('clearPreviewBtn'),
+    safeMode: document.getElementById('safeMode')
+  };
+
+  const encoder = new TextEncoder();
+  let port = null;
+  let writer = null;
+  let reader = null;
+  let ws = null;
+  let running = false;
+  let stopFlag = false;
+  let rafId = null;
+  let mediaObj = null;
+  let mediaType = null;
+  let currentFrame = 0;
+  let animationElapsed = 0;
+  let animationLastTime = performance.now();
+  let animationSpeed = 1;
+  function motionPixel(value) {
+    return Math.round(value);
+  }
+  let animationPreviewTimer = null;
+  let playbackGeneration = 0;
+  let frameInFlight = false;
+
+  const offscreen = document.createElement('canvas');
+  const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
+
+  function getAnimationMode() {
+    return ui.animationMode.value;
+  }
+
+function nowText() {
+    return new Date().toLocaleTimeString();
+  }
+
+  function logLine(msg) {
+    ui.log.textContent = `[${nowText()}] ${msg}\n` + ui.log.textContent;
+    if (ui.log.textContent.length > 3000) {
+      ui.log.textContent = ui.log.textContent.slice(0, 3000);
+    }
+  }
+
+  function setStatus(text, kind = '') {
+    ui.status.textContent = text;
+    ui.status.classList.remove('ok', 'err');
+    if (kind) ui.status.classList.add(kind);
+  }
+
+  function withNum(v, fallback) {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function isHttpMode() {
+    return ui.controlMode.value === 'ddp' || ui.controlMode.value === 'http' || (ui.controlMode.value === 'auto' && ipTransport !== 'ws');
+  }
+
+  function isWsMode() {
+    return ui.controlMode.value === 'ws' || (ui.controlMode.value === 'auto' && ipTransport === 'ws');
+  }
+
+  function getHttpTarget() {
+    const host = (ui.wledHost.value || '').trim().replace(/\/$/, '');
+    const path = (ui.httpPath.value || '/json/state').trim();
+    return `${host}${path.startsWith('/') ? '' : '/'}${path}`;
+  }
+
+  function getWsUrl() {
+    const rawHost = (ui.wledHost.value || '').trim();
+    if (!rawHost) throw new Error('未填写 WLED 地址');
+    try {
+      const u = new URL(rawHost);
+      return `ws://${u.host}/ws`;
+    } catch {
+      return `ws://${rawHost.replace(/\/+$/, '')}/ws`;
+    }
+  }
+
+  function wsSendPayload(payload) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      throw new Error('WebSocket 未连接');
+    }
+    ws.send(JSON.stringify(payload));
+  }
+
+  function getFrameConfig() {
+    const w = Math.max(1, Math.min(512, withNum(ui.matrixW.value, 15)));
+    const h = Math.max(1, Math.min(512, withNum(ui.matrixH.value, 27)));
+    const d = Math.max(0, Math.min(255, withNum(ui.brightness.value, 255)));
+    return { w, h, d, pixelCount: w * h };
+  }
+
+  function frameBytesForCurrentConfig() {
+    const { pixelCount } = getFrameConfig();
+    return pixelCount * 3;
+  }
+
+  function clampFpsForCurrentMode(rawMode, userFps) {
+    if(ui.controlMode.value==='serial' && ui.protocol.value==='adalight'){
+      const target=Math.max(1,Math.min(60,Number(ui.fps.value)||20));
+      const config=getFrameConfig();
+      return serialLab.nativeUsb?Math.min(target,60):Math.min(target,serialUartFps(config.w*config.h*3));
+    }
+    const base = Math.max(1, Math.min(60, withNum(userFps, 20)));
+    if (ui.controlMode.value === 'ddp') return base;
+    if (!ui.safeMode.checked) return base;
+    const bytes = frameBytesForCurrentConfig();
+    if (ui.controlMode.value !== 'serial') return Math.min(base, bytes > 6144 ? 6 : bytes > 3072 ? 12 : 20);
+    return Math.min(base, bytes > 2048 ? 4 : bytes > 1024 ? 6 : 8);
+  }
+  function minIntervalMs() {
+    if(ui.controlMode.value==='serial' && ui.protocol.value==='adalight')return 0;
+    return ui.safeMode.checked && ui.controlMode.value === 'serial' ? 120 : 0;
+  }
+
+  function mapIndex(x, y, w, h) {
+    if (ui.mapping.value === 'serpentine' && (y % 2 === 1)) {
+      x = (w - 1 - x);
+    }
+    return y * w + x;
+  }
+
+  function drawToDisplayCanvas(targetW, targetH, sourceWidth, sourceHeight) {
+    offCtx.fillStyle = '#000000';
+    offCtx.fillRect(0, 0, targetW, targetH);
+
+    if (!sourceWidth || !sourceHeight || !Number.isFinite(sourceWidth) || !Number.isFinite(sourceHeight)) {
+      offCtx.drawImage(mediaObj, 0, 0, targetW, targetH);
+      return;
+    }
+
+    const mode = ui.scaleMode.value;
+    if (mode === 'fit') {
+      const scale = Math.min(targetW / sourceWidth, targetH / sourceHeight);
+      const dw = Math.max(1, Math.round(sourceWidth * scale));
+      const dh = Math.max(1, Math.round(sourceHeight * scale));
+      const x = Math.max(0, Math.floor((targetW - dw) / 2));
+      const y = Math.max(0, Math.floor((targetH - dh) / 2));
+      offCtx.drawImage(mediaObj, x, y, dw, dh);
+      return;
+    }
+
+    offCtx.drawImage(mediaObj, 0, 0, targetW, targetH);
+  }
+
+  function extractFrame() {
+    const { w, h } = getFrameConfig();
+    offscreen.width = w;
+    offscreen.height = h;
+    offCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+    if (!mediaObj) return null;
+    offCtx.clearRect(0, 0, w, h);
+    try {
+      const sourceW = mediaObj.videoWidth || mediaObj.naturalWidth || mediaObj.width || 0;
+      const sourceH = mediaObj.videoHeight || mediaObj.naturalHeight || mediaObj.height || 0;
+      drawToDisplayCanvas(w, h, sourceW, sourceH);
+      ui.preview.src = offscreen.toDataURL('image/png');
+    } catch (e) {
+      return null;
+    }
+    return sampleFrameFromCanvas();
+  }
+
+  function sampleFrameFromCanvas() {
+    const { w, h, d } = getFrameConfig();
+    const imgData = offCtx.getImageData(0, 0, w, h).data;
+    const rgb = new Uint8Array(w * h * 3);
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const sourceIndex = (y * w + x) * 4;
+        const targetIndex = mapIndex(x, y, w, h) * 3;
+        const scale = ui.protocol.value === 'raw-bin' ? d / 255 : 1;
+        rgb[targetIndex] = Math.round(imgData[sourceIndex] * scale);
+        rgb[targetIndex + 1] = Math.round(imgData[sourceIndex + 1] * scale);
+        rgb[targetIndex + 2] = Math.round(imgData[sourceIndex + 2] * scale);
+      }
+    }
+    return rgb;
+  }
+
+  function applyPreviewAspect() {
+    // Output workers render pixels only; browser layout must not run there.
+    if (window.pixelStudioHeadless === true) return;
+    const { w, h } = getFrameConfig();
+    const stage = ui.preview.closest('.preview-stage');
+    const well = document.querySelector('.ps-library-well');
+    const aligned = !!well && window.innerWidth > 760;
+    const availableWidth = Math.max(1, (stage?.clientWidth || 380) - (aligned ? 16 : 40));
+    const maxHeight = Math.max(1, aligned ? stage.clientHeight - 12 : (stage?.clientHeight || 486) - 40);
+    const scale = Math.min(availableWidth / w, maxHeight / h);
+    ui.preview.style.width = `${w * scale}px`;
+    ui.preview.style.height = `${h * scale}px`;
+    ui.preview.style.aspectRatio = `${w} / ${h}`;
+    ui.preview.style.imageRendering = 'pixelated';
+    ui.preview.style.objectFit = 'contain';
+    document.getElementById('screenResolution').textContent = w + ' × ' + h;
+    document.getElementById('pixelCount').textContent = (w * h) + ' PIXELS';
+    document.querySelectorAll('[data-resolution]').forEach(button => button.classList.toggle('is-active', button.dataset.resolution === w + ',' + h));
+  }
+
+  function drawClockFrame() {
+    drawStudioClock(offCtx,getFrameConfig());
+  }
+
+  function drawWaveFrame(t) {
+    const { w, h } = getFrameConfig();
+    offCtx.fillStyle = '#000000';
+    offCtx.fillRect(0, 0, w, h);
+    offCtx.fillStyle = '#ffdd57';
+    for (let x = 0; x < w; x++) {
+      const wave = Math.sin((x / Math.max(1, w)) * Math.PI * 6 + t * 2) * 0.45 + 0.55;
+      const y = Math.round(wave * (h - 1));
+      offCtx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  const animationDescriptions = {pocket_strawberry: "小盆栽长出红草莓，叶片随风摆动，金色花粉轻轻飘过。",
+pocket_starwhale: "蓝色小鲸在星海里缓缓游动，尾鳍轻摆，气泡化作星光。",
+pocket_windbell: "玻璃风铃轻轻摇摆，薄荷色纸签随晚风摆动，背景星点缓缓闪烁。",
+pocket_fox: "暖橙小狐狸坐在林间树桩上，轻轻摇动奶油色尾巴。",
+pocket_capybara: "顶着小橘子的水豚泡在青绿色温泉里，蒸汽慢慢升起。",
+pocket_owl: "月牙树梢下的小猫头鹰左右张望，偶尔眨一眨眼。",
+pocket_axolotl: "粉色六角龙在水中轻轻漂浮，柔软外鳃随着水流摆动。",
+pocket_snail: "背着紫色螺旋小屋的蜗牛，伸长触角穿过雨后草地。",
+pocket_bees: "两只小蜜蜂绕着金色蜂巢飞行，下面盛开着糖果色小花。",
+pocket_ferris: "六只彩色座舱在夜空下缓缓旋转，带着小小游乐园的温度。",
+pocket_cablecar: "红色缆车沿山间索道来回经过，远处是落日与层叠雪峰。",
+pocket_windmill: "奶油色风车在暖色暮光里转动，前景的麦穗随风摇摆。",
+pocket_telescope: "蓝色圆顶上的望远镜慢慢扫过星空，偶尔有流星划过。",
+pocket_submarine: "金色小潜艇在蓝绿深海中巡游，舷窗发光，水草轻摇。",
+pocket_castle: "粉紫色城堡浮在云间小岛上，旗帜轻摆，细小瀑布落向夜空。",
+pocket_mushrooms: "柔和紫色菌盖撑起夜光小森林，荧光孢子在林间缓缓上升。",
+pocket_pumpkin: "圆滚滚的南瓜灯透出暖金色烛光，枯叶安静飘落。",
+pocket_gyroscope: "三圈薄荷、玫红与金色轨道在空间中交错旋转。",
+pocket_circuit: "青绿色电路上的光点向中央芯片流动，像一块微型星舰面板。",
+portrait_fireflies: "深绿草丛里，萤火虫一明一暗，月牙安静悬着。",
+portrait_balloon: "奶油色云朵从彩色热气球后面经过，远山慢慢起伏。",
+portrait_penguin: "圆滚滚的小企鹅摆动脚丫，陪着细雪散步。",
+portrait_bamboo: "青绿竹节与斜伸的细叶，在绵绵雨线中呼吸。",
+portrait_sakura: "粉色花瓣落过深蓝溪水，水面的碎光轻轻流动。",
+portrait_whale: "蓝鲸在星星间漂浮，喷出的水花变成一串星尘。",
+portrait_portal: "青蓝与玫红矩形光圈，沿竖屏向远处延伸。",
+portrait_coffee: "暖色杯子冒着弯弯的蒸汽，桌边是安静的下午。",
+portrait_prism: "糖果色短光束划过夜幕，每一颗都有渐隐的尾巴。",
+portrait_dancer: "薄荷上衣的小舞者摆动手臂，舞池随着节奏变换。",
+portrait_rose: "珊瑚粉玫瑰缓缓明暗变化，几片花瓣轻轻落下。",
+portrait_moonrabbit: "长耳朵小兔在月光山丘上轻跳，星空闪闪发光。",
+clock: '上下排列的像素时钟，显示当前小时和分钟。',
+wave: '黄色波浪穿过屏幕，适合观察像素映射和更新节奏。',
+rainbow: '柔和的彩虹色带沿对角线流动，铺满整个屏幕。',
+fire: '从屏幕底部升起的橙红火焰，夹着向上飘散的火星。',
+rain: '明亮的雨头带着绿色尾迹向下流动，每列速度不同。',
+meteors: '深色夜空中的闪烁星点与斜向划过的蓝色流星。',
+fireworks: '彩色烟花依次升空、绽放、落下，适合竖屏。',
+heart: '大颗像素爱心双拍跳动，底部是一条心电波形。',
+ripples: '蓝紫色水波从移动的中心向四周扩散。',
+snake: '带彩虹尾巴的小蛇在屏幕中来回游动。',
+lava: '红橙色光团缓慢上浮、融合，适合舒缓播放。',
+jellyfish: '蓝色像素水母轻轻漂浮，触手摆动，气泡上升。',
+aurora: '绿色极光像帷幕一样舒展，远处是安静的星点。',
+snow: '大小不一的雪点慢慢落下，落在屏幕底部的雪地上。',
+sunset: '落日悬在海面，橙色倒影随着水纹轻轻闪动。',
+bubbles: '透明的彩色气泡摇摆着上浮，适合舒缓节奏。',
+butterfly: '一只色彩对称的像素蝴蝶，在屏幕中央轻轻振翅。',
+hourglass: '金色像素沙粒落下，沙漏填满后重新循环。',
+galaxy: '蓝色旋臂绕着亮芯缓慢转动，星点在周围闪烁。',
+checker: '整齐的色块交错移动，明暗随着节奏呼吸。',
+equalizer: '彩色光柱高低起伏。这是模拟律动，不采集音频。',
+bloom: '六片像素花瓣缓缓舒展，花心与绿叶清晰可见。',
+koi: "两尾橙白锦鲤，在深色池水中缓缓游动。",
+lanterns: "温暖的小灯笼摇摆上升，点亮安静夜空。",
+city: "彩色窗灯与细雨，组成一座小小的夜城。",
+mountains: "层层青山与缓慢经过的云，适合舒缓播放。",
+rocket: "像素火箭带着跳动的尾焰穿过星空。",
+fish: "彩色小鱼相向游过，底部水草轻轻摇摆。",
+cat: "一只会眨眼、摇尾巴的暖色像素猫。",
+candle: "小蜡烛与温暖跳动的火苗，适合夜晚。",
+waterfall: "蓝白色水流向下奔涌，在底部化成泡沫。",
+orbit: "带着光环的行星与缓缓公转的小卫星。",
+dna: "青色与粉色像素链旋转交错，持续向上流动。",
+tunnel: "层层彩色方环向中心流动，形成像素隧道。",
+tiny_train:"暖色车窗穿过暮色山野，一趟小小的夜归列车。",
+rainy_umbrella:"细雨、红伞和轻轻扩散的水洼，安静地待一会儿。",
+moon_lighthouse:"月色海面上的小灯塔，光束缓缓扫过远方。",
+little_vinyl:"木色唱机、旋转的唱片与向上飘动的小音符。",
+paper_flight:"奶油白纸飞机穿过蓝色云层，留下短短的航迹。",
+tiny_greenhouse:"一座玻璃小温室，三株小花慢慢生长。"};
+
+  function getAnimationTime() {
+    const now = performance.now();
+    animationElapsed += (now - animationLastTime) / 1000 * animationSpeed;
+    animationLastTime = now;
+    return animationElapsed;
+  }
+
+
+  // Third-party and private hand-drawn pixel assets are excluded from this public build.
+  const handmadeSource = {};
+  const handmadeDecoded = new Map();
+  function handmadeFrame(name, time=0) {
+    const asset=handmadeSource[name];
+    const duration=asset.frames.reduce((sum,frame)=>sum+frame.ms,0);
+    let position=((time*1000)%duration+duration)%duration,index=0;
+    while(index<asset.frames.length-1 && position>=asset.frames[index].ms)position-=asset.frames[index++].ms;
+    const key=name+':'+index;
+    if(!handmadeDecoded.has(key)){
+      const frame=asset.frames[index],pixels=[];
+      for(let i=0;i<frame.d.length;i+=2)pixels.push(frame.p[parseInt(frame.d.slice(i,i+2),16)]);
+      handmadeDecoded.set(key,{w:asset.w,h:asset.h,pixels});
+    }
+    return handmadeDecoded.get(key);
+  }
+  // Dedicated odd-sized editions keep the original pixels and palette intact.
+  // Insert at the center horizontally, and away from facial details vertically.
+  const handmade15Decoded = new Map();
+  const handmade15Rows = {
+    'Echo.png':18,
+    'Ironman_1.png':20,'Ironman_2.png':20,'Ironman_3.png':20,
+    'Kiriko.png':20,
+    'LavaBucket.png':14,'LavaBucket_2.png':14,
+    'Mario_1.png':20,'Mario_2.png':16,'Mario_3.png':16,
+    'pixil-frame-0.png':13,
+    'Rocket.png':12,'Rocket_2.png':12,
+    'ROG_1.png':9,'ROG_2.png':9,
+    'T1_1.png':13,'T1_2.png':13,
+    'superMarioRun.gif':9
+  };
+  function handmadeFrame15(name,time=0) {
+    const original=handmadeFrame(name,time);
+    if(original.w!==14 || ![14,26].includes(original.h))return original;
+    if(handmade15Decoded.has(original))return handmade15Decoded.get(original);
+    const width=original.w+1,height=original.h+1;
+    const column=original.w/2;
+    const row=Math.max(1,Math.min(original.h-1,handmade15Rows[name] ?? Math.floor(original.h/2)));
+    const pixels=new Array(width*height);
+    for(let y=0;y<height;y++){
+      const sy=y<row?y:y-1;
+      for(let x=0;x<width;x++){
+        const sx=x<column?x:x-1;
+        pixels[y*width+x]=original.pixels[sy*original.w+sx];
+      }
+    }
+    const edition={w:width,h:height,pixels};
+    handmade15Decoded.set(original,edition);
+    return edition;
+  }
+  const clockGlyphs = {
+    rounded:{
+      0:['01110','11011','11011','11011','11011','11011','11011','11011','01110'],
+      1:['00110','01110','00110','00110','00110','00110','00110','00110','01111'],
+      2:['01110','11011','00011','00011','00110','01100','11000','11000','11111'],
+      3:['11110','00011','00011','00110','00110','00011','00011','00011','11110'],
+      4:['00011','00111','01111','11011','11011','11111','00011','00011','00011'],
+      5:['11111','11000','11000','11110','00011','00011','00011','11011','01110'],
+      6:['00110','01100','11000','11110','11011','11011','11011','11011','01110'],
+      7:['11111','00011','00011','00110','00110','01100','01100','11000','11000'],
+      8:['01110','11011','11011','11011','01110','11011','11011','11011','01110'],
+      9:['01110','11011','11011','11011','01111','00011','00011','00110','01100']
+    },
+    classic:{
+      0:['01110','10001','10011','10101','11001','10001','01110'],
+      1:['00100','01100','00100','00100','00100','00100','01110'],
+      2:['01110','10001','00001','00010','00100','01000','11111'],
+      3:['11110','00001','00001','01110','00001','00001','11110'],
+      4:['00010','00110','01010','10010','11111','00010','00010'],
+      5:['11111','10000','10000','11110','00001','10001','01110'],
+      6:['00110','01000','10000','11110','10001','10001','01110'],
+      7:['11111','00001','00010','00100','01000','01000','01000'],
+      8:['01110','10001','10001','01110','10001','10001','01110'],
+      9:['01110','10001','10001','01111','00001','00010','01100']
+    }
+  };
+  const clockPalettes = {
+    mint:{hour:'#f2ebd6',minute:'#8af2c9',divider:'#397660'},
+    amber:{hour:'#ffe2ab',minute:'#ffad59',divider:'#925628'},
+    ice:{hour:'#e5f5ff',minute:'#6ad3f5',divider:'#356e88'},
+    rose:{hour:'#fff0f5',minute:'#ff9ec3',divider:'#9e4d72'},
+    violet:{hour:'#f5efff',minute:'#be97ff',divider:'#67508e'}
+  };
+  function drawStudioClock(paint,dimensions,date=new Date(),font,palette) {
+    const {w,h}=dimensions;
+    font=font || document.getElementById('clockFont')?.value || 'rounded';
+    palette=palette || document.getElementById('clockPalette')?.value || 'mint';
+    const custom=/^custom:(#[0-9a-f]{6}):(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i.exec(palette);
+    const colors=custom ? {hour:custom[1],minute:custom[2],divider:custom[3]} : (clockPalettes[palette] || clockPalettes.mint);
+    const hours=String(date.getHours()).padStart(2,'0'),minutes=String(date.getMinutes()).padStart(2,'0');
+    paint.fillStyle='#000000';paint.fillRect(0,0,w,h);paint.imageSmoothingEnabled=false;
+    const glyph=(digit,left,top,gw,gh,color)=>{
+      paint.fillStyle=color;
+      if(font==='segment'){
+        const active=['abcedf','bc','abged','abgcd','fgbc','afgcd','afgecd','abc','abcdefg','abfgcd'][Number(digit)];
+        const stroke=Math.max(1,Math.floor(gw/4)),mid=Math.floor(gh/2);
+        const horizontal=(y)=>paint.fillRect(left+stroke,top+y,Math.max(1,gw-stroke*2),stroke);
+        const vertical=(x,y,length)=>paint.fillRect(left+x,top+y,stroke,Math.max(1,length));
+        if(active.includes('a'))horizontal(0);
+        if(active.includes('g'))horizontal(mid);
+        if(active.includes('d'))horizontal(gh-stroke);
+        if(active.includes('f'))vertical(0,stroke,mid-stroke);
+        if(active.includes('b'))vertical(gw-stroke,stroke,mid-stroke);
+        if(active.includes('e'))vertical(0,mid+stroke,gh-mid-stroke*2);
+        if(active.includes('c'))vertical(gw-stroke,mid+stroke,gh-mid-stroke*2);
+      }else{
+        const rows=(clockGlyphs[font] || clockGlyphs.rounded)[digit];
+        for(let y=0;y<gh;y++)for(let x=0;x<gw;x++)
+          if(rows[Math.min(rows.length-1,Math.floor((y+.5)*rows.length/gh))][Math.min(4,Math.floor((x+.5)*5/gw))]==='1')
+            paint.fillRect(left+x,top+y,1,1);
+      }
+    };
+    if(h>=w || w<24){
+      const margin=w>=12 && h>=20 ? 1 : 0;
+      const digitGap=w>=14 ? (w%2 ? 1 : 2) : 1;
+      const gw=Math.max(1,Math.floor((w-margin*2-digitGap)/2));
+      const groupW=gw*2+digitGap;
+      const split=h>=20 ? (h%2 ? 3 : 2) : 1;
+      const gh=Math.max(1,Math.floor((h-margin*2-split)/2));
+      const top=Math.floor((h-(gh*2+split))/2),left=Math.floor((w-groupW)/2);
+      [hours,minutes].forEach((line,row)=>[...line].forEach((digit,col)=>glyph(digit,left+col*(gw+digitGap),top+row*(gh+split),gw,gh,row?colors.minute:colors.hour)));
+      paint.fillStyle=colors.divider;
+      let dash=Math.min(w,Math.max(2,Math.min(4,Math.floor(w*.3))));
+      if((w-dash)%2)dash=Math.max(1,dash-1);
+      paint.fillRect(Math.floor((w-dash)/2),top+gh+(split%2?Math.floor(split/2):0),dash,split%2?1:split);
+    }else{
+      const gh=Math.max(1,h-2),gap=Math.max(1,Math.floor(w/32)),colon=2;
+      const gw=Math.max(1,Math.floor((w-2-gap*2-colon-2)/4));
+      const content=gw*4+gap*2+colon+2,left=Math.floor((w-content)/2),top=Math.floor((h-gh)/2);
+      [...hours].forEach((digit,col)=>glyph(digit,left+col*(gw+gap),top,gw,gh,colors.hour));
+      const cx=left+gw*2+gap;
+      paint.fillStyle=colors.divider;paint.fillRect(cx+1,Math.floor(h*.35),1,1);paint.fillRect(cx+1,Math.floor(h*.65),1,1);
+      [...minutes].forEach((digit,col)=>glyph(digit,cx+colon+2+col*(gw+gap),top,gw,gh,colors.minute));
+    }
+  }
+  function drawHandmadeAnimation() {}
+  function drawNewScenes(mode,t,paint,{w,h}) {
+    const dot=(x,y,color)=>{paint.fillStyle=color;paint.fillRect(Math.round(x),Math.round(y),1,1);};
+    const rect=(x,y,rw,rh,color)=>{paint.fillStyle=color;paint.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(rw)),Math.max(1,Math.round(rh)));};
+    const rgb=(r,g,b)=>'rgb('+[r,g,b].map(n=>Math.max(0,Math.min(255,Math.round(n)))).join(',')+')';
+    const seed=n=>{const v=Math.sin(n*33.19+7)*2917.31;return v-Math.floor(v);};
+    const shape=(rows,x,y,palette)=>rows.forEach((row,dy)=>[...row].forEach((c,dx)=>{if(palette[c])dot(x+dx,y+dy,palette[c]);}));
+    switch(mode){
+      case 'tiny_train':{
+        for(let y=0;y<h;y++)rect(0,y,w,1,rgb(29+y/h*55,27+y/h*28,55+y/h*12));
+        shape(['01110','11111','11111','01110'],Math.floor(w*.6)-2,Math.floor(h*.18),{'1':'#f5b86e'});
+        for(let x=0;x<w;x++){
+          const hill=motionPixel(h*.48+Math.sin(x*.45-t*.15)*2,t,x);
+          rect(x,hill,1,h-hill,'#263f48');
+        }
+        const y=Math.floor(h*.69),offset=motionPixel((t*4)%(w+19)-19,t,2);
+        rect(0,y+5,w,1,'#a28867');rect(0,y+6,w,h-y-6,'#172f30');
+        for(let k=0;k<3;k++){
+          const x=offset+k*7;rect(x,y,6,4,k===0?'#a35145':'#ba7454');
+          rect(x+1,y+1,2,1,'#ffe2a0');rect(x+4,y+1,1,1,'#ffe2a0');
+          dot(x+1,y+4,'#08181b');dot(x+4,y+4,'#08181b');
+        }
+        for(let x=0;x<w;x+=4)dot(x,y+7,'#6c6650');
+        break;
+      }
+      case 'rainy_umbrella':{
+        rect(0,0,w,h,'#071b2b');
+        for(let i=0;i<16;i++){const x=Math.floor(seed(i)*w),y=motionPixel((t*7+i*2.7)%h,t,i);dot(x,y,'#294e6b');if(i%3===0)dot(x,y-1,'#142c41');}
+        const cx=Math.floor(w/2),y=Math.floor(h*.39);
+        shape(['000111000','011111110','111111111','111111111','101010101'],cx-4,y,{'1':'#df786a'});
+        rect(cx,y+4,1,6,'#dab19b');dot(cx-1,y+9,'#dab19b');
+        rect(0,h-4,w,4,'#112c38');
+        for(let x=0;x<w;x++)if(Math.sin(x*.8+t*2)>.2)dot(x,h-2,'#397383');
+        const ripple=motionPixel(t*2,t,3)%5;
+        dot(cx-ripple,h-3,'#719b9b');dot(cx+ripple,h-3,'#719b9b');
+        break;
+      }
+      case 'moon_lighthouse':{
+        rect(0,0,w,h,'#0b1429');
+        for(let i=0;i<8;i++)dot(seed(i+5)*(w-1),seed(i+24)*h*.4,'#5b657e');
+        shape(['0110','1111','1110','0110'],w-5,2,{'1':'#e3d4ab'});
+        const cx=motionPixel(w*.35,t,4),cy=motionPixel(h*.39,t,5),sweep=Math.sin(t*.7);
+        for(let x=0;x<w;x++)for(let y=cy-4;y<cy+5;y++)
+          if(Math.abs(y-cy-sweep*(x-cx)*.65)<1.15 && (x-cx)*sweep>0)dot(x,y,'#a79155');
+        rect(0,h*.67,w,h*.33,'#102f40');
+        for(let y=Math.floor(h*.7);y<h;y+=2)for(let x=0;x<w;x++)if(Math.sin(x*.8+y-t*2)>.55)dot(x,y,'#366477');
+        shape(['01110','11111','00100','01110','01110','01110','01110','11111'],cx-2,cy,{'1':'#d3d6c6'});
+        rect(cx-1,cy+1,3,1,'#ffd985');rect(cx-1,cy+4,3,1,'#b1584a');
+        break;
+      }
+      case 'little_vinyl':{
+        rect(0,0,w,h,'#101b1b');
+        const cx=(w-1)/2,cy=h*.43,r=Math.min(w*.41,h*.3);
+        rect(1,cy-r-2,w-2,r*2+5,'#735849');
+        for(let y=Math.floor(cy-r);y<=cy+r;y++)for(let x=0;x<w;x++){
+          const d=Math.hypot(x-cx,y-cy),angle=Math.atan2(y-cy,x-cx);
+          if(d<=r)dot(x,y,d<r*.25?'#cf795d':Math.sin(angle+t*2+d*2)>.6?'#354749':'#12282b');
+        }
+        dot(cx,cy,'#f4ddab');
+        for(let i=0;i<6;i++)dot(w-3-i*.45,cy-r+i,'#cfbea2');
+        for(let i=0;i<3;i++){
+          const y=h-2-((t*2+i*3)%Math.max(3,h*.25)),x=2+i*(w-4)/3;
+          dot(x,y,'#84baa5');dot(x+1,y-1,'#84baa5');
+        }
+        break;
+      }
+      case 'paper_flight':{
+        for(let y=0;y<h;y++)rect(0,y,w,1,rgb(20+y/h*20,47+y/h*26,68+y/h*24));
+        for(let i=0;i<4;i++){
+          const x=(seed(i)*w-t*.7+i*4)%(w+6),y=3+i*h*.22;
+          shape(['01110','11111'],x-3,y,{'1':'#476b80'});
+        }
+        const cx=motionPixel(w*.5+Math.sin(t*.7)*w*.18,t,6),cy=motionPixel(h*.45+Math.sin(t*1.1)*2,t,7);
+        for(let i=2;i<7;i++)if(i%2===0)dot(cx-i*.5,cy+i,'#70929d');
+        shape(['00001','00111','11111','00110','00100'],cx-2,cy-2,{'1':'#eee7d5'});
+        dot(cx+1,cy,'#adc1c0');
+        break;
+      }
+      case 'tiny_greenhouse':{
+        rect(0,0,w,h,'#0c211f');
+        const cx=Math.floor(w/2),roof=Math.floor(h*.22),base=h-3;
+        for(let y=roof;y<=base;y++){
+          const half=Math.min(Math.floor(w*.4),y-roof);
+          for(let x=cx-half;x<=cx+half;x++)dot(x,y,x===cx-half||x===cx+half?'#9baf91':'#183d39');
+        }
+        rect(cx,roof,1,base-roof,'#687c64');rect(cx-w*.35,base,w*.7,1,'#a89d72');
+        for(let i=0;i<3;i++){
+          const x=Math.round((i+1)*w/4),grow=3+motionPixel((Math.sin(t*.45+i)+1)*2,t,i+8);
+          rect(x,base-grow,1,grow,'#7fac68');dot(x-1,base-grow+2,'#b4c27c');dot(x+1,base-grow+1,'#7eab6c');
+          dot(x,base-grow-1,i%2?'#e8b778':'#d88487');
+        }
+        for(let i=0;i<3;i++)dot((t*.7+i*5)%w,roof-2+i%2,'#8cac71');
+        break;
+      }
+      default:return false;
+    }
+    return true;
+  }
+
+
+  function drawPortraitScenes(mode, t, paint, dimensions) {
+    const {w, h} = dimensions;
+    const r = (x, y, rw, rh, color) => {
+      const x0 = Math.round(x * w / 15), y0 = Math.round(y * h / 27);
+      const x1 = Math.round((x + rw) * w / 15), y1 = Math.round((y + rh) * h / 27);
+      if (x1 <= x0 || y1 <= y0) return;
+      paint.fillStyle = color; paint.fillRect(x0, y0, x1 - x0, y1 - y0);
+    };
+    const p = (x,y,c) => r(Math.round(x),Math.round(y),1,1,c);
+    const seed = n => { const v = Math.sin(n * 127.1 + 31.7) * 43758.5453; return v - Math.floor(v); };
+    const rgb = (red,green,blue) => 'rgb(' + [red,green,blue].map(v => Math.max(0,Math.min(255,Math.round(v)))).join(',') + ')';
+    const bg = (a,b) => {
+      for(let y=0;y<27;y++){const k=y/26;r(0,y,15,1,rgb(...a.map((v,i)=>v+(b[i]-v)*k)));}
+    };
+    const art = (rows,x,y,palette) => rows.forEach((row,dy)=>Array.from(row).forEach((c,dx)=>{if(palette[c])p(x+dx,y+dy,palette[c]);}));
+    const stars = (count=12) => {
+      for(let i=0;i<count;i++){const glow=0.4+0.6*(0.5+0.5*Math.sin(t*1.6+i*2.4));p(seed(i)*14,seed(i+40)*20,rgb(120*glow,172*glow,225*glow));}
+    };
+    paint.imageSmoothingEnabled=false;
+    paint.fillStyle='#000000';paint.fillRect(0,0,w,h);
+    switch(mode) {
+      case 'portrait_fireflies': {
+        bg([3,12,24],[6,30,22]);
+        r(11,2,2,3,'#c9e5bc');r(12,2,1,2,'#102d35');
+        for(let i=0;i<9;i++){const x=i*2-1,height=3+Math.floor(seed(i+90)*5);r(x,27-height,1,height,'#145a40');p(x+1,26-height,'#3a8853');}
+        for(let i=0;i<10;i++){const x=1+seed(i+12)*12+Math.sin(t*.7+i)*1.1,y=5+seed(i+24)*17+Math.cos(t*.6+i)*1.4;
+          const g=Math.pow(.5+.5*Math.sin(t*2+i*1.7),2);p(x,y,rgb(70+185*g,85+150*g,12+38*g));if(g>.85){p(x-1,y,'#243d12');p(x+1,y,'#243d12');}}
+        break;
+      }
+      case 'portrait_balloon': {
+        bg([30,97,142],[236,162,117]);
+        for(let i=0;i<4;i++){const x=((t*(.3+i*.08)+seed(i)*24)%24)-6,y=3+i*5;r(x,y,4,1,'#c4e1d6');r(x+1,y-1,2,1,'#e4eadd');}
+        for(let x=0;x<15;x++){const y=23+Math.sin(x*.6)*2;r(x,y,1,27-y,'#336d6a');r(x,25+Math.sin(x*.8+2),1,3,'#204b55');}
+        const y=5+Math.round(Math.sin(t*.7));
+        art(['..aaa..','.abbba.','abbcbba','abbcbba','abbcbba','.abbba.','..aba..','..d.d..','..ddd..'],4,y,{a:'#e76456',b:'#ffc56c',c:'#fff0b7',d:'#855b40'});
+        break;
+      }
+      case 'portrait_penguin': {
+        bg([11,40,70],[82,143,167]);stars(8);
+        r(0,23,15,4,'#92d5d8');r(0,23,15,1,'#e7f5e5');r(3,25,4,1,'#60aabb');r(10,24,3,1,'#60aabb');
+        const x=4+motionPixel(Math.sin(t*.6)*2,t,9),bob=motionPixel((Math.sin(t*3-Math.PI/2)+1)*.5,t,10);
+        art(['..aaa..','.abbba.','abbcbba','abbcbba','abdddda','aeeeeea','aeeeeea','aeeeeea','.eeee.'],x,13-bob,{a:'#14334c',b:'#e6f5dc',c:'#183346',d:'#ffbe62',e:'#c4e7dd'});
+        p(x+1,22-bob,'#ffb052');p(x+2,22,'#ffb052');p(x+4,22,'#ffb052');p(x+5,22-bob,'#ffb052');
+        for(let i=0;i<7;i++)p(seed(i+2)*14,(t*(1+seed(i))+i*4)%26,'#b9e4e5');
+        break;
+      }
+      case 'portrait_bamboo': {
+        bg([5,24,31],[18,57,43]);
+        for(let i=0;i<4;i++){const x=1+i*4,top=3+Math.floor(seed(i)*5);r(x,top,1,27-top,i%2?'#3c9869':'#296d57');
+          for(let y=top+3;y<27;y+=5){p(x,y,'#acd09b');const d=(i+y)%2?1:-1;p(x+d,y-1,'#56ab79');p(x+d*2,y-2,'#3f8c68');p(x+d*2,y,'#3f8c68');}}
+        for(let i=0;i<10;i++){const y=(t*12+seed(i+7)*30)%31-3;r(seed(i)*14,y,1,2,'#254e52');}
+        break;
+      }
+      case 'portrait_sakura': {
+        bg([23,19,48],[84,58,74]);r(0,19,15,8,'#203e5c');
+        r(2,3,1,17,'#69494f');r(3,6,3,1,'#80515c');r(0,3,5,1,'#80515c');r(5,4,1,3,'#80515c');
+        for(let i=0;i<20;i++){const x=Math.floor(seed(i+100)*10)-2,y=Math.floor(seed(i+30)*7);p(x,y,i%3?'#e09eae':'#ffd4bf');}
+        for(let i=0;i<11;i++){const y=(t*(.9+seed(i)) + i*2.6)%27,x=(seed(i+9)*14+Math.sin(t*.7+i)*2+15)%15;p(x,y,i%2?'#ffd0d4':'#df8bac');}
+        for(let i=0;i<5;i++)r((t*.8+i*3)%16-2,20+i,2,1,i%2?'#64748a':'#42617d');
+        break;
+      }
+      case 'portrait_whale': {
+        bg([8,9,34],[29,22,65]);stars(22);
+        r(11,3,2,2,'#bd93cd');p(10,4,'#604374');p(13,3,'#604374');
+        const y=12+Math.round(Math.sin(t*.8));
+        art(['...aaaaa....','..abbbbba...','.abccbbbba..','abbbbbbbbd.a','abbbbbbbbaaa','.aeeeeeeaa..','..aaaaaa....'],1,y,{a:'#3767a5',b:'#739ce1',c:'#bfceff',d:'#0c234b',e:'#a0c0e5'});
+        for(let i=0;i<3;i++){const phase=(t*2+i*2)%7;p(5+(i-1)*Math.floor(phase/3),y-1-phase,phase<5?'#9dddea':'#46689a');}
+        break;
+      }
+      case 'portrait_portal': {
+        for(let y=0;y<27;y++)for(let x=0;x<15;x++){
+          const edge=Math.min(x,14-x,Math.floor(y*15/27),Math.floor((26-y)*15/27));
+          const phase=edge*0.78-t*.65;
+          const pulse=.5+.5*Math.sin(phase*1.8);
+          p(x,y,rgb(30+110*pulse+edge*12,60+145*(1-pulse),145+100*pulse));
+        }
+        r(5,9,5,9,'#060a1a');r(6,10,3,7,'#090522');
+        p(7,13,'#f5eaff');p(7,14,'#f5eaff');break;
+      }
+      case 'portrait_coffee': {
+        bg([30,18,25],[66,37,39]);r(0,22,15,2,'#ad7752');r(0,24,15,3,'#4f3433');
+        r(3,14,8,6,'#e5d0a1');r(4,20,6,1,'#c1a477');r(4,14,6,1,'#653d2f');r(11,15,2,4,'#e5d0a1');r(11,16,1,2,'#422830');r(2,21,11,1,'#f5ddb0');
+        p(5,17,'#b17960');p(8,17,'#b17960');r(6,19,2,1,'#b17960');
+        for(let i=0;i<3;i++)for(let k=0;k<5;k++){const y=12-((t*2+k+i*.6)%8);p(4+i*3+Math.sin(y*.9+t+i),y,rgb(112+k*16,89+k*15,82+k*13));}
+        break;
+      }
+      case 'portrait_prism': {
+        bg([5,13,28],[17,10,37]);
+        const colors=['#f674a3','#ffb65e','#e7e885','#73d6bc','#71b5f4','#ad95e3'];
+        for(let i=0;i<12;i++){const x=Math.floor(seed(i+60)*15),y=motionPixel((t*(3+seed(i)*5)+seed(i+11)*34)%34-7,t,i+11);
+          for(let k=0;k<5;k++){const c=colors[i%colors.length],v=parseInt(c.slice(1),16),f=(5-k)/5;p(x,y-k,rgb((v>>16)*f,((v>>8)&255)*f,(v&255)*f));}
+          p(x,y,'#e9eeff');}
+        break;
+      }
+      case 'portrait_dancer': {
+        bg([14,9,32],[32,17,43]);
+        for(let y=21;y<27;y++)for(let x=0;x<15;x++)p(x,y,(x+y+motionPixel(t*2,t,12))%4?'#26203e':'#804b91');
+        const sway=motionPixel(Math.sin(t*3),t,13),arm=motionPixel((Math.sin(t*3)+1)*.5,t,14);
+        art(['.aaa.','abbba','abcba','abbba','.aaa.','..d..','.ddd.','ddddd','.ddd.','..d..'],5+sway,7,{a:'#e58b80',b:'#ffc5a0',c:'#512953',d:'#68cbbd'});
+        for(let i=0;i<3;i++){p(4+sway-i,14+(arm?-i:i),'#ffc5a0');p(10+sway+i,14+(arm?i:-i),'#ffc5a0');}
+        for(let i=0;i<4;i++){p(7+sway-Math.round(i*.7),17+i,'#8295e6');p(7+sway+Math.round(i*.7),17+i,'#8295e6');}
+        p(3+sway,21,'#f3b669');p(11+sway,21,'#f3b669');break;
+      }
+      case 'portrait_rose': {
+        bg([10,18,26],[24,39,40]);r(7,13,1,11,'#459b68');r(5,18,2,1,'#70bd79');p(4,17,'#70bd79');r(8,20,2,1,'#34794f');p(10,19,'#34794f');
+        const pulse=.5+.5*Math.sin(t*.9),petals=['..aa.aa..','.abbbbaaa','abccbbbba','abccdbbba','.abbbbaa.','..aaaaa..'];
+        art(petals,3,7,{a:'#892b57',b:rgb(202+pulse*28,70+pulse*18,110+pulse*15),c:'#ffb49c',d:'#f5d294'});
+        for(let i=0;i<4;i++){const y=(t*1.2+i*6)%25;p(2+seed(i)*11+Math.sin(t+i),y,'#ad6279');}
+        r(5,24,5,1,'#28433c');break;
+      }
+      case 'portrait_moonrabbit': {
+        bg([10,14,36],[29,29,58]);stars(15);
+        r(9,3,3,4,'#f9dda3');r(8,4,1,2,'#f9dda3');r(10,3,2,3,'#17203f');
+        for(let x=0;x<15;x++)r(x,23+Math.sin(x*.45),1,5,'#4b6479');
+        const y=13-Math.max(0,Math.round(Math.sin(t*1.6)*2));
+        art(['.a..a..','.b..b..','.b..b..','.aaaa..','aabcaa.','aaaaaa.','.aaaa..','aaaaaaa','aaaaaaa','.a...a.'],4,y,{a:'#ece5d1',b:'#dba1b0',c:'#334059'});
+        p(5,23,'#829395');p(10,25,'#829395');break;
+      }
+      default:return false;
+    }
+    return true;
+  }
+
+
+  const serialLab = { confirmedWriter:null, pending:null, readTask:null, bytes:0, nativeUsb:false, activeBaud:115200, frames:0, sampleAt:0, busy:false, heldFrame:null, holdTimer:null, lastWrite:0 };
+
+  function serialNote(message, kind) {
+    const node=document.getElementById('serialDiagnostic');
+    if(node) {node.textContent=message;node.dataset.state=kind||'info';}
+  }
+
+  function serialResetSession() {
+    serialLab.confirmedWriter=null;
+    serialLab.bytes=0;serialLab.frames=0;serialLab.sampleAt=0;
+    serialLab.heldFrame=null;clearTimeout(serialLab.holdTimer);
+    if(serialLab.pending)serialLab.pending.finish(null);
+  }
+
+  function serialAcceptLine(line, sourceWriter) {
+    const pending=serialLab.pending;
+    if(!pending || pending.writer!==sourceWriter)return;
+    const trimmed=line.trim();
+    if(pending.type==='version' && /^WLED\s+\S+/i.test(trimmed))pending.finish(trimmed.slice(0,100));
+    if(pending.type==='json'){
+      try {const value=JSON.parse(trimmed);if(value.info && typeof value.info.ver==='string' && value.state)pending.finish('WLED '+value.info.ver);}catch(_){}
+    }
+  }
+
+  async function serialQuery(type, payload) {
+    const sourceWriter=writer;
+    return new Promise((resolve,reject)=>{
+      const pending={type,writer:sourceWriter,timer:null,finish:null};
+      pending.finish=value=>{clearTimeout(pending.timer);if(serialLab.pending===pending)serialLab.pending=null;resolve(value);};
+      serialLab.pending=pending;
+      pending.timer=setTimeout(()=>pending.finish(null),1800);
+      sourceWriter.write(encoder.encode(payload)).catch(error=>{
+        clearTimeout(pending.timer);
+        if(serialLab.pending===pending)serialLab.pending=null;
+        reject(error);
+      });
+    });
+  }
+
+  async function sendFrameAdalight(frame) {
+    if(!writer || serialLab.confirmedWriter!==writer)throw new Error('请先连接串口并点击「串口诊断」，收到 WLED 回包后才能发送。');
+    if(serialLab.pending)throw new Error('串口诊断正在进行，请稍候。');
+    if(serialLab.busy) return;
+    const count=frame.length/3;
+    if(!Number.isInteger(count)||count<1||count>65535)throw new Error('Adalight 帧必须为 1–65535 个 RGB 像素。');
+    const packet=new Uint8Array(frame.length+6),n=count-1,hi=n>>8,lo=n&255;
+    packet.set([65,100,97,hi,lo,hi^lo^0x55]);
+    const brightness=Math.max(0,Math.min(255,Number(getFrameConfig().d)))/255;
+    for(let i=0;i<frame.length;i++)packet[i+6]=Math.round(frame[i]*brightness);
+    const sourceWriter=writer;
+    const writeStarted=performance.now();
+    serialLab.busy=true;
+    try {
+      await sourceWriter.write(packet);
+      showStreamStats(true, packet.length, performance.now()-writeStarted);
+      serialLab.lastWrite=performance.now();
+      serialLab.frames++;
+      if(!serialLab.sampleAt)serialLab.sampleAt=serialLab.lastWrite;
+      const elapsed=serialLab.lastWrite-serialLab.sampleAt;
+      if(elapsed>=1000){
+        serialNote((serialLab.nativeUsb?'原生 USB CDC':'UART '+serialLab.activeBaud)+' · 写入 '+(serialLab.frames*1000/elapsed).toFixed(1)+' FPS · '+count+' 像素。此处是电脑写入速率，不是屏幕实测帧率。','ok');
+        serialLab.sampleAt=serialLab.lastWrite;serialLab.frames=0;
+      }
+      if(!animationCatalog[getAnimationMode()]) {
+        serialLab.heldFrame=new Uint8Array(frame);
+        clearTimeout(serialLab.holdTimer);
+        serialLab.holdTimer=setTimeout(serialHoldImage,500);
+      } else serialLab.heldFrame=null;
+    } finally {serialLab.busy=false;}
+  }
+
+  async function serialHoldImage() {
+    if(!serialLab.heldFrame || !writer || serialLab.confirmedWriter!==writer || ui.controlMode.value!=='serial' || ui.protocol.value!=='adalight')return;
+    if(serialLab.busy){serialLab.holdTimer=setTimeout(serialHoldImage,200);return;}
+    try {await sendFrameAdalight(serialLab.heldFrame);}
+    catch(error){serialLab.heldFrame=null;serialNote('静态画面续传已停止：'+error.message,'error');}
+  }
+
+  function serialUartFps(frameBytes) {
+    const baud=serialLab.activeBaud||115200;
+    return Math.max(1,Math.floor(baud/(10*((frameBytes||getFrameConfig().w*getFrameConfig().h*3)+6))*0.85));
+  }
+
+  function serialStopHold() {
+    serialLab.heldFrame=null;
+    clearTimeout(serialLab.holdTimer);
+  }
+
+    function drawPocketScenes(mode, t, paint, dimensions) {
+    const { w, h } = dimensions;
+    const W = 15, H = 27;
+    const frame = new Array(W * H).fill('#07101d');
+    const seed = n => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const mod = (n, d) => ((n % d) + d) % d;
+    const px = (x, y, color) => {
+      x = Math.round(x); y = Math.round(y);
+      if (x >= 0 && x < W && y >= 0 && y < H) frame[y * W + x] = color;
+    };
+    const box = (x, y, width, height, color) => {
+      x = Math.round(x); y = Math.round(y);
+      for (let yy = 0; yy < height; yy++) for (let xx = 0; xx < width; xx++) px(x + xx, y + yy, color);
+    };
+    const line = (x1, y1, x2, y2, color) => {
+      const steps = Math.max(1, Math.ceil(Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1))));
+      for (let i = 0; i <= steps; i++) px(x1 + (x2 - x1) * i / steps, y1 + (y2 - y1) * i / steps, color);
+    };
+    const oval = (cx, cy, rx, ry, color) => {
+      for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++)
+        for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++)
+          if ((x - cx) ** 2 / (rx * rx) + (y - cy) ** 2 / (ry * ry) <= 1) px(x, y, color);
+    };
+    const sprite = (rows, x, y, colors) => {
+      rows.forEach((row, yy) => {
+        for (let xx = 0; xx < row.length; xx++) if (colors[row[xx]]) px(x + xx, y + yy, colors[row[xx]]);
+      });
+    };
+    const hue = (angle, light = 50) => 'hsl(' + Math.round(mod(angle, 360)) + ',85%,' + Math.round(light) + '%)';
+    const stars = (count = 13, ceiling = 16) => {
+      for (let i = 0; i < count; i++) {
+        const glow = 0.5 + 0.5 * Math.sin(t * 1.2 + i * 2.3);
+        px(seed(i + 10) * 14, seed(i + 80) * ceiling, glow > 0.78 ? '#a7cbdf' : '#24364a');
+      }
+    };
+    const cloud = (x, y, color) => { box(x, y, 5, 1, color); box(x + 1, y - 1, 3, 1, color); };
+    const flower = (x, y, color) => {
+      line(x, y + 1, x, 26, '#2b7353');
+      px(x - 1, y, color); px(x + 1, y, color);
+      px(x, y - 1, color); px(x, y + 1, color); px(x, y, '#ffe8a1');
+    };
+
+    switch (mode) {
+      
+      case 'pocket_strawberry': {
+        frame.fill('#142b29');
+        const sway = Math.round(Math.sin(t*1.3));
+        line(7,19,7+sway,10,'#79ab64');
+        oval(4+sway,12,2,1,'#6dba81');oval(9+sway,10,2,1,'#99ce79');
+        sprite(['.GGG.','GRRRG','RRRYR','RYRRR','.RRR.','..R..'],5+sway,13,
+          {G:'#75b17a',R:'#ed6578',Y:'#ffe4a1'});
+        box(3,20,9,2,'#dc9a76');box(4,22,7,3,'#b77461');box(5,25,5,1,'#925451');
+        for(let i=0;i<5;i++)px(mod(i*4+t*.6,15),mod(i*7-t*.7,17),'#d8c68e');
+        break;
+      }
+      case 'pocket_starwhale': {
+        frame.fill('#111b36');stars(17,27);
+        const y=12+Math.round(Math.sin(t*.9));
+        sprite(['...BBBB....','..BBBBBB...','.BBBBBBBB..','BBBBBBBBB.B','BBBBWBBBBBB','.BCCCCCCBB.','..CCCCCC...'],1,y,
+          {B:'#549dc5',C:'#a6d9dc',W:'#12243e'});
+        px(12,y+2+Math.round(Math.sin(t*2)),'#74b9d2');
+        const bubble=mod(t*1.7,8);
+        px(5,10-bubble,'#b8e9e3');px(7,8-mod(bubble+3,8),'#71abbf');
+        break;
+      }
+      case 'pocket_windbell': {
+        frame.fill('#17252e');stars(11,27);
+        const sway=Math.round(Math.sin(t*1.2));
+        line(7,0,7,6,'#d4c6a0');
+        sprite(['...AAA...','..ACCCA..','.ACCCCCA.','ACCCCCCCA','AAAAAAAAA'],3+sway,7,
+          {A:'#7db8ae',C:'#315b61'});
+        px(5+sway,9,'#c3e7cf');
+        line(7+sway,12,7+sway*2,16,'#d8c29a');
+        box(6+sway*2,17,3,7,'#aadbc6');
+        box(7+sway*2,19,1,3,'#468b80');
+        break;
+      }
+      
+      
+      case 'pocket_fox': {
+        frame.fill('#0a191d'); stars(10, 10);
+        for (const [x, top] of [[1, 7], [12, 5]]) {
+          line(x, top, x, 24, '#23453a');
+          for (let y = top; y < 21; y += 3) {
+            line(x, y, x - 2, y + 3, '#1b3a32'); line(x, y, x + 2, y + 3, '#1b3a32');
+          }
+        }
+        box(0, 24, 15, 3, '#183d33'); box(3, 23, 9, 2, '#61442f');
+        const lift = Math.round(Math.sin(t * 1.8) * 0.35);
+        const tailY = 21 + Math.round(Math.sin(t * 2.4));
+        oval(11, tailY, 2.6, 2.2, '#e57038'); box(12, tailY - 2, 2, 2, '#f5d5a0');
+        sprite([
+          '.o.....o.', '.od...do.', '.oodddoo.', '..ooooo..', '.oofofoo.',
+          '.owwowwo.', '..wwkww..', '...www...', '..ooooo..', '..owwwo..',
+          '..owwwo..', '..d...d..'
+        ], 3, 11 + lift, { o:'#ed8a42', d:'#804631', w:'#ffe3b1', k:'#27202a', f:'#181b24' });
+        if (mod(t, 5.5) > 5.23) { px(6, 15 + lift, '#ed8a42'); px(8, 15 + lift, '#ed8a42'); }
+        for (let i = 0; i < 3; i++) px(2 + i * 5 + Math.sin(t + i), 8 + mod(t * 1.4 + i * 7, 14), '#b4a35e');
+        break;
+      }
+      case 'pocket_capybara': {
+        frame.fill('#162b35');
+        for (let x = 0; x < W; x++) {
+          const mountain = 8 + Math.round(Math.abs(x - 5) * 0.55);
+          box(x, mountain, 1, H - mountain, '#294147');
+        }
+        box(0, 18, 15, 9, '#285c66'); oval(7, 21, 7, 3.3, '#768381');
+        oval(7, 20, 5.7, 2.3, '#3b9294');
+        const by = 11 + Math.round(Math.sin(t) * 0.35);
+        sprite([
+          '.dd...dd.', '.ddbbbbb.', '..bbbbbb.', '.bbkbbkb.', '.bbbbbbb.',
+          '.bbssssb.', '..sskkss.', '..bbbbbb.', '..bbbbbb.'
+        ], 3, by, { d:'#866448', b:'#ba9165', s:'#d7b58b', k:'#322d31' });
+        box(6, by - 2, 3, 2, '#f4ad43'); px(7, by - 3, '#6bb26e');
+        for (let y = 0; y < 7; y++) {
+          const x = 4 + Math.round(Math.sin(t * 1.3 - y * 0.6));
+          px(x, 9 - y, y % 2 ? '#47646d' : '#7d9c9a');
+          px(x + 6, 8 - y, '#47646d');
+        }
+        for (let x = 2; x < 13; x++) if (Math.sin(x * 0.8 + t * 2) > 0.25) px(x, 21, '#94c8ba');
+        box(0, 25, 15, 2, '#243d40');
+        break;
+      }
+      case 'pocket_owl': {
+        frame.fill('#11182b'); stars(15, 18);
+        oval(3, 4, 2.1, 2.1, '#f4d6a0'); oval(4, 3, 1.6, 1.8, '#11182b');
+        box(12, 9, 2, 18, '#47343d'); line(1, 22, 13, 21, '#79514b');
+        const flap = Math.round(Math.sin(t * 1.6));
+        line(3, 15, 2, 19 + flap, '#936d64'); line(11, 15, 12, 19 - flap, '#936d64');
+        sprite([
+          'd.......d', 'dd.....dd', '.ddddddd.', '.dccdccd.',
+          '.cwwcwwc.', '.cwwcwwc.', '..cckcc..', '..cbbbc..',
+          '..bwbwb..', '..bbbbb..', '...b.b...'
+        ], 3, 10, { d:'#775655', c:'#bc9581', w:'#ffe2ad', k:'#e7a648', b:'#a87964' });
+        const look = Math.round(Math.sin(t * 0.65));
+        px(5 + look, 15, '#151d2b'); px(9 + look, 15, '#151d2b');
+        if (mod(t, 6) > 5.65) { line(4, 15, 6, 15, '#775655'); line(8, 15, 10, 15, '#775655'); }
+        px(6, 21, '#e4b374'); px(9, 21, '#e4b374');
+        break;
+      }
+      case 'pocket_axolotl': {
+        frame.fill('#0b2834');
+        for (let i = 0; i < 7; i++) {
+          const y = 25 - mod(t * (1 + seed(i) * 0.7) + i * 4, 28);
+          const x = 1 + seed(i + 22) * 12;
+          px(x, y, '#315c70'); if (i % 3 === 0) px(x + 1, y - 1, '#55899a');
+        }
+        const by = 10 + Math.round(Math.sin(t * 1.1));
+        for (let side = -1; side <= 1; side += 2) for (let i = 0; i < 3; i++) {
+          const x = 7 + side * 4, y = by + 2 + i * 2;
+          line(x, y, x + side, y - 1 + Math.round(Math.sin(t * 2 + i) * 0.5), '#e881aa');
+          px(x + side * 2, y - 1, '#ffbfd0');
+        }
+        sprite([
+          '..ppp..', '.ppppp.', 'ppppppp', 'pkpppkp', 'ppppppp',
+          '.ppkpp.', '..ppp..', '.pwpwp.', '..pwp..', '..pwp..', '...p...'
+        ], 4, by, { p:'#f3b6c3', w:'#ffe1d4', k:'#59364c' });
+        for (let x of [1, 12, 14]) for (let y = 0; y < 5; y++) px(x + Math.sin(t + y * 0.7), 26 - y, '#397965');
+        box(4, 26, 7, 1, '#486f71');
+        break;
+      }
+      case 'pocket_snail': {
+        frame.fill('#13242a');
+        for (let i = 0; i < 8; i++) px(seed(i + 41) * 14, mod(t * 2 + i * 3.7, 19), '#365965');
+        box(0, 25, 15, 2, '#64784a');
+        for (let x = 0; x < 15; x += 3) line(x, 25, x + Math.round(Math.sin(t + x)), 22, '#426548');
+        const sx = 3 + Math.round(Math.sin(t * 0.5));
+        box(sx - 1, 23, 10, 2, '#c9b96c'); box(sx, 22, 7, 1, '#efe39a');
+        oval(sx + 3, 19, 3.2, 3.4, '#aa849f'); oval(sx + 3, 19, 2.2, 2.4, '#dcc2b0');
+        line(sx + 2, 17, sx + 4, 17, '#815e86'); line(sx + 4, 17, sx + 4, 20, '#815e86');
+        line(sx + 2, 20, sx + 4, 20, '#815e86'); px(sx + 2, 19, '#815e86');
+        const head = sx + 7;
+        line(head, 22, head - 1, 18, '#e4d98a'); line(head + 1, 22, head + 2, 19, '#e4d98a');
+        px(head - 1, 18, '#f5ecc4'); px(head + 2, 19, '#f5ecc4');
+        if (mod(t, 5) < 4.7) { px(head - 1, 17, '#202c32'); px(head + 2, 18, '#202c32'); }
+        cloud(mod(t * 0.35, 22) - 6, 4, '#27404b');
+        break;
+      }
+      case 'pocket_bees': {
+        frame.fill('#162d32'); line(0, 4, 10, 5, '#71594a'); line(7, 5, 7, 7, '#98704b');
+        oval(7, 11, 3.8, 4.2, '#daa350');
+        for (const y of [8, 11, 14]) line(4, y, 10, y, '#a87539');
+        oval(7, 13, 1.4, 1.4, '#493a31');
+        flower(2, 23, '#f3b5a1'); flower(7, 24, '#b7bdde'); flower(12, 22, '#e5bd6c');
+        for (let i = 0; i < 2; i++) {
+          const angle = t * (i ? -1.3 : 1.1) + i * 3;
+          const x = 7 + Math.sin(angle) * 4.8;
+          const y = 18 + Math.cos(angle * 0.8) * 2;
+          box(x - 1, y, 3, 2, '#f6ce68'); box(x, y, 1, 2, '#58432f');
+          px(x + 2, y, '#ddd9ad');
+          px(x - 1, y - 1 - (Math.sin(t * 8 + i) > 0 ? 1 : 0), '#d9eeec');
+          px(x + 1, y - 1, '#8cc5c4');
+        }
+        break;
+      }
+      case 'pocket_ferris': {
+        frame.fill('#10162b'); stars(14, 23);
+        line(7, 11, 2, 24, '#446c7b'); line(7, 11, 12, 24, '#446c7b');
+        box(1, 24, 13, 2, '#274d59'); box(0, 26, 15, 1, '#192e42');
+        const colors = ['#f3bc7a','#a0dbc5','#c1b0e5','#ec96a6','#79bed8','#e6d79b'];
+        for (let i = 0; i < 48; i++) {
+          const a = i / 48 * Math.PI * 2;
+          px(7 + Math.cos(a) * 5, 11 + Math.sin(a) * 6, '#47617e');
+        }
+        for (let i = 0; i < 6; i++) {
+          const a = t * 0.32 + i / 6 * Math.PI * 2;
+          const x = 7 + Math.cos(a) * 5, y = 11 + Math.sin(a) * 6;
+          line(7, 11, x, y, '#6a8b99');
+          box(x - 1, y, 3, 3, colors[i]); box(x - 1, y, 3, 1, '#233d53'); px(x, y + 1, '#eff1d5');
+        }
+        px(7, 11, '#f6eac4');
+        break;
+      }
+      case 'pocket_cablecar': {
+        frame.fill('#28314c'); oval(11, 4, 2, 2, '#e8b69c');
+        cloud(mod(t * 0.25, 24) - 6, 3, '#5a526a');
+        for (let x = 0; x < W; x++) {
+          let top = 10 + Math.round(Math.abs(x - 4) * 1.1);
+          box(x, top, 1, H - top, '#6d87a1'); box(x, top, 1, 2, '#c6d7d7');
+          top = 18 + Math.round(Math.abs(x - 11) * 0.65);
+          box(x, top, 1, H - top, '#3e667e'); px(x, top, '#8fb6c3');
+        }
+        line(0, 6, 14, 10, '#a9acb5');
+        const x = 7 + Math.sin(t * 0.43) * 5;
+        const y = 6 + x * 4 / 14;
+        line(x, y, x, y + 3, '#dac7b5'); box(x - 2, y + 3, 5, 5, '#bf625f');
+        box(x - 1, y + 4, 3, 2, '#b9d9d3'); px(x, y + 4, '#547589'); box(x - 1, y + 7, 3, 1, '#874856');
+        for (let i = 0; i < 5; i++) px(seed(i + 93) * 14 + Math.sin(t * 0.4 + i), mod(t * 0.9 + i * 6, 27), '#a5c4cf');
+        break;
+      }
+      case 'pocket_windmill': {
+        for (let y = 0; y < H; y++) box(0, y, W, 1, y < 8 ? '#62506a' : y < 17 ? '#bd866b' : '#42604d');
+        oval(11, 5, 2.2, 2.2, '#f7c981'); cloud(mod(t * 0.3, 22) - 6, 8, '#ddad89');
+        for (let x = 0; x < W; x++) box(x, 20 + Math.round(Math.sin(x * 0.45) * 2), 1, 8, '#6f8954');
+        box(5, 13, 5, 10, '#dcceab'); box(8, 13, 2, 10, '#b8aa89');
+        for (let y = 0; y < 3; y++) box(7 - y, 10 + y, y * 2 + 1, 1, '#784c48');
+        box(6, 20, 2, 3, '#635752'); px(6, 16, '#759b9b');
+        for (let i = 0; i < 4; i++) {
+          const a = t * 0.72 + i * Math.PI / 2;
+          const ex = 7 + Math.cos(a) * 5, ey = 12 + Math.sin(a) * 5;
+          line(7, 12, ex, ey, '#f2e0b5');
+          line(7 + Math.cos(a) * 3 - Math.sin(a), 12 + Math.sin(a) * 3 + Math.cos(a), ex - Math.sin(a), ey + Math.cos(a), '#d8b580');
+        }
+        px(7, 12, '#8a624f');
+        for (let x of [1, 3, 11, 13]) { line(x, 26, x + Math.sin(t + x) * 0.7, 23, '#d7c178'); px(x + 1, 24, '#e7d692'); }
+        break;
+      }
+      case 'pocket_telescope': {
+        frame.fill('#111a32'); stars(21, 17);
+        box(3, 21, 9, 6, '#735b74'); box(4, 22, 7, 5, '#94748a');
+        oval(7, 20, 5, 4, '#54738d'); box(2, 20, 11, 2, '#334b69');
+        box(6, 23, 3, 4, '#334356'); px(7, 24, '#eacb8b');
+        const angle = -1.03 + Math.sin(t * 0.35) * 0.19;
+        const ex = 7 + Math.cos(angle) * 6, ey = 18 + Math.sin(angle) * 6;
+        line(7, 18, ex, ey, '#d4d6c5'); line(8, 18, ex + 1, ey, '#88aeba');
+        box(ex, ey - 1, 2, 2, '#89e0d7'); box(6, 17, 2, 2, '#658795');
+        const travel = mod(t * 2.7, 32);
+        if (travel < 17) for (let i = 0; i < 4; i++) px(travel - i, 3 + (travel - i) * 0.45, i === 0 ? '#f3d7a1' : '#536d85');
+        break;
+      }
+      case 'pocket_submarine': {
+        frame.fill('#092434');
+        for (let y = 0; y < H; y++) {
+          px(3 + Math.sin(y * 0.25 + t * 0.5), y, '#113b4b');
+          px(10 + Math.sin(y * 0.3 - t * 0.4), y, '#103444');
+        }
+        const cy = 13 + Math.round(Math.sin(t * 0.9));
+        box(6, cy - 5, 2, 3, '#c6a15f'); box(7, cy - 5, 3, 1, '#e6c47a');
+        oval(7, cy, 5.3, 3.1, '#d1a650'); box(3, cy + 2, 8, 1, '#a97a43');
+        line(1, cy - 2, 1, cy + 2, '#cfbd86'); px(0, cy + Math.round(Math.sin(t * 6) * 2), '#7eafb4');
+        for (let x of [5, 9]) { oval(x, cy, 1.6, 1.7, '#6a684b'); oval(x, cy, 0.9, 1, '#7dd1d5'); px(x, cy - 1, '#d8ede0'); }
+        line(12, cy, 14, cy - 2, '#28514d'); line(12, cy, 14, cy + 2, '#28514d');
+        for (let i = 0; i < 6; i++) px(1 + seed(i + 120) * 12, 26 - mod(t * 1.2 + i * 5, 28), '#356274');
+        for (let x of [1, 4, 11, 13]) for (let y = 0; y < 6; y++) px(x + Math.sin(t + y * 0.65), 26 - y, '#306356');
+        break;
+      }
+      case 'pocket_castle': {
+        frame.fill('#293047'); stars(10, 14);
+        cloud(mod(t * 0.45, 23) - 7, 8, '#54546d'); cloud(14 - mod(t * 0.35, 23), 19, '#6b647b');
+        const dy = Math.round(Math.sin(t * 0.8));
+        for (let y = 0; y < 6; y++) box(2 + y, 20 + y + dy, 11 - y * 2, 1, y < 2 ? '#77988d' : '#514a65');
+        box(4, 12 + dy, 7, 8, '#b8a4b6'); box(3, 10 + dy, 3, 10, '#cbb8c0'); box(9, 8 + dy, 3, 12, '#9a91ae');
+        for (const [cx, top] of [[4, 7], [10, 5]]) {
+          for (let y = 0; y < 3; y++) box(cx - y, top + y + dy, y * 2 + 1, 1, '#bd7895');
+          line(cx, top + dy, cx, top - 3 + dy, '#d7c59f');
+          box(cx + 1, top - 3 + dy + (Math.sin(t * 2 + cx) > 0 ? 0 : 1), 2, 1, '#efbe7a');
+        }
+        box(6, 17 + dy, 3, 3, '#574b6b');
+        for (const [x,y] of [[4,13],[10,11],[7,14]]) box(x, y + dy, 1, 2, '#f3d69a');
+        for (let i = 0; i < 4; i++) px(3, 22 + mod(t * 3 + i * 2, 6), i % 2 ? '#83ccc9' : '#4a818f');
+        break;
+      }
+      case 'pocket_mushrooms': {
+        frame.fill('#111b2b');
+        for (let x of [1, 12, 14]) line(x, 26, x - 1, 8, '#203e45');
+        box(5, 13, 5, 11, '#749996'); box(5, 14, 2, 9, '#b2c7ad');
+        oval(7, 12, 6.2, 4.3, '#805b94'); box(1, 12, 13, 3, '#9c6ca5');
+        line(2, 15, 12, 15, '#c4d6c2');
+        for (const [x,y] of [[4,10],[9,10],[6,12],[11,12],[2,13]]) px(x, y, '#dfc8d1');
+        for (const [x,y,c] of [[2,23,'#cc997b'],[12,21,'#81bcb0']]) {
+          box(x, y, 1, 5, '#a1ac8e'); oval(x, y, 2.1, 1.5, c); px(x - 1, y - 1, '#e8dfb9');
+        }
+        box(0, 26, 15, 1, '#31544b');
+        for (let i = 0; i < 9; i++) {
+          const x = seed(i + 181) * 14 + Math.sin(t * 0.7 + i);
+          const y = 25 - mod(t * 0.8 + i * 3.9, 27);
+          px(x, y, Math.sin(t * 1.2 + i) > 0.5 ? '#c2e6bb' : '#446e72');
+        }
+        break;
+      }
+      case 'pocket_pumpkin': {
+        frame.fill('#1b1b2a'); stars(9, 9); box(0, 24, 15, 3, '#294037');
+        oval(7, 16, 6.1, 7.3, '#c66c37'); oval(7, 16, 4.5, 7, '#ea9144');
+        for (let y = 10; y < 23; y++) {
+          px(4 + Math.sin((y - 10) / 13 * Math.PI), y, '#c77337');
+          px(10 - Math.sin((y - 10) / 13 * Math.PI), y, '#c77337');
+        }
+        box(6, 7, 2, 3, '#7a8650'); line(7, 7, 10, 5, '#8da365'); line(10, 5, 11, 6, '#8da365');
+        px(5, 8, '#4b6b4b'); px(4, 7, '#617e53');
+        sprite(['.k...k.','kk...kk','..k.k..','.......','k.k.k.k','.kkkkk.'], 4, 13, { k:'#633732' });
+        const glow = Math.sin(t * 2.2) + Math.sin(t * 3.7) * 0.4 > 0 ? '#f9d879' : '#eeba63';
+        px(5, 14, glow); px(9, 14, glow); line(5, 18, 9, 18, glow);
+        for (let i = 0; i < 3; i++) px(2 + i * 5 + Math.sin(t * 0.7 + i), mod(t * 0.7 + i * 8, 26), '#856c43');
+        break;
+      }
+      case 'pocket_gyroscope': {
+        frame.fill('#081421'); stars(18, 26);
+        for (let ring = 0; ring < 3; ring++) {
+          const tilt = t * 0.37 + ring * Math.PI / 3;
+          const roll = t * 0.21 + ring * 0.7;
+          let last = null;
+          for (let i = 0; i <= 60; i++) {
+            const a = i / 60 * Math.PI * 2, r = 5 - ring * 0.55;
+            const x = Math.cos(a) * r, y = Math.sin(a) * Math.cos(tilt) * r, z = Math.sin(a) * Math.sin(tilt);
+            const scale = 1 / (1 + z * 0.12);
+            const xx = 7 + (x * Math.cos(roll) - y * Math.sin(roll)) * scale;
+            const yy = 13 + (x * Math.sin(roll) + y * Math.cos(roll)) * scale * 1.75;
+            const color = hue(170 + ring * 80 + a * 30 + t * 9, 37 + (z + 1) * 12);
+            if (last) line(last[0], last[1], xx, yy, color);
+            last = [xx, yy];
+          }
+        }
+        px(7, 13, '#e0f4ec'); px(6, 13, '#86c9bc'); px(8, 13, '#86c9bc');
+        break;
+      }
+      case 'pocket_circuit': {
+        frame.fill('#091d22');
+        const paths = [
+          [[0,1],[3,1],[3,6],[5,8],[5,11]],
+          [[14,2],[11,2],[11,5],[9,7],[9,11]],
+          [[0,10],[1,10],[1,13],[5,13]],
+          [[14,9],[13,9],[13,15],[9,15]],
+          [[0,25],[3,25],[3,21],[5,19],[5,16]],
+          [[14,24],[11,24],[11,21],[9,19],[9,16]],
+          [[7,0],[7,11]], [[7,26],[7,16]]
+        ];
+        paths.forEach((points, n) => {
+          const dots = [];
+          for (let i = 1; i < points.length; i++) {
+            const [x1,y1] = points[i-1], [x2,y2] = points[i];
+            const steps = Math.max(Math.abs(x2-x1), Math.abs(y2-y1));
+            for (let j = 0; j < steps; j++) dots.push([Math.round(x1+(x2-x1)*j/steps),Math.round(y1+(y2-y1)*j/steps)]);
+          }
+          dots.forEach(([x,y]) => px(x,y,'#24514e'));
+          const head = Math.floor(mod(t * 5 + n * 3, dots.length + 8));
+          for (let tail = 4; tail >= 0; tail--) {
+            const dot = dots[head-tail];
+            if (dot) px(dot[0],dot[1],['#c4ead0','#76cbb6','#49a48e','#327865','#285c53'][tail]);
+          }
+        });
+        box(4, 10, 7, 8, '#447e6a'); box(5, 11, 5, 6, '#112e34');
+        for (let y = 11; y < 18; y += 2) { px(3,y,'#b5a374');px(11,y,'#b5a374'); }
+        const route = [[6,12],[7,12],[8,12],[8,13],[8,14],[8,15],[7,15],[6,15],[6,14],[6,13]];
+        route.forEach(([x,y]) => px(x,y,'#285b57'));
+        const routeIndex = Math.floor(mod(t * 3, route.length));
+        const pos = route[routeIndex];
+        if (pos) px(pos[0],pos[1],'#ebcc87');
+        break;
+      }
+    }
+
+    // Nearest-neighbor sampling keeps the shared low-resolution art crisp.
+    // Equal-color runs reduce work in both the browser and headless renderers.
+    paint.imageSmoothingEnabled = false;
+    for (let y = 0; y < h; y++) {
+      const sy = Math.min(H - 1, Math.floor((y + 0.5) * H / h));
+      for (let x = 0; x < w;) {
+        const color = frame[sy * W + Math.min(W - 1, Math.floor((x + 0.5) * W / w))];
+        let end = x + 1;
+        while (end < w && frame[sy * W + Math.min(W - 1, Math.floor((end + 0.5) * W / w))] === color) end++;
+        paint.fillStyle = color;
+        paint.fillRect(x, y, end - x, 1);
+        x = end;
+      }
+    }
+    return true;
+  }
+
+
+  function drawPixelAnimation(mode, t, paint = offCtx, dimensions = getFrameConfig()) {
+    if (mode.startsWith('pocket_')) return drawPocketScenes(mode, t, paint, dimensions);
+    if(mode.startsWith('portrait_'))return drawPortraitScenes(mode,t,paint,dimensions);
+    if (mode.startsWith('hand_') || ["tiny_train","rainy_umbrella","moon_lighthouse","little_vinyl","paper_flight","tiny_greenhouse"].includes(mode)) {
+      paint.fillStyle='#000000';paint.fillRect(0,0,dimensions.w,dimensions.h);paint.imageSmoothingEnabled=false;
+      return mode.startsWith('hand_') ? drawHandmadeAnimation(mode,t,paint,dimensions) : drawNewScenes(mode,t,paint,dimensions);
+    }
+
+    const { w, h } = dimensions;
+    const clamp = (n) => Math.max(0, Math.min(1, n));
+    const rgb = (r, g, b) => `rgb(${Math.round(clamp(r / 255) * 255)},${Math.round(clamp(g / 255) * 255)},${Math.round(clamp(b / 255) * 255)})`;
+    const hue = (n, light = 45) => `hsl(${((n % 360) + 360) % 360},100%,${light}%)`;
+    const seed = (n) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const pixel = (x, y, color) => {
+      paint.fillStyle = color;
+      paint.fillRect(Math.round(x), Math.round(y), 1, 1);
+    };
+    const sprite = (rows, cx, cy, color, scale = 1) => {
+      const left = Math.floor(cx - rows[0].length * scale / 2);
+      const top = Math.floor(cy - rows.length * scale / 2);
+      paint.fillStyle = color;
+      rows.forEach((row, y) => {
+        for (let x = 0; x < row.length; x++) {
+          if (row[x] === '1') paint.fillRect(left + x * scale, top + y * scale, scale, scale);
+        }
+      });
+    };
+    paint.fillStyle = '#000000';
+    paint.fillRect(0, 0, w, h);
+    paint.imageSmoothingEnabled = false;
+
+    switch (mode) {
+      case 'rainbow':
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) pixel(x, y, hue(x / w * 130 + y / h * 230 - t * 35, 32));
+        }
+        break;
+      case 'fire':
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const nx = (x + 0.5) / w;
+            const altitude = 1 - y / Math.max(1, h - 1);
+            const flame = 0.52 + Math.sin(nx * 11 + t * 2.4) * 0.14 + Math.sin(nx * 23 - t * 3.1) * 0.1;
+            const heat = clamp((flame - altitude + Math.sin(nx * 41 + y * 1.7 - t * 5) * 0.065) * 2.2);
+            pixel(x, y, rgb(255 * Math.pow(heat, 0.65), heat * heat * 230, Math.pow(heat, 6) * 100));
+          }
+        }
+        for (let i = 0; i < 4; i++) {
+          const rise = (t * (0.13 + seed(i) * 0.1) + seed(i + 8)) % 1;
+          pixel(seed(i + 4) * (w - 1), (1 - rise) * (h - 1), rgb(190 * (1 - rise), 65 * (1 - rise), 0));
+        }
+        break;
+      case 'rain':
+        for (let x = 0; x < w; x++) {
+          const tail = 3 + Math.floor(seed(x + 5) * 6);
+          const head = (t * (3 + seed(x) * 5) + seed(x + 2) * (h + tail)) % (h + tail);
+          for (let k = tail; k >= 0; k--) {
+            const fade = Math.pow(1 - k / (tail + 1), 2);
+            pixel(x, Math.floor(head) - k, k === 0 ? '#b8ffcc' : rgb(5 * fade, 180 * fade, 48 * fade));
+          }
+        }
+        break;
+      case 'meteors':
+        for (let i = 0; i < Math.max(6, Math.floor(w * h / 24)); i++) {
+          const glow = 20 + 65 * (0.5 + Math.sin(t * 1.3 + i * 2.4) * 0.5);
+          pixel(seed(i + 3) * (w - 1), seed(i + 91) * (h - 1), rgb(glow * 0.5, glow * 0.7, glow));
+        }
+        for (let i = 0; i < 3; i++) {
+          const phase = (t * (0.12 + i * 0.022) + i / 3) % 1;
+          const headY = phase * (h + 10) - 5;
+          const headX = seed(i + 14) * w * 0.55 + phase * w * 0.45;
+          for (let k = 6; k >= 0; k--) pixel(headX - k * 0.45, headY - k, k === 0 ? '#dcfaff' : rgb(12, 150 * (1 - k / 7), 230 * (1 - k / 7)));
+        }
+        break;
+      case 'fireworks':
+        for (let i = 0; i < 3; i++) {
+          const cycle = (t + i * 1.6) / 4.8;
+          const age = (cycle - Math.floor(cycle)) * 4.8;
+          const id = Math.floor(cycle) * 3 + i;
+          const cx = (0.25 + seed(id + 10) * 0.5) * (w - 1);
+          const cy = (0.23 + seed(id + 20) * 0.28) * (h - 1);
+          const color = seed(id + 30) * 360;
+          if (age < 1.2) {
+            const y = h - 1 - (h - 1 - cy) * age / 1.2;
+            pixel(cx, y + 1, '#7d3510');
+            pixel(cx, y, '#ffe3a0');
+          } else if (age < 3.4) {
+            const burst = age - 1.2;
+            for (let k = 0; k < 12; k++) {
+              const angle = k / 12 * Math.PI * 2;
+              for (let tail = 1; tail >= 0; tail--) {
+                const dt = Math.max(0, burst - tail * 0.14);
+                const radius = dt * Math.min(w, h) * 0.32;
+                pixel(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius + dt * dt * 1.8, hue(color + k * 4, (1 - burst / 2.2) * (tail ? 20 : 60)));
+              }
+            }
+          }
+        }
+        break;
+      case 'heart': {
+        const beat = t % 1.4;
+        const large = beat < 0.18 || (beat > 0.33 && beat < 0.51);
+        const rows = large
+          ? ['00110001100', '01111011110', '11111111111', '11111111111', '01111111110', '00111111100', '00011111000', '00001110000', '00000100000']
+          : ['001000100', '011101110', '111111111', '011111110', '001111100', '000111000', '000010000'];
+        const scale = Math.max(1, Math.floor(Math.min(w / 13, h / 19)));
+        sprite(rows, w / 2, h * 0.4, large ? '#ff3972' : '#bd1849', scale);
+        const trace = [0, 0, 0, -1, 2, -3, 1, 0, 0, 0, 0, 0];
+        for (let x = 0; x < w; x++) {
+          const y = Math.round(h * 0.78) + trace[((x - motionPixel(t * 5,t,x+19)) % trace.length + trace.length) % trace.length];
+          pixel(x, y, '#29a88f');
+        }
+        break;
+      }
+      case 'ripples': {
+        const cx = (w - 1) * (0.5 + Math.sin(t * 0.35) * 0.16);
+        const cy = (h - 1) * (0.48 + Math.cos(t * 0.27) * 0.13);
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const distance = Math.hypot(x - cx, y - cy);
+            const ring = Math.pow(0.5 + Math.sin(distance * 1.35 - t * 3) * 0.5, 4);
+            pixel(x, y, hue(185 + distance * 6, 3 + ring * 43));
+          }
+        }
+        break;
+      }
+      case 'snake': {
+        const length = Math.max(12, Math.min(60, w * 2));
+        const drawSmoothPixel = (x, y, color) => {
+          const left = Math.floor(x), top = Math.floor(y);
+          const fx = x - left, fy = y - top;
+          paint.fillStyle = color;
+          for (let dy = 0; dy <= 1; dy++) {
+            for (let dx = 0; dx <= 1; dx++) {
+              const px = left + dx, py = top + dy;
+              if (px < 0 || py < 0 || px >= w || py >= h) continue;
+              const weight = (dx ? fx : 1 - fx) * (dy ? fy : 1 - fy);
+              if (weight < 0.01) continue;
+              paint.globalAlpha = weight;
+              paint.fillRect(px, py, 1, 1);
+            }
+          }
+          paint.globalAlpha = 1;
+        };
+        for (let k = length; k >= 0; k--) {
+          const phase = t * 0.8 - k * 0.075;
+          const x = (w - 1) / 2 + Math.max(0, w - 3) / 2 * Math.sin(phase);
+          const y = (h - 1) / 2 + Math.max(0, h - 3) / 2 * Math.sin(phase * 1.7 + 0.8);
+          drawSmoothPixel(x, y, k === 0 ? '#efffff' : hue(k / length * 300 + t * 20, 14 + (1 - k / length) * 35));
+        }
+        break;
+      }
+      case 'lava': {
+        const blobs = Array.from({ length: 4 }, (_, i) => ({
+          x: 0.5 + Math.sin(t * 0.4 + i * 2.1) * 0.32,
+          y: 1.3 - ((t * (0.055 + i * 0.009) + i * 0.34) % 1.6),
+          radius: 0.16 + seed(i) * 0.08
+        }));
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            let field = 0;
+            for (const blob of blobs) {
+              const dx = (x + 0.5) / w - blob.x;
+              const dy = ((y + 0.5) / h - blob.y) * 1.5;
+              field += Math.exp(-(dx * dx + dy * dy) / (blob.radius * blob.radius));
+            }
+            const glow = clamp((field - 0.2) * 1.4);
+            pixel(x, y, rgb(240 * glow, 100 * glow * glow, 40 * glow * (1 - glow)));
+          }
+        }
+        break;
+      }
+      case 'jellyfish': {
+        const scale = Math.max(1, Math.floor(Math.min(w / 13, h / 23)));
+        const cx = w / 2 + Math.sin(t * 0.65) * Math.max(0, (w - 10 * scale) / 2);
+        const cy = h * 0.32 + Math.sin(t * 0.9) * Math.max(1, h * 0.06);
+        for (let arm = -1; arm <= 1; arm++) {
+          for (let k = 0; k < 8 * scale; k++) {
+            const sway = Math.sin(t * 2 - k * 0.5 + arm) * (0.5 + k / (8 * scale)) * scale;
+            pixel(cx + arm * 2 * scale + sway, Math.floor(cy + 2 * scale) + k, hue(185 + k * 5, 45 - k / scale * 3));
+          }
+        }
+        sprite(['000111000', '001111100', '011111110', '111111111', '011111110'], cx, cy, '#2886c9', scale);
+        pixel(cx - 2 * scale, cy, '#b3fcff');
+        pixel(cx + 2 * scale, cy, '#b3fcff');
+        for (let i = 0; i < 4; i++) pixel(seed(i + 51) * (w - 1), (1 - ((t * 0.09 + i * 0.27) % 1)) * (h - 1), '#123f57');
+        break;
+      }
+
+      case 'aurora':
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const nx = x / Math.max(1, w - 1), ny = y / h;
+          const curtain = 0.32 + Math.sin(nx * 5 + t * 0.6) * 0.18 + Math.sin(nx * 11 - t * 0.4) * 0.09;
+          const glow = Math.exp(-Math.pow((ny - curtain) * 7, 2)) * (0.7 + Math.sin(nx * 20 + t) * 0.3);
+          pixel(x, y, rgb(12 + glow * 35, 7 + glow * 170, 22 + glow * 130));
+        }
+        for (let i = 0; i < 9; i++) pixel(seed(i + 8) * (w - 1), seed(i + 30) * h * 0.3, '#698c92');
+        break;
+      case 'snow':
+        for (let y = 0; y < h; y++) { paint.fillStyle = rgb(4 + y / h * 5, 11 + y / h * 10, 23 + y / h * 18); paint.fillRect(0, y, w, 1); }
+        for (let i = 0; i < Math.max(12, Math.floor(w * h / 14)); i++) {
+          const y = (t * (1.1 + seed(i) * 2.6) + seed(i + 70) * (h + 2)) % (h + 2) - 1;
+          const x = (seed(i + 40) * w + Math.sin(t * 0.7 + i) * 1.6 + w) % w;
+          pixel(x, y, i % 3 === 0 ? '#f1fcff' : '#769fb6');
+        }
+        for (let x = 0; x < w; x++) { const height = 1 + Math.round((Math.sin(x * 0.6) + 1) * Math.max(1, h * 0.035)); paint.fillStyle = '#9bb9c8'; paint.fillRect(x, h - height, 1, height); }
+        break;
+      case 'sunset': {
+        const horizon = Math.floor(h * 0.55), sunX = motionPixel((w - 1) / 2,t,20), sunY = motionPixel(h * (0.29 + Math.sin(t * 0.15) * 0.03),t,21), radius = Math.max(1, w * 0.24);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          if (y < horizon) {
+            const fade = y / Math.max(1, horizon);
+            pixel(x, y, rgb(34 + 106 * fade, 17 + 27 * fade, 60 - 18 * fade));
+            if (Math.hypot(x - sunX, y - sunY) < radius) pixel(x, y, '#ffbd67');
+          } else {
+            const depth = (y - horizon) / Math.max(1, h - horizon), shimmer = Math.sin(x * 1.8 + y * 0.8 - t * 2) * 0.5 + 0.5;
+            const reflection = Math.abs(x - sunX) < (0.08 + depth * 0.32) * w && shimmer > 0.43;
+            pixel(x, y, reflection ? rgb(175 * (1 - depth * 0.4), 75 * (1 - depth * 0.4), 62) : rgb(12, 27 + shimmer * 10, 45 + shimmer * 22));
+          }
+        }
+        break;
+      }
+      case 'bubbles':
+        for (let i = 0; i < 6; i++) {
+          const phase = (t * (0.07 + seed(i) * 0.07) + i / 6) % 1, cy = h + 3 - phase * (h + 7);
+          const cx = (0.15 + seed(i + 5) * 0.7) * (w - 1) + Math.sin(t + i) * 1.2, radius = 1.2 + seed(i + 12) * Math.max(1, w * 0.18);
+          for (let y = Math.floor(cy - radius); y <= Math.ceil(cy + radius); y++) for (let x = Math.floor(cx - radius); x <= Math.ceil(cx + radius); x++) {
+            if (Math.abs(Math.hypot(x - cx, y - cy) - radius) < 0.55) pixel(x, y, hue(170 + i * 15, 25 + phase * 20));
+          }
+          pixel(cx - radius * 0.35, cy - radius * 0.6, '#a6eee5');
+        }
+        break;
+      case 'butterfly': {
+        const cy = (h - 1) * 0.44 + Math.sin(t * 1.3), cx = (w - 1) / 2, spread = 0.4 + Math.abs(Math.sin(t * 2.5)) * 0.6;
+        const wingW = Math.max(2, Math.floor(w * 0.4 * spread)), wingH = Math.max(3, Math.floor(h * 0.22));
+        for (let dy = -wingH; dy <= wingH; dy++) {
+          const wingShape = dy < 0 ? 1 - Math.abs(dy + wingH * 0.48) / wingH : 0.74 - Math.abs(dy - wingH * 0.42) / wingH;
+          for (let dx = 1; dx <= Math.max(0, Math.round(wingW * wingShape)); dx++) {
+            const c = hue(20 + dy * 12 + dx * 20 + t * 18, dx === 1 ? 30 : 49);
+            pixel(cx - dx, cy + dy, c); pixel(cx + dx, cy + dy, c);
+          }
+        }
+        for (let dy = -wingH + 1; dy < wingH; dy++) pixel(cx, cy + dy, '#eccda0');
+        pixel(cx - 1, cy - wingH, '#b39b78'); pixel(cx + 1, cy - wingH, '#b39b78');
+        for (let i = 0; i < 4; i++) pixel(seed(i + 51) * (w - 1), h * 0.8 + Math.sin(t + i) * 2, hue(60 + i * 30, 25));
+        break;
+      }
+      
+      
+      case 'hourglass': {
+        const left = Math.max(0, Math.floor(w * 0.16)), right = w - 1 - left, top = Math.max(1, Math.floor(h * 0.09)), bottom = h - 1 - top;
+        const middle = (top + bottom) / 2, center = (w - 1) / 2, phase = (t * 0.16) % 1;
+        for (let y = top; y <= bottom; y++) {
+          const width = Math.max(0.5, Math.abs(y - middle) / Math.max(1, middle - top) * (right - left) / 2);
+          pixel(center - width, y, '#638b82'); pixel(center + width, y, '#638b82');
+          for (let x = Math.ceil(center - width + 1); x <= Math.floor(center + width - 1); x++) {
+            const upper = y < middle && (y - top) / Math.max(1, middle - top) > phase, lower = y > middle && (bottom - y) / Math.max(1, bottom - middle) < phase;
+            if (upper || lower) pixel(x, y, hue(35 + seed(x + y * w) * 10, 40 + seed(y) * 13));
+          }
+        }
+        for (let x = left; x <= right; x++) { pixel(x, top, '#c4a573'); pixel(x, bottom, '#c4a573'); }
+        for (let y = Math.floor(middle); y < bottom - phase * (bottom - middle); y++) if ((y + Math.floor(t * 10)) % 3 !== 0) pixel(center, y, '#fbd480');
+        break;
+      }
+      case 'galaxy':
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const nx = (x - (w - 1) / 2) / Math.max(1, w * 0.5), ny = (y - (h - 1) / 2) / Math.max(1, w * 0.5), radius = Math.hypot(nx, ny);
+          const arm = Math.pow(0.5 + Math.sin(Math.atan2(ny, nx) * 3 - radius * 6 + t * 0.85) * 0.5, 3), glow = arm * Math.exp(-radius * 1.3);
+          pixel(x, y, rgb(22 * glow + 100 * Math.exp(-radius * 5), 80 * glow, 230 * glow));
+        }
+        for (let i = 0; i < 10; i++) { const glow = 30 + 100 * (0.5 + Math.sin(t + i * 3) * 0.5); pixel(seed(i + 91) * (w - 1), seed(i + 75) * (h - 1), rgb(glow, glow, glow)); }
+        break;
+      case 'checker': {
+        const size = Math.max(2, Math.floor(w / 4)), scroll = motionPixel(t * 2,t,22), light = 28 + Math.sin(t * 2) * 12;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) pixel(x, y, (Math.floor((x + scroll) / size) + Math.floor((y + scroll) / size)) % 2 ? hue(165 + t * 20, light) : '#10241d');
+        break;
+      }
+      case 'equalizer': {
+        const bars = Math.max(1, Math.floor(w / 3)), barW = Math.max(1, Math.floor(w / bars));
+        for (let i = 0; i < bars; i++) {
+          const value = 0.24 + (Math.sin(t * 2.7 + i * 1.7) * 0.5 + 0.5) * 0.43 + (Math.sin(t * 4.1 - i) * 0.5 + 0.5) * 0.25, height = Math.max(1, Math.floor(value * h));
+          for (let y = h - height; y < h; y++) for (let dx = 0; dx < Math.max(1, barW - 1); dx++) pixel(i * barW + dx, y, hue(145 - (1 - y / h) * 130, 42));
+          for (let dx = 0; dx < Math.max(1, barW - 1); dx++) pixel(i * barW + dx, Math.max(0, h - height - 2), '#f2f0ac');
+        }
+        break;
+      }
+      case 'bloom': {
+        const cx = (w - 1) / 2, cy = (h - 1) * 0.38, opening = 0.65 + Math.sin(t * 0.9) * 0.35, radius = Math.max(1, Math.min(w * 0.33, h * 0.18));
+        for (let y = Math.round(cy); y < h - 2; y++) pixel(cx, y, '#4baf77');
+        sprite(['10000','11000','01100','00111','00010'], cx, h * 0.76, '#39996c');
+        for (let i = 0; i < 6; i++) {
+          const angle = i / 6 * Math.PI * 2 + Math.sin(t * 0.45) * 0.1, px = cx + Math.cos(angle) * radius * opening, py = cy + Math.sin(angle) * radius * opening, petal = Math.max(1, radius * 0.62);
+          for (let dy = -Math.ceil(petal); dy <= petal; dy++) for (let dx = -Math.ceil(petal); dx <= petal; dx++) if (dx * dx + dy * dy <= petal * petal) pixel(px + dx, py + dy, hue(325 + i * 6 + Math.sin(t * 0.3) * 24, 42 + i * 2));
+        }
+        sprite(['010','111','010'], cx, cy, '#ffe291');
+        break;
+      }
+
+      case 'koi': {
+        for (let y=0;y<h;y++) for(let x=0;x<w;x++) pixel(x,y,rgb(3,14+Math.sin(x*.6+y*.4-t)*5,20));
+        const fish=['00100','01110','11111','11111','11111','01110','00100','01010','10001'];
+        for(let i=0;i<2;i++){
+          const cy=(t*(i?1.6:2.1)+i*h*.55)%(h+10)-5,cx=(w-1)*(.3+i*.4)+Math.sin(t*.8+i)*1.2;
+          fish.forEach((row,y)=>{for(let x=0;x<5;x++)if(row[x]==='1')pixel(cx+x-2,cy+y-4,(y<3||(x+y+i)%4===0)?'#ef7b32':'#dfd8b7');});
+          pixel(cx,cy-3,'#382719');
+        }
+        break;
+      }
+      case 'lanterns':
+        for(let i=0;i<8;i++)pixel(seed(i+71)*(w-1),seed(i+19)*(h-1),'#292b35');
+        for(let i=0;i<4;i++){
+          const rise=(t*(.035+seed(i)*.025)+i*.27)%1,cy=h+4-rise*(h+9),cx=(.2+seed(i+31)*.6)*(w-1)+Math.sin(t*.5+i);
+          sprite(['01110','11111','11111','11111','01110'],cx,cy,hue(23+i*6,38+Math.sin(t*1.5+i)*5));
+          pixel(cx,cy,'#ffd691');pixel(cx,cy+3,'#d76e34');
+        }
+        break;
+      case 'city': {
+        for(let x=0;x<w;x++){
+          const building=Math.floor(x/3),roof=Math.floor(h*(.34+seed(building+8)*.3));
+          for(let y=roof;y<h;y++)pixel(x,y,x%3===2?'#071119':'#102434');
+          if(x%3!==2)for(let y=roof+2;y<h;y+=3)if(seed(building*19+y+Math.floor(t*.2))>.35)pixel(x,y,hue(180+building*35,28));
+        }
+        for(let i=0;i<7;i++){const y=(t*7+i*4)%h,x=seed(i+80)*(w-1);pixel(x,y,'#39809c');pixel(x,y-1,'#1d4155');}
+        break;
+      }
+      case 'mountains':
+        for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+          let c=rgb(35+y/h*35,70+y/h*50,95+y/h*35);
+          if(y>h*.45+Math.sin(x/w*5+1)*h*.12)c='#516b80';
+          if(y>h*.64+Math.sin(x/w*7)*h*.12)c='#315b62';
+          if(y>h*.82+Math.sin(x/w*6+2)*h*.08)c='#1b443c';
+          pixel(x,y,c);
+        }
+        for(let i=0;i<3;i++){const x=(t*.6+i*w*.6)%(w+7)-3; sprite(['011100','111111'],x,h*(.15+i*.08),'#c0d8cf');}
+        break;
+      case 'rocket': {
+        for(let i=0;i<12;i++)pixel(seed(i+50)*(w-1),(seed(i+9)*h+t*(1+seed(i)*3))%h,i%3?'#3c536e':'#a0c5c9');
+        const cx=w/2+Math.sin(t*.8)*Math.max(1,w*.1),cy=h*.45+Math.sin(t*1.3);
+        sprite(['00100','01110','01110','01110','11111','10101'],cx,cy,'#dce5e2');
+        pixel(cx,cy-1,'#50add0');
+        for(let k=0;k<3+Math.floor((Math.sin(t*13)+1)*1.5);k++)pixel(cx,cy+3+k,k<2?'#ffcf70':'#db5a39');
+        break;
+      }
+      case 'fish':
+        for(let i=0;i<4;i++){
+          const direction=i%2?1:-1,phase=(t*(2+seed(i))+i*7)%(w+10),cx=direction>0?phase-5:w+5-phase,cy=(i+.5)*h/4+Math.sin(t+i)*.7;
+          const rows=['001100','111110','001100'],fish=direction<0?rows.map(row=>row.split('').reverse().join('')):rows;
+          sprite(fish,cx,cy,hue(i*85+t*8,47));
+          pixel(cx+direction,cy,'#172a29');
+        }
+        for(let x=0;x<w;x+=4)for(let k=0;k<4;k++)pixel(x+Math.sin(t+k*.7)*.5,h-1-k,'#26735e');
+        break;
+      case 'cat': {
+        const cx=w/2,cy=h*.4,bob=Math.round(Math.sin(t*1.3)*.6);
+        sprite(['110000011','111000111','111111111','111111111','111111111','011111110','001111100'],cx,cy+bob,'#b18b70');
+        const blink=t%4.8>4.4;
+        pixel(cx-2,cy-1+bob,blink?'#493d39':'#b7e098');pixel(cx+2,cy-1+bob,blink?'#493d39':'#b7e098');
+        pixel(cx,cy+1+bob,'#f0b2a4');
+        sprite(['01110','11111','11111','11011'],cx,cy+6,'#8c705f');
+        for(let k=0;k<5;k++)pixel(cx+3+Math.sin(t*1.5+k*.5),cy+7-k,'#b18b70');
+        break;
+      }
+      case 'candle': {
+        const left=Math.floor(w*.35),right=Math.ceil(w*.65),top=Math.floor(h*.48);
+        for(let y=top;y<h-2;y++)for(let x=left;x<right;x++)pixel(x,y,rgb(165+(x-left)*9,129+(x-left)*5,83));
+        const cx=(w-1)/2+Math.sin(t*4)*.9,cy=top-4;
+        sprite(['00100','01100','01110','11111','01110'],cx,cy,rgb(230+Math.sin(t*5)*14,128+Math.sin(t*3)*14,39));
+        sprite(['010','111','010'],cx,cy+1,'#ffd780');pixel(cx,top-1,'#35281c');
+        break;
+      }
+      case 'waterfall':
+        for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+          const band=Math.sin(x*1.6)*.5+.5,fall=Math.sin(y*.8-t*5+x)*.5+.5,foam=y>h*.8?(Math.sin(x*1.7+t*2+y)*.5+.5)*.6:0;
+          pixel(x,y,rgb(9+(fall*band+foam)*75,28+(fall*band+foam)*125,50+(fall*band+foam)*145));
+        }
+        break;
+      case 'orbit': {
+        const cx=(w-1)/2,cy=(h-1)/2,r=Math.max(1,w*.23);
+        for(let i=0;i<8;i++)pixel(seed(i+61)*(w-1),seed(i+83)*(h-1),'#4a5964');
+        for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(Math.hypot(x-cx,y-cy)<r)pixel(x,y,hue(18+y*3,30+Math.sin(y*1.4)*8));
+        for(let k=0;k<36;k++){const a=k/36*Math.PI*2;pixel(cx+Math.cos(a)*w*.42,cy+Math.sin(a)*w*.16,'#ad9471');}
+        pixel(cx+Math.cos(t*.9)*w*.42,cy+Math.sin(t*.9)*h*.37,'#a7e1e8');
+        break;
+      }
+      case 'dna':
+        for(let y=0;y<h;y++){
+          const phase=y*.48-t*1.8,left=(w-1)/2+Math.sin(phase)*w*.32,right=(w-1)/2-Math.sin(phase)*w*.32;
+          if(y%3===0)for(let x=Math.round(Math.min(left,right));x<=Math.round(Math.max(left,right));x++)pixel(x,y,'#243f4b');
+          pixel(left,y,'#44cdbc');pixel(right,y,'#eb7697');
+        }
+        break;
+      case 'tunnel':
+        for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+          const dx=Math.abs(x-(w-1)/2),dy=Math.abs(y-(h-1)/2)*w/h,depth=Math.max(dx,dy),phase=depth-t*1.3;
+          const glow=.5+Math.sin(phase*2)*.5;
+          pixel(x,y,hue(depth*28+t*24,8+glow*32));
+        }
+        break;
+      default: return false;
+    }
+    return true;
+  }
+
+
+  const animationCatalog = {pocket_strawberry: ["nature", true],
+pocket_starwhale: ["ambience", true],
+pocket_windbell: ["ambience", true],
+pocket_fox: ["playful", true],
+pocket_capybara: ["playful", true],
+pocket_owl: ["nature", true],
+pocket_axolotl: ["playful", true],
+pocket_snail: ["nature", true],
+pocket_bees: ["nature", true],
+pocket_ferris: ["playful", true],
+pocket_cablecar: ["nature", true],
+pocket_windmill: ["nature", true],
+pocket_telescope: ["ambience", true],
+pocket_submarine: ["playful", true],
+pocket_castle: ["ambience", true],
+pocket_mushrooms: ["nature", true],
+pocket_pumpkin: ["playful", true],
+pocket_gyroscope: ["ambience", true],
+pocket_circuit: ["ambience", true],
+portrait_fireflies: ["nature", true],
+portrait_balloon: ["playful", true],
+portrait_penguin: ["playful", true],
+portrait_bamboo: ["nature", true],
+portrait_sakura: ["nature", true],
+portrait_whale: ["ambience", true],
+portrait_portal: ["ambience", true],
+portrait_coffee: ["playful", true],
+portrait_prism: ["ambience", true],
+portrait_dancer: ["playful", true],
+portrait_rose: ["nature", true],
+portrait_moonrabbit: ["playful", true],
+rainbow:['ambience',false],
+fire:['nature',false],
+rain:['ambience',false],
+meteors:['nature',false],
+fireworks:['playful',false],
+heart:['playful',false],
+ripples:['nature',false],
+snake:['playful',false],
+lava:['ambience',false],
+jellyfish:['nature',false],
+wave:['ambience',false],
+clock:['utility',false],
+aurora:['ambience',false],
+snow:['nature',false],
+sunset:['nature',false],
+bubbles:['nature',false],
+butterfly:['nature',false],
+hourglass:['playful',false],
+galaxy:['ambience',false],
+checker:['playful',false],
+equalizer:['ambience',false],
+bloom:['nature',false],
+koi:["nature",false],
+lanterns:["ambience",false],
+city:["ambience",false],
+mountains:["nature",false],
+rocket:["playful",false],
+fish:["nature",false],
+cat:["playful",false],
+candle:["ambience",false],
+waterfall:["nature",false],
+orbit:["ambience",false],
+dna:["playful",false],
+tunnel:["ambience",false],
+tiny_train:["ambience", false],
+rainy_umbrella:["nature", false],
+moon_lighthouse:["ambience", false],
+little_vinyl:["playful", false],
+paper_flight:["playful", false],
+tiny_greenhouse:["nature", false]};
+  let activeAnimationFilter = 'all';
+  function makeAnimationThumbnail(mode) {
+    const canvas=document.createElement('canvas');canvas.width=15;canvas.height=27;
+    const ctx=canvas.getContext('2d');ctx.fillStyle='#000000';ctx.fillRect(0,0,15,27);
+    if(mode==='clock')drawStudioClock(ctx,{w:15,h:27},new Date(2026,0,1,14,20,0));
+    else if(mode==='wave'){
+      ctx.fillStyle='#ffdd57';
+      for(let x=0;x<15;x++)ctx.fillRect(x,Math.round((Math.sin(x/15*Math.PI*6+2)*.45+.55)*26),1,1);
+    }else drawPixelAnimation(mode,1.8,ctx,{w:15,h:27});
+    return canvas.toDataURL('image/png');
+  }
+  function syncStudioSelection() {
+    const mode = getAnimationMode();
+    const search = document.getElementById('librarySearch').value.trim().toLocaleLowerCase();
+    document.getElementById('nowPlaying').textContent = mode === 'file' ? '我的图片 / 视频' : ui.animationMode.selectedOptions[0].textContent;
+    document.querySelectorAll('.animation-card').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+      const categoryHidden = activeAnimationFilter === 'new' ? !animationCatalog[button.dataset.mode][1] : activeAnimationFilter !== 'all' && animationCatalog[button.dataset.mode][0] !== activeAnimationFilter;
+      const title = button.querySelector('.animation-title').textContent.toLocaleLowerCase();
+      button.hidden = categoryHidden || (search && !title.includes(search));
+    });
+  }
+  function setupCadPixelPreview() {
+    const preview = ui.preview;
+    const stage = preview.closest('.preview-stage');
+    if (!stage || stage.querySelector('.pixel-appearance')) return;
+
+    const controls = document.createElement('div');
+    controls.className = 'pixel-appearance';
+    controls.setAttribute('role', 'group');
+    controls.setAttribute('aria-label', '像素预览外观');
+    const label = document.createElement('span');
+    label.className = 'pixel-appearance-label';
+    label.textContent = '像素外观';
+
+    const cadButton = document.createElement('button');
+    cadButton.type = 'button';
+    cadButton.className = 'chip pixel-appearance-button';
+    cadButton.textContent = 'CAD 圆角';
+    cadButton.title = '参考手绘 CAD：开孔 6.325 mm，中心距 7.125 mm，圆角 R0.8 mm';
+    const rawButton = document.createElement('button');
+    rawButton.type = 'button';
+    rawButton.className = 'chip pixel-appearance-button';
+    rawButton.textContent = '原始像素';
+    const hint = document.createElement('span');
+    hint.className = 'pixel-appearance-hint';
+    hint.textContent = '仅影响预览，不改变发送数据';
+    controls.append(label, cadButton, rawButton, hint);
+    stage.insertAdjacentElement('afterend', controls);
+
+    // CAD front opening: pitch 7.125 mm, opening 6.325 mm, corner R0.8 mm.
+    // A half-gap on each tile edge keeps the aperture centered on its RGB pixel.
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="7.125" height="7.125" viewBox="0 0 7.125 7.125"><rect x="0.4" y="0.4" width="6.325" height="6.325" rx="0.8" ry="0.8" fill="white"/></svg>';
+    preview.style.setProperty('--cad-pixel-mask', 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")');
+    let lastDimensions = '';
+    const updateDimensions = () => {
+      const { w, h } = getFrameConfig();
+      if (!(w > 0 && h > 0)) return;
+      const key = w + 'x' + h;
+      if (key === lastDimensions) return;
+      lastDimensions = key;
+      preview.style.setProperty('--cad-pixel-width', (100 / w) + '%');
+      preview.style.setProperty('--cad-pixel-height', (100 / h) + '%');
+    };
+    const setAppearance = enabled => {
+      updateDimensions();
+      preview.classList.toggle('cad-pixels', enabled);
+      stage.classList.toggle('cad-stage', enabled);
+      cadButton.setAttribute('aria-pressed', String(enabled));
+      rawButton.setAttribute('aria-pressed', String(!enabled));
+    };
+    cadButton.addEventListener('click', () => setAppearance(true));
+    rawButton.addEventListener('click', () => setAppearance(false));
+    for (const input of [ui.matrixW, ui.matrixH]) {
+      input.addEventListener('input', updateDimensions);
+      input.addEventListener('change', updateDimensions);
+    }
+    // Presets and device-size reads can change dimensions programmatically.
+    // Observe the existing preview, without creating another animation loop.
+    new MutationObserver(updateDimensions).observe(preview, { attributes: true, attributeFilter: ['src'] });
+    setAppearance(true);
+  }
+
+  function setupStudio() {
+    setupCadPixelPreview();
+    for(const control of [ui.stopBtn,ui.previewOnlyBtn,ui.disconnectBtn]){
+      if(control)control.addEventListener('click',serialStopHold);
+    }
+    for(const control of [ui.controlMode,ui.protocol,ui.matrixW,ui.matrixH]){
+      if(control)control.addEventListener('change',serialStopHold);
+    }
+    const gallery = document.getElementById('animationGallery');
+    for (const [mode, entry] of Object.entries(animationCatalog).sort((a,b) => Number(b[1][1]) - Number(a[1][1]))) {
+      const title = Array.from(ui.animationMode.options).find(option => option.value === mode).textContent;
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'animation-card'; button.dataset.mode = mode;
+      button.setAttribute('aria-label', title); button.setAttribute('aria-pressed', 'false');
+      const thumb = document.createElement('span'); thumb.className = 'animation-thumb';
+      const image = document.createElement('img'); image.src = makeAnimationThumbnail(mode); image.alt = ''; thumb.append(image);
+      const label = document.createElement('span'); label.className = 'animation-title'; label.textContent = title; button.append(thumb, label);
+      if (entry[1]) { const badge = document.createElement('span'); badge.className = 'new-label'; badge.textContent = entry[0] === 'handmade' ? '手绘' : 'NEW'; button.append(badge); }
+      button.addEventListener('click', () => { ui.animationMode.value = mode; ui.animationMode.dispatchEvent(new Event('change')); });
+      gallery.append(button);
+    }
+    document.querySelectorAll('[data-filter]').forEach(button => button.addEventListener('click', () => {
+      activeAnimationFilter = button.dataset.filter;
+      document.querySelectorAll('[data-filter]').forEach(item => { const active = item === button; item.classList.toggle('is-active', active); item.setAttribute('aria-pressed', String(active)); });
+      syncStudioSelection();
+    }));
+    document.getElementById('libraryCategory').addEventListener('change', event => {
+      document.querySelector(`[data-filter="${event.target.value}"]`)?.click();
+    });
+    document.getElementById('librarySearch').addEventListener('input', syncStudioSelection);
+    document.querySelectorAll('[data-resolution]').forEach(button => button.addEventListener('click', () => {
+      const [w, h] = button.dataset.resolution.split(','); ui.matrixW.value = w; ui.matrixH.value = h;
+      ui.matrixW.dispatchEvent(new Event('change'));
+    }));
+    document.getElementById('randomAnimationBtn').addEventListener('click', () => {
+      const choices = Object.keys(animationCatalog).filter(mode => mode !== getAnimationMode() && (activeAnimationFilter === 'all' || (activeAnimationFilter === 'new' ? animationCatalog[mode][1] : animationCatalog[mode][0] === activeAnimationFilter)));
+      if (!choices.length) return;
+      ui.animationMode.value = choices[Math.floor(Math.random() * choices.length)]; ui.animationMode.dispatchEvent(new Event('change'));
+    });
+    ui.animationMode.addEventListener('change', syncStudioSelection);
+    ui.mediaFile.addEventListener('change', syncStudioSelection);
+    window.addEventListener('resize', applyPreviewAspect);
+    ui.animationMode.dispatchEvent(new Event('change'));
+  }
+
+  function stopAnimationPreview() {
+    if (animationPreviewTimer !== null) clearTimeout(animationPreviewTimer);
+    animationPreviewTimer = null;
+  }
+
+  function startAnimationPreview() {
+    stopAnimationPreview();
+    const tick = () => {
+      if (running || getAnimationMode() === 'file') return;
+      buildGeneratedFrame(getAnimationMode());
+      animationPreviewTimer = setTimeout(tick, 16);
+    };
+    tick();
+  }
+
+  function buildGeneratedFrame(mode) {
+    const { w, h } = getFrameConfig();
+    offscreen.width = w;
+    offscreen.height = h;
+    offCtx.setTransform(1, 0, 0, 1, 0, 0);
+    const t = getAnimationTime();
+    if (mode === 'clock') drawClockFrame();
+    else if (mode === 'wave') drawWaveFrame(t);
+    else if (!drawPixelAnimation(mode, t)) return null;
+    if (window.pixelStudioHeadless !== true && window.pixelStudioRecolor && ['pocket_circuit','wave','portrait_portal','pocket_starwhale','ripples','waterfall'].includes(mode)) {
+      const image = offCtx.getImageData(0, 0, w, h);
+      const rgb = new Uint8Array(w * h * 3);
+      for (let i=0,j=0;i<image.data.length;i+=4,j+=3) rgb.set(image.data.subarray(i,i+3),j);
+      const colored = window.pixelStudioRecolor(rgb, window.pixelStudioAnimationPaletteKey || 'original', mode);
+      for (let i=0,j=0;i<image.data.length;i+=4,j+=3) image.data.set(colored.subarray(j,j+3),i);
+      offCtx.putImageData(image,0,0);
+    }
+    ui.preview.src = offscreen.toDataURL('image/png');
+    return sampleFrameFromCanvas();
+  }
+
+  function updatePreviewByMode() {
+    applyPreviewAspect();
+    if (!mediaObj) return;
+    const { w, h } = getFrameConfig();
+    offscreen.width = w;
+    offscreen.height = h;
+    const sourceW = mediaObj.videoWidth || mediaObj.naturalWidth || mediaObj.width || 0;
+    const sourceH = mediaObj.videoHeight || mediaObj.naturalHeight || mediaObj.height || 0;
+    drawToDisplayCanvas(w, h, sourceW, sourceH);
+    ui.preview.src = offscreen.toDataURL('image/png');
+  }
+
+  function bytesToHex(u8) {
+    let s = '';
+    for (const b of u8) {
+      s += b.toString(16).padStart(2, '0');
+    }
+    return s;
+  }
+
+  function pixelToHex(v) {
+    return Math.max(0, Math.min(255, v ?? 0)).toString(16).padStart(2, '0').toUpperCase();
+  }
+
+function frameToHexList(frame) {
+    const colors = [];
+    for (let i = 0; i < frame.length; i += 3) {
+      colors.push(`${pixelToHex(frame[i])}${pixelToHex(frame[i + 1])}${pixelToHex(frame[i + 2])}`);
+    }
+    return colors;
+  }
+
+  function buildFramePairs(frame) {
+    const colors = frameToHexList(frame);
+    const pairs = [];
+    for (let i = 0; i < colors.length; i++) {
+      pairs.push(i, colors[i]);
+    }
+    return pairs;
+  }
+
+  function frameToRgbTriples(frame) {
+    const rgb = [];
+    for (let i = 0; i < frame.length; i += 3) {
+      rgb.push([
+        Math.max(0, Math.min(255, frame[i] ?? 0)),
+        Math.max(0, Math.min(255, frame[i + 1] ?? 0)),
+        Math.max(0, Math.min(255, frame[i + 2] ?? 0))
+      ]);
+    }
+    return rgb;
+  }
+
+  function updatePreviewByMode() {
+    if (!mediaObj || mediaType !== 'image') return;
+    const { w, h } = getFrameConfig();
+    offscreen.width = w;
+    offscreen.height = h;
+    const sourceW = mediaObj.videoWidth || mediaObj.naturalWidth || mediaObj.width || 0;
+    const sourceH = mediaObj.videoHeight || mediaObj.naturalHeight || mediaObj.height || 0;
+    drawToDisplayCanvas(w, h, sourceW, sourceH);
+    ui.preview.src = offscreen.toDataURL('image/png');
+  }
+
+  async function writeLine(line) {
+    if (!writer) throw new Error('串口未连接');
+    await writer.write(encoder.encode(line));
+  }
+
+
+  let ipTransport = 'http';
+  let frameSocketPromise = null;
+  let wsPending = null;
+  let deviceProfile = null;
+  let profilePromise = null;
+  let preparedOutput = '';
+  let lastSentColors = null;
+  let lastFrameKey = '';
+  let lastKeyframeAt = 0;
+  let statsWindow = { at:performance.now(), frames:0, bytes:0, ms:0 };
+
+  function deviceBase() {
+    const raw = (ui.wledHost.value || '').trim();
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : 'http://' + raw);
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error('请输入有效的 WLED 地址');
+    return url.origin;
+  }
+
+  async function fetchDeviceJSON(path, payload) {
+    if (bridgeToken && payload === undefined) return (await bridgeRequest('/api/device?host='+encodeURIComponent(deviceBase())+'&path='+encodeURIComponent(path))).json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4500);
+    try {
+      const res = await fetch(deviceBase() + path, {
+        method:payload === undefined ? 'GET' : 'POST',
+        cache:'no-store',
+        ...(payload === undefined ? {} : {headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}),
+        signal:controller.signal
+      });
+      const text = await res.text();
+      if (!res.ok) throw new Error('WLED HTTP ' + res.status + ': ' + text.slice(0, 80));
+      const result = text ? JSON.parse(text) : {};
+      if (result.error) throw new Error('WLED 错误 ' + result.error);
+      return result;
+    } finally { clearTimeout(timer); }
+  }
+
+  async function readDeviceProfile(force = false) {
+    const host = deviceBase();
+    if (!force && deviceProfile?.host === host) return deviceProfile;
+    if (profilePromise) return profilePromise;
+    profilePromise = (async () => {
+      const [stateResult, configResult] = await Promise.allSettled([
+        fetchDeviceJSON('/json/si'), fetchDeviceJSON('/json/cfg')
+      ]);
+      if (stateResult.status !== 'fulfilled') throw stateResult.reason;
+      const info = stateResult.value.info || {};
+      const gc = configResult.status === 'fulfilled' ? configResult.value.light?.gc : null;
+      let gamma = Number(document.getElementById('colorGamma').value) || 2.8;
+      if (gc) gamma = (gc.col === false || gc.col === 0) ? 1 : typeof gc.col === 'number' ? gc.col : Number(gc.val) || 2.8;
+      gamma = Math.max(1, Math.min(4, gamma));
+      const profile = { host, gamma, matrix:info.leds?.matrix, count:info.leds?.count, arch:info.arch, version:info.ver, maxMessage:info.arch === 'esp8266' ? 480 : 1200 };
+      if (deviceBase() !== host) throw new Error('设备地址已改变，请重新开始');
+      deviceProfile = profile;
+      document.getElementById('colorGamma').value = gamma.toFixed(2);
+      document.getElementById('deviceInfo').textContent = (info.release || info.arch || 'WLED') + ' · ' + (info.ver || '') + (profile.matrix ? ' · 设备 ' + profile.matrix.w + ' × ' + profile.matrix.h : '') + ' · Gamma ' + gamma;
+      if (!gc) logLine('未读取到颜色配置，按手动 Gamma ' + gamma + ' 处理');
+      return profile;
+    })();
+    try { return await profilePromise; } finally { profilePromise = null; }
+  }
+
+  function resetFrameCache() {
+    lastSentColors = null; lastFrameKey = ''; lastKeyframeAt = 0; preparedOutput = '';
+  }
+
+  function closeFrameSocket() {
+    const socket = ws;
+    ws = null; frameSocketPromise = null;
+    if (wsPending) { const pending = wsPending; wsPending = null; clearTimeout(pending.timer); pending.reject(new Error('WebSocket 已断开')); }
+    if (socket) { try { socket.close(); } catch (_) {} }
+    resetFrameCache();
+  }
+
+  async function openFrameSocket() {
+    const url = getWsUrl();
+    if (ws?.readyState === WebSocket.OPEN && ws.url === url) return;
+    if (frameSocketPromise) return frameSocketPromise;
+    if (ws) closeFrameSocket();
+    frameSocketPromise = new Promise((resolve, reject) => {
+      const socket = new WebSocket(url);
+      ws = socket;
+      let welcomed = false;
+      const timer = setTimeout(() => { reject(new Error('WebSocket 连接超时')); socket.close(); }, 2500);
+      socket.onmessage = (event) => {
+        if (ws !== socket || typeof event.data !== 'string') return;
+        if (event.data === 'pong') {
+          if (wsPending) { const p = wsPending; wsPending = null; clearTimeout(p.timer); p.resolve(); }
+          return;
+        }
+        let data;
+        try { data = JSON.parse(event.data); } catch (_) { return; }
+        if (!welcomed && (data.state || data.info)) {
+          welcomed = true; clearTimeout(timer); resolve();
+        }
+        if (data.error && wsPending) {
+          const p = wsPending; wsPending = null; clearTimeout(p.timer);
+          p.reject(new Error('WLED WebSocket 错误 ' + data.error));
+          socket.close();
+        }
+      };
+      socket.onerror = () => { clearTimeout(timer); reject(new Error('WebSocket 无法连接')); };
+      socket.onclose = () => {
+        clearTimeout(timer);
+        if (!welcomed) reject(new Error('WebSocket 连接已关闭'));
+        if (ws === socket) {
+          ws = null; frameSocketPromise = null; resetFrameCache();
+          if (wsPending) { const p = wsPending; wsPending = null; clearTimeout(p.timer); p.reject(new Error('WebSocket 连接中断')); }
+        }
+      };
+    });
+    try { await frameSocketPromise; } finally { frameSocketPromise = null; }
+  }
+
+  async function sendSocketCommand(payload) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) throw new Error('WebSocket 未连接');
+    if (wsPending) throw new Error('上一条设备命令尚未完成');
+    if (ws.bufferedAmount > 4096) throw new Error('设备接收缓慢，已停止积压');
+    const socket = ws;
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (wsPending?.timer !== timer) return;
+        wsPending = null; reject(new Error('WLED 响应超时')); socket.close();
+      }, 2500);
+      wsPending = {resolve, reject, timer};
+      try {
+        socket.send(JSON.stringify(payload));
+        // A pong is a barrier for the preceding JSON message, not an unrelated state broadcast.
+        socket.send('p');
+      } catch (error) { clearTimeout(timer); wsPending = null; reject(error); }
+    });
+  }
+
+  async function ensureIpTransport() {
+    if (isDdpMode()) {
+      if (!bridgeToken) throw new Error('请双击 Start-Pixel-DDP.cmd 打开本地 DDP 高速入口');
+      await readDeviceProfile(); ipTransport='ddp'; return;
+    }
+    await readDeviceProfile();
+    const mode = ui.controlMode.value;
+    if (mode === 'http') { ipTransport = 'http'; return; }
+    if (mode === 'auto' && ipTransport === 'http-fallback') return;
+    try { await openFrameSocket(); ipTransport = 'ws'; }
+    catch (error) {
+      if (mode !== 'auto') throw error;
+      closeFrameSocket(); ipTransport = 'http-fallback';
+      logLine('长连接不可用，已回退 HTTP：' + error.message);
+    }
+  }
+
+  function compensateColors(frame) {
+    const match = document.getElementById('colorMode').value === 'match';
+    const gamma = match ? Math.max(1, Math.min(4, Number(document.getElementById('colorGamma').value) || 2.8)) : 1;
+    const lut = Array.from({length:256}, (_, value) => Math.round(255 * Math.pow(value / 255, 1 / gamma)).toString(16).padStart(2, '0').toUpperCase());
+    const colors = [];
+    for (let i = 0; i < frame.length; i += 3) colors.push(lut[frame[i]] + lut[frame[i + 1]] + lut[frame[i + 2]]);
+    return colors;
+  }
+
+  function encodePixelPackets(colors, previous, limit) {
+    const packets = [];
+    let values = [], cursor = 0;
+    const wrap = list => ({seg:{id:0,i:list}});
+    const flush = () => { if (values.length) packets.push(wrap(values)); values = []; cursor = 0; };
+    for (let start = 0; start < colors.length;) {
+      if (previous && previous[start] === colors[start]) { start++; continue; }
+      let end = start + 1;
+      while (end < colors.length && colors[end] === colors[start]) end++;
+      const unit = () => end - start > 1 ? [start, end, colors[start]] : start === cursor ? [colors[start]] : [start, colors[start]];
+      let next = unit();
+      if (values.length && JSON.stringify(wrap(values.concat(next))).length > limit) { flush(); next = unit(); }
+      values.push(...next); cursor = end; start = end;
+    }
+    flush();
+    return packets;
+  }
+
+  function showStreamStats(sent, bytes, ms) {
+    const now = performance.now();
+    statsWindow.frames += sent ? 1 : 0; statsWindow.bytes += bytes;
+    if (sent) statsWindow.ms = ms;
+    if (now - statsWindow.at < 700) return;
+    const seconds = (now - statsWindow.at) / 1000;
+    const name = ui.controlMode.value === 'serial' ? 'Adalight' : 'DDP';
+    document.getElementById('streamStats').textContent = name + ' · ' + (statsWindow.frames / seconds).toFixed(1) + ' / ' + ui.fps.value + ' FPS | ' + (statsWindow.bytes * 8 / seconds / 1000).toFixed(1) + ' kbps';
+    statsWindow = {at:now, frames:0, bytes:0, ms:statsWindow.ms};
+  }
+
+  async function sendFrameWledJson(frame, options = {}) {
+    if(ui.controlMode.value==='serial' && ui.protocol.value==='adalight')return sendFrameAdalight(frame);
+    if (isDdpMode()) return sendFrameDdp(frame);
+    const generation = playbackGeneration;
+    const started = performance.now();
+    if (ui.controlMode.value === 'serial') {
+      await writeLine(JSON.stringify({on:true,bri:getFrameConfig().d,seg:{id:0,i:compensateColors(frame)}}) + '\n');
+      return;
+    }
+    await ensureIpTransport();
+    if (generation !== playbackGeneration) return;
+    const {w,h,d} = getFrameConfig();
+    const matrix = deviceProfile?.matrix;
+    if (matrix && (w !== matrix.w || h !== matrix.h)) throw new Error('设备为 ' + matrix.w + '×' + matrix.h + '，请点击“读取设备尺寸”后再发送');
+    const outputKey = deviceBase() + '|' + ipTransport + '|' + d;
+    const dispatch = payload => isWsMode() ? sendSocketCommand(payload) : sendFrameHttp(payload, {skipResponseRead:true});
+    if (preparedOutput !== outputKey) {
+      await dispatch({on:d > 0,bri:d,tt:0,seg:{id:0,on:true,bri:255}});
+      if (generation !== playbackGeneration) return;
+      preparedOutput = outputKey; lastSentColors = null;
+    }
+    const colors = compensateColors(frame);
+    const frameKey = outputKey + '|' + w + ',' + h + '|' + ui.mapping.value + '|' + document.getElementById('colorMode').value + '|' + document.getElementById('colorGamma').value;
+    const forceFull = frameKey !== lastFrameKey || performance.now() - lastKeyframeAt > 2000;
+    const packets = encodePixelPackets(colors, forceFull ? null : lastSentColors, isWsMode() ? (deviceProfile?.maxMessage || 1200) : 6000);
+    let bytes = 0;
+    for (const payload of packets) {
+      if (generation !== playbackGeneration) return;
+      await dispatch(payload); bytes += JSON.stringify(payload).length;
+    }
+    if (generation !== playbackGeneration) return;
+    lastSentColors = colors; lastFrameKey = frameKey;
+    if (forceFull) lastKeyframeAt = performance.now();
+    showStreamStats(packets.length > 0, bytes, performance.now() - started);
+  }
+
+  async function sendFrameHttp(payload, options = {}) {
+    let path = (ui.httpPath.value || '/json/state').trim();
+    if (!path.startsWith('/')) path = '/' + path;
+    const result = await fetchDeviceJSON(path, payload);
+    if (!options.skipResponseRead) logLine('HTTP 回包: ' + JSON.stringify(result));
+  }
+
+  async function sendFrameWledColorCompat(color) {
+    await sendFrameWledJson(buildSolidFrame(color));
+  }
+
+  async function sendFrameRaw(frame) {
+    // 自定义协议：按行传输十六进制分包，方便你按 ESP32 侧需求快速对接
+    const { w, h } = getFrameConfig();
+    const chunkBytes = 64;
+    await writeLine(`@WLEDRAW ${w} ${h} ${frame.length} ${chunkBytes}\n`);
+    let index = 0;
+    let chunkId = 0;
+    while (index < frame.length) {
+      const next = Math.min(index + chunkBytes, frame.length);
+      const chunk = frame.slice(index, next);
+      const hex = bytesToHex(chunk);
+      await writeLine(`@CHUNK ${chunkId} ${chunk.length} ${hex}\n`);
+      index = next;
+      chunkId++;
+    }
+    await writeLine(`@END ${currentFrame}\n`);
+  }
+
+  async function sendFrame() {
+    const frame = extractFrame();
+    if (!frame) return false;
+    if (ui.protocol.value === 'raw-bin') {
+      if (isHttpMode()) {
+        throw new Error('HTTP 模式不支持 raw-bin，请切回串口 + raw-bin');
+      }
+      await sendFrameRaw(frame);
+    } else {
+      await sendFrameWledJson(frame);
+    }
+    currentFrame++;
+    return true;
+  }
+
+  async function loopFrames(generation = playbackGeneration) {
+    if (!running || stopFlag || generation !== playbackGeneration) return;
+    if (frameInFlight) {
+      rafId = setTimeout(() => loopFrames(generation), 25);
+      return;
+    }
+    const startedAt = performance.now();
+    const mode = getAnimationMode();
+    frameInFlight = true;
+    try {
+      let ok = false;
+      if (mode === 'file') {
+        ok = await sendFrame();
+      } else {
+        const frame = buildGeneratedFrame(mode);
+        if (!frame) {
+          throw new Error('无法生成动态帧');
+        }
+        if (ui.protocol.value === 'raw-bin') {
+          if (isHttpMode()) {
+            throw new Error('HTTP 模式不支持 raw-bin，请切回串口 + raw-bin');
+          }
+          await sendFrameRaw(frame);
+        } else {
+          await sendFrameWledJson(frame, { skipHttpResponseRead: true });
+        }
+        currentFrame++;
+        ok = true;
+      }
+      if (ok && generation === playbackGeneration) {
+        ui.progress.value = (mode === 'file' && mediaType === 'image') ? 1 : (ui.progress.value + 0.02) % 1;
+      }
+    } catch (e) {
+      if (generation === playbackGeneration) {
+        stopLoop(`发送失败：${e.message}`);
+        setStatus(`发送失败：${e.message}`, 'err');
+      }
+      return;
+    } finally {
+      frameInFlight = false;
+    }
+
+    if (!running || stopFlag || generation !== playbackGeneration) return;
+    const baseDelay = 1000 / Math.max(1, withNum(ui.fps.value, 12));
+    const safeDelay = Math.max(baseDelay, minIntervalMs());
+    const effectiveDelay = Math.max(safeDelay, 1000 / clampFpsForCurrentMode(ui.protocol.value === 'raw-bin' && !isHttpMode(), withNum(ui.fps.value, 12)));
+    if (getAnimationMode() === 'file' && mediaType === 'image') {
+      running = false;
+      stopBtn(false);
+      setStatus('静态图片已发送完成', 'ok');
+      ui.progress.value = 1;
+      return;
+    }
+    rafId = setTimeout(() => loopFrames(generation), Math.max(0, effectiveDelay - (performance.now() - startedAt)));
+  }
+
+  let startingPlayback = false;
+  async function startLoop() {
+    if (startingPlayback) return;
+    if (running) return;
+    if (isDdpMode() && !bridgeToken) {
+      setStatus('DDP 需要本地服务：请启动 Start-Pixel-DDP.cmd 并从服务页面播放；USB 请在设置中选择 USB 输出。', 'err');
+      return;
+    }
+    if (ui.controlMode.value === 'serial') {
+      startingPlayback = true;
+      try {
+        if (!writer) await connect();
+        if (!writer) return;
+        if (serialLab.confirmedWriter !== writer) await testSerial();
+        if (serialLab.confirmedWriter !== writer) {
+          setStatus('USB 已打开，但尚未收到 WLED 握手响应。请查看设置中的连接诊断，并确认串口、波特率和固件。', 'err');
+          return;
+        }
+      } finally { startingPlayback = false; }
+    }
+    if (isHttpMode()) {
+      const target = getHttpTarget();
+      if (!target.startsWith('http://') && !target.startsWith('https://')) {
+        setStatus('HTTP 地址不合法', 'err');
+        return;
+      }
+    } else if (!isWsMode() && !writer) {
+      setStatus('请先连接串口再发送', 'err');
+      return;
+    }
+    if (getAnimationMode() === 'file' && !mediaObj) {
+      setStatus('请先选择图片/视频文件', 'err');
+      return;
+    }
+    if (getAnimationMode() !== 'file') {
+      mediaType = getAnimationMode();
+      applyPreviewAspect();
+      buildGeneratedFrame(mediaType);
+    }
+    if (frameBytesForCurrentConfig() > 8192 && ui.protocol.value === 'wled-json' && isHttpMode()) {
+      setStatus('HTTP + JSON 单帧数据过大，先降分辨率再测试', 'err');
+      return;
+    }
+    stopAnimationPreview();
+    resetFrameCache();
+    statsWindow = {at:performance.now(),frames:0,bytes:0,ms:0};
+    playbackGeneration++;
+    running = true;
+    stopFlag = false;
+    currentFrame = 0;
+    ui.progress.value = 0;
+    setStatus('开始发送...', 'ok');
+    document.getElementById('streamStats').textContent = '0.0 / ' + ui.fps.value + ' FPS | 0.0 kbps';
+    loopFrames();
+  }
+
+  function stopBtn(setMsg = true) {
+    playbackGeneration++;
+    stopAnimationPreview();
+    running = false;
+    stopFlag = true;
+    if (rafId) clearTimeout(rafId);
+    rafId = null;
+    if (setMsg) setStatus('已停止');
+  }
+
+  async function connect() {
+    serialResetSession();
+    if (ui.controlMode.value !== 'serial') {
+      try { await ensureIpTransport(); setStatus(isDdpMode() ? 'DDP 服务就绪，点击开始发送进入实时模式' : isWsMode() ? 'WLED 长连接就绪' : 'WLED HTTP 就绪', 'ok'); }
+      catch (error) { setStatus('连接失败：' + error.message, 'err'); }
+      return;
+    }
+
+    if (!('serial' in navigator)) {
+      setStatus('当前浏览器不支持 Web Serial', 'err');
+      return;
+    }
+
+    try {
+      port = await navigator.serial.requestPort();
+      const baudRate = withNum(ui.baudRate.value, 115200);
+      await port.open({ baudRate });
+      writer = port.writable.getWriter();
+      serialLab.activeBaud=Number(ui.baudRate.value)||115200;
+      const serialUsbInfo=port.getInfo();
+      serialLab.nativeUsb=serialUsbInfo.usbVendorId===0x303a && serialUsbInfo.usbProductId===0x1001;
+      serialNote((serialLab.nativeUsb?"已连接 Espressif 原生 USB。":"串口已打开。")+" 请点击串口诊断；打开端口不等于 WLED 已响应。");
+      if (port.readable) {
+        reader = port.readable.getReader();
+        serialLab.readTask=readLoop();
+      }
+      setStatus(`已连接（baud ${baudRate}）`, 'ok');
+      logLine('串口已连接');
+    } catch (err) {
+      setStatus(`连接失败：${err.message}`, 'err');
+      logLine(`连接失败: ${err.message}`);
+    }
+  }
+
+  async function disconnect() {
+    if(ui.controlMode.value==='serial' && running)stopLoop('串口断开');
+    serialResetSession();
+    stopBtn(false);
+    closeFrameSocket();
+    ipTransport = 'http';
+    if (ws) {
+      try { ws.close(); } catch (_) {}
+      ws = null;
+      logLine('WebSocket 已断开');
+    }
+    if (reader) {
+      try { await reader.cancel();
+        if(serialLab.readTask)await serialLab.readTask; } catch (_) {}
+      reader.releaseLock();
+      reader = null;
+    }
+    if (writer) {
+      try { writer.releaseLock(); } catch (_) {}
+      writer = null;
+    }
+    if (port) {
+      try { await port.close(); } catch (_) {}
+      port = null;
+    }
+    setStatus('已断开');
+    logLine('串口已断开');
+  }
+
+  async function readLoop() {
+    const sourceReader=reader,sourceWriter=writer;
+    const decoder=new TextDecoder();
+    let buffer='';
+    try {
+      while(sourceReader){
+        const {value,done}=await sourceReader.read();
+        if(done)break;
+        if(!value)continue;
+        serialLab.bytes+=value.length;
+        buffer+=decoder.decode(value,{stream:true});
+        const lines=buffer.split(/\r?\n/);
+        buffer=lines.pop().slice(-16384);
+        for(const line of lines)serialAcceptLine(line,sourceWriter);
+      }
+    } catch(error) {
+      if(writer===sourceWriter)serialNote('串口读取中断：'+error.message,'error');
+    } finally {
+      if(serialLab.pending && serialLab.pending.writer===sourceWriter)serialLab.pending.finish(null);
+      if(serialLab.confirmedWriter===sourceWriter)serialLab.confirmedWriter=null;
+      try{sourceReader.releaseLock();}catch(_){}
+    }
+  }
+
+  function stopLoop(reason) {
+    serialStopHold();
+    stopDdpPlayback();
+    if (reason) logLine(reason);
+    stopBtn(true);
+  }
+
+  async function testHttp() {
+    try {
+      await readDeviceProfile(true);
+      if (ui.controlMode.value !== 'serial') await ensureIpTransport();
+      setStatus('设备可达，颜色配置已读取' + (isWsMode() ? '，长连接就绪' : ''), 'ok');
+    } catch (error) { setStatus('连接测试失败：' + error.message, 'err'); }
+  }
+
+  async function testSerial() {
+    if(ui.controlMode.value!=='serial') {serialNote('先把控制方式切换到串口。IP / DDP 无需此诊断。');return;}
+    if(!writer || !reader){serialNote('请先连接 ESP32 的串口。当前发现的 COM5 是 Espressif 原生 USB 设备。');return;}
+    if(running || serialLab.busy || serialLab.heldFrame){serialNote('请先停止播放，再运行只读诊断，避免查询和像素数据混在一起。');return;}
+    if(serialLab.pending)return;
+    const sourceWriter=writer,startBytes=serialLab.bytes;
+    serialLab.confirmedWriter=null;
+    const button=document.getElementById('testSerialBtn');
+    if(button)button.disabled=true;
+    serialNote('只读诊断中：先查询 WLED 版本，必要时再查询 JSON 状态。不会改灯光、波特率或固件。');
+    try {
+      let version=await serialQuery('version','v');
+      if(!version && writer===sourceWriter)version=await serialQuery('json',JSON.stringify({v:true})+'\n');
+      if(writer!==sourceWriter)return;
+      if(version){
+        serialLab.confirmedWriter=sourceWriter;
+        const config=getFrameConfig();
+        serialNote('已收到 '+version+' 回包，串口命令通道可用。'+(serialLab.nativeUsb?'检测到 Espressif 原生 USB CDC；吞吐仍需实测。':'UART 安全帧率上限约 '+serialUartFps(config.w*config.h*3)+' FPS。')+' 选择 Adalight 后可开始发送；回包不代表像素输出已验证。','ok');
+      }else{
+        const received=serialLab.bytes-startBytes;
+        serialNote((received?'收到 '+received+' 字节，但不是有效 WLED 回包。':'查询超时，没有收到 WLED 回包。')+' 尚不能确认串口控制可用。请核对端口、固件的 USB CDC / UART 编译选项及串口引脚占用；提高波特率不能解决接口未启用。','error');
+      }
+    }catch(error){serialNote('诊断失败：'+error.message,'error');}
+    finally{if(button)button.disabled=false;}
+  }
+
+  function buildSolidFrame(color) {
+    const { w, h } = getFrameConfig();
+    const frame = new Uint8Array(w * h * 3);
+    for (let i = 0; i < frame.length; i += 3) {
+      frame[i] = color[0];
+      frame[i + 1] = color[1];
+      frame[i + 2] = color[2];
+    }
+    return frame;
+  }
+
+  async function sendSolidFrame(color) {
+    stopLoop('发送测试颜色');
+    try {
+      const deadline = performance.now() + 5000;
+      while (frameInFlight && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 20));
+      if (frameInFlight) throw new Error('上一帧尚未结束，请稍后再试');
+      resetFrameCache();
+      if (ui.protocol.value === 'raw-bin') {
+        if (ui.controlMode.value !== 'serial') throw new Error('二进制串口协议不能用于 IP 控制');
+        await sendFrameRaw(buildSolidFrame(color));
+      } else await sendFrameWledJson(buildSolidFrame(color));
+      setStatus('测试颜色已发送到整屏', 'ok');
+    } catch (error) { setStatus('发送测试色失败：' + error.message, 'err'); }
+  }
+
+  function showStaticPreview(file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
+
+    if (mediaObj) {
+      mediaObj.onload = null;
+      mediaObj.onended = null;
+    }
+
+    if (file.type.startsWith('video/')) {
+      mediaType = 'video';
+      const video = document.createElement('video');
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.src = URL.createObjectURL(file);
+      video.onloadedmetadata = () => {
+        mediaObj = video;
+        video.play().catch(() => {});
+        applyPreviewAspect();
+        updatePreviewByMode();
+        setStatus('视频已就绪，可点击开始发送');
+      };
+      return;
+    }
+
+    mediaType = 'image';
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      mediaObj = img;
+      updatePreviewByMode();
+      setStatus('图片已就绪，可点击开始发送');
+    };
+    img.onerror = () => setStatus('图片读取失败', 'err');
+  }
+
+  ui.connectBtn.addEventListener('click', connect);
+  ui.quickSerialBtn.addEventListener('click', async () => {
+    if (!('serial' in navigator)) { setStatus('当前浏览器不支持 Web Serial，请使用桌面版 Chrome 或 Edge', 'err'); return; }
+    ui.controlMode.value = 'serial';
+    ui.protocol.value = 'adalight';
+    await connect();
+  });
+  ui.disconnectBtn.addEventListener('click', disconnect);
+  ui.testHttpBtn.addEventListener('click', testHttp);
+  ui.testSerialBtn.addEventListener('click', testSerial);
+  ui.startBtn.addEventListener('click', startLoop);
+  ui.stopBtn.addEventListener('click', stopLoop.bind(null, ''));
+  ui.animationMode.addEventListener('change', () => {
+    const mode = getAnimationMode();
+    animationElapsed = 0;
+    animationLastTime = performance.now();
+    stopAnimationPreview();
+    document.getElementById('animationHint').textContent = animationDescriptions[mode] || '选择图片或视频文件后，可以预览并发送到 WLED。';
+    if (mode !== 'file') {
+      mediaObj = null;
+      mediaType = mode;
+      applyPreviewAspect();
+      if (!running) startAnimationPreview();
+      setStatus(`已切换到${ui.animationMode.selectedOptions[0].textContent}${running ? '，持续发送中' : '，正在本地预览'}`);
+    } else {
+      if (running) stopLoop('切换到文件模式');
+      setStatus('已切换到文件模式，请选择图片或视频');
+    }
+  });
+  document.getElementById('animationSpeed').addEventListener('input', (e) => {
+    getAnimationTime();
+    animationSpeed = Number(e.target.value) || 1;
+    document.getElementById('animationSpeedValue').value = animationSpeed.toFixed(2) + '×';
+  });
+  ui.previewOnlyBtn.addEventListener('click', () => {
+    if (getAnimationMode() !== 'file') {
+      if (running) stopLoop('切换到本地预览');
+      applyPreviewAspect();
+      startAnimationPreview();
+      setStatus('正在本地预览，点击开始发送可控制 WLED');
+      return;
+    }
+    const f = ui.mediaFile.files && ui.mediaFile.files[0];
+    if (!f) {
+      setStatus('请先选择文件', 'err');
+      return;
+    }
+    showStaticPreview(f);
+  });
+
+  ui.mediaFile.addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (running) stopLoop('选择了新的媒体文件');
+    stopAnimationPreview();
+    ui.animationMode.value = 'file';
+    document.getElementById('animationHint').textContent = '选择图片或视频文件后，可以预览并发送到 WLED。';
+    showStaticPreview(f);
+  });
+  ui.matrixW.addEventListener('change', () => {
+    applyPreviewAspect();
+    updatePreviewByMode();
+  });
+  ui.matrixH.addEventListener('change', () => {
+    applyPreviewAspect();
+    updatePreviewByMode();
+  });
+  ui.scaleMode.addEventListener('change', () => {
+    applyPreviewAspect();
+    updatePreviewByMode();
+  });
+  ui.testRedBtn.addEventListener('click', () => sendSolidFrame([255, 0, 0]));
+  ui.testGreenBtn.addEventListener('click', () => sendSolidFrame([0, 255, 0]));
+  ui.testBlueBtn.addEventListener('click', () => sendSolidFrame([0, 0, 255]));
+  ui.testBlackBtn.addEventListener('click', () => sendSolidFrame([0, 0, 0]));
+  ui.testWhiteBtn.addEventListener('click', () => sendSolidFrame([255, 255, 255]));
+  ui.clearPreviewBtn.addEventListener('click', () => {
+    stopLoop('预览已清空');
+    mediaObj = null;
+    mediaType = null;
+    ui.preview.src = '';
+    ui.mediaFile.value = '';
+    setStatus('预览已清空');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !document.querySelector('dialog[open]')) stopLoop('用户按键停止');
+  });
+
+  applyPreviewAspect();
+
+  for (const id of ['colorMode','colorGamma']) document.getElementById(id).addEventListener('change', resetFrameCache);
+  for (const field of [ui.wledHost,ui.controlMode]) field.addEventListener('change', () => {
+    stopLoop('设备通道已改变'); closeFrameSocket(); deviceProfile = null; ipTransport = 'http';
+  });
+  document.getElementById('readDeviceSizeBtn').addEventListener('click', async () => {
+    stopLoop('读取设备尺寸');
+    try {
+      const profile = await readDeviceProfile(true);
+      if (!profile.matrix) throw new Error('设备未报告二维矩阵尺寸，请手动输入');
+      ui.matrixW.value = profile.matrix.w; ui.matrixH.value = profile.matrix.h;
+      applyPreviewAspect(); resetFrameCache();
+      if (getAnimationMode() === 'file') updatePreviewByMode(); else startAnimationPreview();
+      setStatus('已使用设备尺寸 ' + profile.matrix.w + '×' + profile.matrix.h, 'ok');
+    } catch (error) { setStatus(error.message, 'err'); }
+  });
+
+
+  const bridgeToken = document.querySelector('meta[name="pixel-bridge-token"]')?.content || '';
+  const runtimeNotice = document.getElementById('runtimeNotice');
+  if (bridgeToken) {
+    runtimeNotice.textContent = '高速控制已连接 · DDP 后台 60 FPS · 动画与亮度支持无缝更新';
+    runtimeNotice.classList.add('ok');
+  } else {
+    runtimeNotice.innerHTML = '当前为文件兼容模式，仅适合预览或低速控制。要使用最新控制，请打开 <a href="http://127.0.0.1:8766/" target="_blank" rel="noopener">本地高速 DDP 服务</a>。';
+    runtimeNotice.classList.add('err');
+  }
+  const ddp = {session:null,pending:null,epoch:0,releasing:Promise.resolve(),controller:null};
+  function isDdpMode() { return ui.controlMode.value === 'ddp'; }
+  function ddpTargetFps() { return Math.max(1,Math.min(60,Math.round(Number(ui.fps.value)||60))); }
+  async function bridgeRequest(route, options = {}) {
+    if (!bridgeToken) throw new Error('DDP 需要本地服务：请双击 Start-Pixel-DDP.cmd，从 127.0.0.1:8766 打开');
+    const controller = options.controller || new AbortController();
+    const timer = setTimeout(() => controller.abort(), options.timeout || 6000);
+    try {
+      const response = await fetch(route, {
+        method:options.json === undefined && options.binary === undefined ? 'GET' : 'POST',
+        headers:{'X-Pixel-Token':bridgeToken,...(options.json === undefined ? {} : {'Content-Type':'application/json'})},
+        ...(options.json === undefined ? options.binary === undefined ? {} : {body:options.binary} : {body:JSON.stringify(options.json)}),
+        signal:controller.signal,cache:'no-store',keepalive:!!options.keepalive
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || '本地 DDP 服务错误 ' + response.status);
+      }
+      return response;
+    } finally { clearTimeout(timer); }
+  }
+  function stopDdpPlayback() {
+    ddp.epoch++;
+    ddp.controller?.abort();ddp.controller=null;
+    const old = ddp.session;ddp.session=null;
+    if (old) ddp.releasing = ddp.releasing.catch(() => {}).then(async () => {
+      try { await bridgeRequest('/api/stop',{json:{id:old.id},keepalive:true}); }
+      catch (error) { logLine('DDP 停止通知：'+error.message+'；设备将按实时超时设置退出'); }
+    });
+  }
+  async function ensureDdpSession() {
+    if (!bridgeToken) throw new Error('请双击 Start-Pixel-DDP.cmd，从本地高速入口打开 DDP 模式');
+    const {w,h,d}=getFrameConfig();
+    const config={host:deviceBase(),w,h,brightness:d,mode:getAnimationMode(),speed:animationSpeed,fps:ddpTargetFps(),mapping:ui.mapping.value,clockFont:document.getElementById('clockFont').value,clockPalette:getAnimationMode()==='clock'?document.getElementById('clockPalette').value:(window.pixelStudioAnimationPaletteKey||'original'),match:document.getElementById('colorMode').value==='match',gamma:Number(document.getElementById('colorGamma').value)||2.8};
+    const compatibilityKey=[config.host,w,h,config.mode==='file'?'file':'generated'].join('|');
+    const key=[compatibilityKey,d,config.mode,animationSpeed,config.fps,config.mapping,config.clockFont,config.clockPalette,config.match,config.gamma].join('|');
+    if (ddp.session?.key === key) return ddp.session;
+    if (ddp.pending) { await ddp.pending; return ensureDdpSession(); }
+    if (ddp.session?.autonomous && ddp.session.compatibilityKey === compatibilityKey) {
+      await (await bridgeRequest('/api/update',{json:{id:ddp.session.id,...config},timeout:6500})).json();
+      ddp.session.key=key;
+      ddp.session.targetFps=config.fps;
+      document.getElementById('streamStats').textContent='DDP 后台 · 已无缝切换至 '+ui.animationMode.selectedOptions[0].textContent;
+      return ddp.session;
+    }
+    if (ddp.session) stopDdpPlayback();
+    const epoch=ddp.epoch;
+    ddp.pending=(async () => {
+      await ddp.releasing;
+      if (epoch!==ddp.epoch) return null;
+      const result=await (await bridgeRequest('/api/start',{json:config,timeout:20000})).json();
+      if (epoch!==ddp.epoch) {
+        await bridgeRequest('/api/stop',{json:{id:result.id}});
+        return null;
+      }
+      ddp.session={...result,key,compatibilityKey,statsAt:-Infinity};
+      ipTransport='ddp';
+      logLine((result.autonomous?'DDP 后台动画已启动，目标 '+result.targetFps+' FPS，切换标签页不影响发送':'DDP 图片/视频由网页供帧，请保持页面在前台')+'；每帧 '+result.packetCount+' 个 UDP 包；'+(result.gammaCompensated?'按设备实时 Gamma 补偿':'直接发送原始 RGB'));
+      return ddp.session;
+    })();
+    try { return await ddp.pending; } finally { ddp.pending=null; }
+  }
+  async function sendFrameDdp(frame) {
+    const epoch=ddp.epoch;
+    const session=await ensureDdpSession();
+    if (!session || session!==ddp.session || epoch!==ddp.epoch) return;
+    if (session.autonomous) { await updateBackgroundStats(session); return; }
+    const started=performance.now();
+    const controller=new AbortController();ddp.controller=controller;
+    try {
+      const response=await bridgeRequest('/api/frame?id='+session.id,{binary:frame,controller,timeout:1500});
+      if (session!==ddp.session) return;
+      const sent=response.headers.get('X-Pixel-Dropped')!=='1';
+      showStreamStats(sent,sent?frame.length+session.packetCount*10:0,performance.now()-started);
+    } finally { if(ddp.controller===controller)ddp.controller=null; }
+  }
+
+
+  async function updateBackgroundStats(session) {
+    const now=performance.now();
+    if(now-session.statsAt<750)return;
+    session.statsAt=now;
+    const stats=await (await bridgeRequest('/api/stats?id='+session.id,{timeout:2500})).json();
+    if(ddp.session!==session)return;
+    const fps=Number(stats.fps)||0,target=Number(stats.targetFps)||60;
+    document.getElementById('streamStats').textContent='DDP 后台 · 目标 '+target+' FPS · 实际发送 '+fps.toFixed(1)+
+      ' 帧/s · '+(Number(stats.frameMs)||0).toFixed(1)+' ms/帧 · '+(Number(stats.kbps)||0).toFixed(1)+
+      ' KB/s · 调度跳帧 '+(Number(stats.missed)||0)+(stats.frames?'':' · 正在采样');
+  }
+  ui.stopBtn.addEventListener('click',()=>{
+    if(!bridgeToken || !isDdpMode())return;
+    // Also stop a worker left running by a crashed/reloaded browser tab.
+    void bridgeRequest('/api/stop',{json:{host:deviceBase()},keepalive:true})
+      .then(()=>{document.getElementById('streamStats').textContent='DDP 后台播放已停止';})
+      .catch(error=>setStatus('后台停止失败：'+error.message,'err'));
+  });
+
+  if (bridgeToken) { ui.controlMode.value='ddp'; ui.fps.value='60'; }
+  window.addEventListener('pagehide',stopDdpPlayback);
+
+  function syncClockStyling() {
+    document.getElementById('clockStyling').hidden=getAnimationMode()!=='clock';
+  }
+  ui.animationMode.addEventListener('change',syncClockStyling);
+  for(const id of ['clockFont','clockPalette'])document.getElementById(id).addEventListener('change',()=>{
+    resetFrameCache();
+    if(getAnimationMode()==='clock' && !running)buildGeneratedFrame('clock');
+    const thumb=document.querySelector('[data-mode="clock"] img');
+    if(thumb)thumb.src=makeAnimationThumbnail('clock');
+  });
+
+  setupStudio();
+  syncClockStyling();
+  // Explicit browser-only state: the shell never infers playback from status text.
+  if (window.pixelStudioHeadless !== true) {
+    window.pixelStudioWebRuntime = {
+      get playing() { return running; },
+      get serialConnected() { return !!writer; },
+      resizePreview: applyPreviewAspect,
+      refreshPalette: resetFrameCache
+    };
+  }
+})();
+
+</script>
+<script src="./pixel-circuit-palette.cjs"></script>
+<script src="./pixel-studio-web-ui.js"></script>
+<script src="./pixel-studio-web-palettes.js"></script>
+<script src="./pixel-studio-web-language.js"></script>
+</body>
+</html>

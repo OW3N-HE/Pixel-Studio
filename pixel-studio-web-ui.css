@@ -1,0 +1,208 @@
+/* Solid ice-blue surfaces; the web shell does not style the OpenRGB plugin. */
+body.ps-web{margin:0;padding:0;background:var(--bg);color:var(--text)}
+.ps-web *,.ps-settings *{box-sizing:border-box}
+.ps-web .wrap,.ps-web .wrap *,.ps-settings,.ps-settings *{background-image:none!important}
+.ps-web .wrap{width:100%;max-width:1920px;height:100dvh;min-height:520px;margin:0 auto;padding:18px 24px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
+.ps-web .topbar{flex:0 0 60px;min-height:60px;height:60px;margin:0;padding:0 2px;border:0;background:transparent}
+.ps-web .brand{gap:18px}.ps-web .brand-mark{width:54px;height:54px}.ps-web .brand-name{font-size:clamp(24px,2.5vw,36px);letter-spacing:1px}
+.ps-web .brand-sub,.ps-web .top-tags,.ps-web .intro,.ps-web .wrap>footer{display:none}
+.ps-web .workspace{display:flex;flex:1;flex-direction:column;align-items:stretch;width:100%;max-width:none;min-width:0;min-height:0;gap:12px;margin:0}
+.ps-web .studio-stage{display:grid;grid-template-columns:var(--preview-column,minmax(180px,36%)) minmax(0,1fr);gap:26px;flex:1;width:100%;max-width:none;align-self:stretch;min-height:0;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:20px}
+.ps-web .preview-card,.ps-web .library-card{width:100%;max-width:none;align-self:stretch;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent}
+.ps-web .preview-card{display:flex;flex-direction:column}
+.ps-web .preview-card>.card-head,.ps-web .library-card>.card-head,.ps-web .library-card>.filters,.ps-web #animationHint{display:none}
+.ps-web .preview-stage{display:flex;flex:1;align-items:center;justify-content:center;min-height:0;height:100%;padding:12px;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.ps-web .preview-stage::before,.ps-web .preview-stage::after{content:none}
+.ps-web .ps-preview-frame{position:relative;flex:none;padding:var(--rim-inset,1px);border:0;border-radius:var(--rim-radius,4px);background:#030b0f;outline:2px solid var(--line);box-shadow:none}
+.ps-web .ps-preview-frame::after{content:'';position:absolute;inset:-2px;border:2px solid var(--brand);border-radius:calc(var(--rim-radius,4px) + 2px);box-shadow:0 0 3px rgba(var(--brand-rgb),.5),0 0 7px rgba(var(--brand-rgb),.28),0 0 12px rgba(var(--brand-rgb),.12);opacity:0;pointer-events:none}
+.ps-web .ps-preview-frame.is-playing::after{animation:studio-breath 3.8s ease-in-out infinite}
+@keyframes studio-breath{0%,100%{opacity:1}50%{opacity:.44}}
+.ps-web #preview{display:block;margin:0;padding:0;border:0!important;border-radius:0!important;max-width:none;max-height:none;box-shadow:none;background:#030b0f}
+.ps-web .library-card{display:flex;flex-direction:column;gap:12px}
+.ps-web .library-toolbar{display:grid;grid-template-columns:minmax(100px,145px) minmax(90px,1fr) auto;align-items:center;gap:10px;margin:0;padding:0}
+.ps-web .library-toolbar input,.ps-web .library-toolbar select{height:42px;min-width:0}
+.ps-web .ps-shuffle-group{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.ps-web .ps-shuffle{display:flex;align-items:center;gap:7px;margin:0;color:var(--text);font-size:14px}
+.ps-web .ps-shuffle input{width:17px;height:17px;margin:0}
+.ps-web .ps-unit{font-size:12px;color:var(--muted)}
+.ps-web .ps-library-well{display:flex;flex:1;min-height:0;flex-direction:column;padding:7px;border:1px solid var(--line);border-radius:17px;background:var(--surface-deep);overflow:hidden}
+.ps-web #animationGallery{display:grid;flex:1;min-height:0;max-height:none;height:auto;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));grid-auto-rows:198px;align-content:start;gap:11px;margin:0;padding:5px 7px 5px 5px;border:0;border-radius:0;background:transparent;overflow-y:auto;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.ps-web .ps-animation-tile{position:relative;min-width:0}
+.ps-web .animation-card{display:flex;flex-direction:column;width:100%;height:100%;min-height:0;padding:11px 8px 9px;border:1px solid var(--line);border-radius:13px;background:var(--surface);box-shadow:none;overflow:hidden}
+.ps-web .animation-card:hover{border-color:var(--brand);background:var(--surface-raised);transform:none}
+.ps-web .animation-card[aria-pressed=true]{border-color:var(--brand);background:var(--surface-raised);box-shadow:inset 0 0 0 1px rgba(var(--brand-rgb),.2)}
+.ps-web .animation-thumb{display:flex;align-items:center;justify-content:center;flex:1;min-height:0;width:100%;height:auto;border:0;background:transparent}
+.ps-web .animation-thumb img{width:auto;height:125px;max-width:100%;object-fit:contain;image-rendering:pixelated}
+.ps-web .animation-title{display:flex;align-items:center;justify-content:center;min-height:43px;padding:7px 0 0;color:var(--text);font-size:14px;line-height:1.35;text-align:center}
+.ps-web .new-label{top:8px;left:8px;font-size:8px;opacity:.65}
+.ps-web .ps-favorite{position:absolute;top:7px;right:7px;z-index:1;display:grid;place-items:center;width:31px;min-width:0;height:31px;padding:6px;border:0;border-radius:50%;background:var(--surface-deep);color:var(--text)}
+.ps-web .ps-favorite svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.ps-web .ps-favorite[aria-pressed=true]{color:#ffa5bd}.ps-web .ps-favorite[aria-pressed=true] svg{fill:currentColor}
+.ps-web .ps-empty{margin:12px;text-align:center;color:var(--muted)}
+.ps-web .studio-controls{flex:none;display:block;width:100%;max-width:none;align-self:stretch;margin:0;padding:18px 20px;border:1px solid var(--line);border-radius:17px;background:var(--panel);box-shadow:none}
+.ps-web .adjustments{display:grid;grid-template-columns:1fr;align-items:center;gap:16px;margin:0;padding:0}
+.ps-web .ps-clock-controls .adjustments{grid-template-columns:1fr 1fr;gap:24px}
+.ps-web .adjustments>div{display:grid;grid-template-columns:58px minmax(0,1fr) 86px;align-items:center;gap:12px;padding:0;margin:0}
+.ps-web .adjustments label{margin:0;color:var(--text);font-size:15px;line-height:1.4}
+.ps-web .adjustments input[type=range]{width:100%!important;min-width:0;margin:0;padding:0}
+.ps-web .adjustments input[type=number]{height:39px;text-align:center}
+.ps-web #clockStyling{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:16px 0 0;padding:0;border:0;background:transparent}
+.ps-web #clockStyling .ps-setting-row{grid-template-columns:58px minmax(0,1fr);gap:12px;margin:0}
+.ps-web #clockStyling .ps-setting-label{display:block;align-self:center;margin:0;padding:0;font-size:15px;line-height:1.4}
+.ps-web #clockStyling .ps-setting-field{display:flex;min-width:0;gap:10px;margin:0;padding:0}
+.ps-web #clockStyling select{flex:1 1 0;min-width:0;width:0;margin:0;min-height:39px;height:39px;font-size:14px}
+.ps-web #clockStyling .ps-custom-colors{flex:1 1 0;min-width:0;height:39px;padding:7px;border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text);font-size:13px;white-space:nowrap}
+.ps-web .ps-shuffle-group>input[type=number]{width:64px;max-width:64px;min-width:64px;flex:0 0 64px}
+.ps-web .ps-settings input[type=color]{height:44px;padding:4px;cursor:pointer}
+.ps-web .ps-playback-bar{display:flex;flex:none;width:100%;max-width:none;align-self:stretch;align-items:center;gap:14px;min-height:52px;padding:0 2px}
+.ps-web .ps-play-toggle{display:grid;place-items:center;flex:none;width:96px;min-width:96px;height:52px;padding:13px;border:0;border-radius:12px;background:var(--brand);color:var(--surface-deep)}
+.ps-web .ps-play-toggle svg{width:26px;height:26px;fill:currentColor}.ps-web .ps-play-toggle.is-playing{background:#d65360;color:white}
+.ps-web .ps-playback-messages{min-width:0;flex:1}.ps-web .ps-playback-messages .status{margin:0;min-height:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.ps-web #streamStats{max-width:36%;margin:0;padding:0;border:0;color:var(--muted);font-size:12px;text-align:right}
+.ps-web button,.ps-web input,.ps-web select,.ps-settings button,.ps-settings input,.ps-settings select{font:inherit}
+.ps-web button,.ps-settings button{cursor:pointer}
+.ps-web input:not([type=range]):not([type=checkbox]),.ps-web select,.ps-settings input:not([type=range]):not([type=checkbox]),.ps-settings select{min-width:0;width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-deep);color:var(--text)}
+.ps-web .ps-shuffle-group>input{width:64px;text-align:center;padding:8px}
+.ps-web button:focus-visible,.ps-web input:focus-visible,.ps-web select:focus-visible,.ps-settings :focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+.ps-web input[type=range],.ps-settings input[type=range],.ps-web input[type=checkbox],.ps-settings input[type=checkbox]{accent-color:var(--brand)}
+.ps-web #webSettingsToggle{display:grid;place-items:center;width:54px;height:54px;min-width:54px;margin:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text)}
+.ps-web #webSettingsToggle svg{width:26px;height:26px;fill:currentColor}
+.ps-settings{width:min(860px,calc(100vw - 40px));max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 24px 80px #0008;overflow:hidden}
+.ps-settings[open]{display:flex;flex-direction:column}.ps-settings::backdrop{background:#02080db3}
+.ps-settings-heading{display:flex;flex:none;justify-content:space-between;align-items:center;gap:20px;padding:15px 24px;border-bottom:1px solid var(--line)}
+.ps-settings-heading h2{margin:0;font-size:19px;font-weight:600}
+.ps-settings .ps-close{width:36px;height:36px;padding:0;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:27px}
+.ps-settings .ps-close:hover{background:var(--surface-raised);color:var(--text)}
+.ps-settings-body{overflow-y:auto;min-height:0;padding:20px 24px 24px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.ps-settings-group{min-width:0;margin:0 0 22px;padding:17px 20px 20px;border:1px solid var(--line);border-radius:13px;background:transparent}
+.ps-settings-group legend{padding:0 8px;color:var(--text);font-size:16px}
+.ps-setting-row{display:grid;grid-template-columns:minmax(100px,.85fr) minmax(0,1.6fr);align-items:center;gap:20px;margin:0 0 14px}
+.ps-setting-row:last-child{margin-bottom:0}.ps-setting-label{margin:0;padding:0;color:var(--text);font-size:14px;line-height:1.5}
+.ps-setting-field{display:flex;min-width:0;align-items:center;gap:10px}.ps-setting-field>select,.ps-setting-field>input{flex:1}
+.ps-settings button:not(.ps-close){min-height:39px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text);white-space:nowrap}
+.ps-settings button:not(.ps-close):hover{border-color:var(--brand)}
+.ps-settings .ps-input-action{display:grid;grid-template-columns:minmax(0,1fr) 134px}
+.ps-web .ps-settings .ps-size-fields{display:flex;flex-direction:row;width:100%;min-width:0;flex-wrap:nowrap;align-items:center;gap:9px}
+.ps-web .ps-settings .ps-size-fields>input[type=number]{width:68px;min-width:48px;max-width:76px;flex:0 1 68px;text-align:center;padding:9px 5px}
+.ps-settings .ps-size-fields>label:not(.ps-check){margin:0;flex:none;color:var(--text)}
+.ps-settings .ps-check{display:flex;align-items:center;gap:7px;margin:0;color:var(--text);white-space:nowrap}
+.ps-settings .ps-size-fields .ps-check{margin-left:auto}.ps-settings input[type=checkbox]{width:17px;height:17px;margin:0}
+.ps-settings .ps-fps input[type=range]{width:100%;min-width:0;padding:0}.ps-settings .ps-fps input[type=number]{width:76px;flex:0 0 76px;text-align:center}
+.ps-settings .ps-help{display:block;margin:14px 0 0;font-size:12px;line-height:1.6;color:var(--muted)}.ps-settings .ps-warning{color:var(--amber)}
+.ps-settings .ps-buttons{flex-wrap:wrap}.ps-settings .ps-advanced{padding:0;border:0;background:transparent}
+.ps-settings .ps-advanced summary{padding:0 0 16px;font-size:14px;color:var(--muted);cursor:pointer}
+.ps-settings #log{max-height:160px;padding:12px;border-radius:9px;background:var(--surface-deep);font-size:11px;overflow:auto}
+.ps-settings #serialDiagnostic{display:block;margin:12px 0;font-size:12px;overflow-wrap:anywhere}
+.ps-settings input:disabled,.ps-settings select:disabled,.ps-web input:disabled{opacity:.5;cursor:not-allowed}
+.ps-web .ps-header-actions{display:flex;align-items:center;gap:12px;margin-left:auto;flex:none}
+.ps-web .ps-import-button{padding:10px 15px;height:42px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);font-size:13px;white-space:nowrap}
+.ps-web .ps-import-button:hover{border-color:var(--brand)}
+.ps-media-dialog{width:min(640px,calc(100vw - 24px))}
+.ps-media-description{margin:0 0 18px;color:var(--muted);font-size:13px;line-height:1.6}
+.ps-media-dialog .ps-settings-group{margin-bottom:0}
+@media(max-width:480px){.ps-web .ps-header-actions{gap:6px}.ps-web .ps-import-button{padding:8px;font-size:12px}.ps-web .brand{gap:9px}.ps-web .brand-name{font-size:19px}.ps-web .ps-settings .ps-size-fields{gap:6px}.ps-web .ps-settings .ps-size-fields>input[type=number]{flex-basis:52px;width:52px}.ps-settings .ps-size-fields .ps-check{font-size:12px}}
+@media(min-width:761px) and (max-height:680px){.ps-web .wrap{padding:10px 16px;gap:8px}.ps-web .topbar{flex-basis:48px}.ps-web .brand-mark{width:43px;height:43px}.ps-web .studio-controls{padding:12px 16px}.ps-web .studio-stage{padding:12px;gap:18px}}
+@media(max-width:1000px){.ps-web .library-toolbar{grid-template-columns:110px minmax(90px,1fr)}.ps-web .ps-shuffle-group{grid-column:1/-1;justify-content:flex-end}.ps-web .adjustments{gap:18px}.ps-web .adjustments>div{grid-template-columns:42px minmax(0,1fr) 72px;gap:8px}}
+@media(max-width:760px){.ps-web .wrap{min-height:100dvh;height:auto;padding:12px;gap:12px}.ps-web .workspace{display:flex}.ps-web .topbar{flex-basis:52px}.ps-web .brand-mark{width:43px;height:43px}.ps-web .brand-name{font-size:24px}.ps-web .studio-stage{flex:none;grid-template-columns:1fr;gap:20px;padding:16px}.ps-web .preview-stage{height:260px;flex:none}.ps-web .ps-library-well{flex:none;height:390px}.ps-web #animationGallery{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));grid-auto-rows:180px}.ps-web .animation-thumb img{height:112px}.ps-web .studio-controls{padding:16px}.ps-web .adjustments{grid-template-columns:1fr;gap:16px}.ps-web .adjustments>div{grid-template-columns:48px minmax(0,1fr) 76px}.ps-web #clockStyling{grid-template-columns:1fr;gap:12px}.ps-web .ps-playback-bar{position:sticky;bottom:0;z-index:4;padding:10px 0;background:var(--bg)}.ps-web .ps-play-toggle{width:64px;min-width:64px}.ps-web #streamStats{max-width:30%;font-size:10px}.ps-settings{width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}.ps-settings-heading{padding:12px 16px}.ps-settings-body{padding:16px}.ps-settings-group{padding:14px}.ps-setting-row{grid-template-columns:1fr;gap:7px}.ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 110px}}
+@media(max-width:1000px){.ps-web .ps-clock-controls .adjustments,.ps-web #clockStyling{column-gap:18px}.ps-web #clockStyling .ps-setting-row{grid-template-columns:42px minmax(0,1fr);gap:8px}}
+@media(max-width:760px){.ps-web .ps-clock-controls .adjustments{grid-template-columns:1fr;gap:16px}.ps-web #clockStyling .ps-setting-row{grid-template-columns:48px minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.ps-web .ps-preview-frame.is-playing::after{animation:none;opacity:.72}}
+/* Shared control geometry keeps the two-row panel stable across animation types. */
+.ps-web [hidden]{display:none!important}
+.ps-web .ps-preview-frame{outline-width:4px}
+.ps-web .ps-preview-frame::after{inset:-4px;border-width:4px;border-radius:calc(var(--rim-radius,4px) + 4px)}
+.ps-web .studio-controls{min-height:132px}
+.ps-web .adjustments>div,.ps-web #clockStyling .ps-setting-row{height:39px;min-height:39px}
+.ps-web .adjustments label,.ps-web #clockStyling .ps-setting-label{display:flex;align-items:center;height:39px;line-height:20px;padding:0;margin:0}
+.ps-web .adjustments,.ps-web .ps-clock-controls .adjustments{row-gap:16px}
+.ps-web input:not([type=range]):not([type=checkbox]):not([type=color]),.ps-web select{height:42px;line-height:normal;padding-top:0;padding-bottom:0}
+.ps-web .adjustments input[type=number],.ps-web #clockStyling select{height:39px;padding-top:0;padding-bottom:0}
+.ps-web .ps-palette-controls .adjustments{grid-template-columns:1fr 1fr;column-gap:24px}
+.ps-web .ps-animation-colors{display:grid;grid-template-columns:58px minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px;margin-top:16px;height:39px}
+.ps-web .ps-animation-colors label{margin:0;line-height:20px;font-size:15px}
+.ps-web .ps-animation-colors select,.ps-web .ps-animation-colors button{height:39px;min-width:0}
+.ps-web .ps-animation-colors button{border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text);padding:0 12px}
+.ps-web #streamStats{white-space:normal;font-variant-numeric:tabular-nums}
+@media(min-width:761px){.ps-web .preview-stage{align-items:flex-start;padding-left:8px;padding-right:8px;padding-bottom:0}.ps-web .studio-controls{height:132px}.ps-web .ps-animation-colors{grid-template-columns:58px minmax(0,1fr) minmax(0,calc(50% - 12px));column-gap:12px}}
+@media(max-width:1000px) and (min-width:761px){.ps-web .ps-palette-controls .adjustments{column-gap:18px}.ps-web .ps-animation-colors{grid-template-columns:42px minmax(0,1fr) minmax(0,calc(50% - 9px));column-gap:8px}}
+@media(max-width:760px){.ps-web .ps-palette-controls .adjustments{grid-template-columns:1fr}.ps-web .ps-animation-colors{grid-template-columns:48px minmax(0,1fr);height:auto}.ps-web .ps-animation-colors button{grid-column:2}}
+html[lang=en] .ps-web .adjustments>div{grid-template-columns:100px minmax(0,1fr) 86px}
+html[lang=en] .ps-web #clockStyling .ps-setting-row{grid-template-columns:100px minmax(0,1fr)}
+/* Palette row shares the same half-width and label column as brightness. */
+.ps-web .ps-animation-colors label{color:var(--text);font-weight:inherit}
+.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) max-content}
+.ps-web .ps-settings .ps-input-action button{min-width:134px;max-width:100%;white-space:normal;line-height:1.3}
+@media(min-width:761px){
+.ps-web .ps-animation-colors{grid-template-columns:58px minmax(0,1fr) minmax(0,calc(50% - 12px));column-gap:12px}
+.ps-web .ps-animation-colors select{width:calc(100% - 12px)}
+html[lang=en] .ps-web .ps-animation-colors{grid-template-columns:100px minmax(0,1fr) minmax(0,calc(50% - 12px))}
+}
+@media(min-width:761px) and (max-width:1000px){
+.ps-web .ps-animation-colors{grid-template-columns:42px minmax(0,1fr) minmax(0,calc(50% - 9px));column-gap:8px}
+.ps-web .ps-animation-colors select{width:calc(100% - 10px)}
+html[lang=en] .ps-web .ps-animation-colors{grid-template-columns:100px minmax(0,1fr) minmax(0,calc(50% - 9px))}
+}
+@media(max-width:480px){.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 110px}.ps-web .ps-settings .ps-input-action button{min-width:0}}
+/* The clock and animation palettes use identical row boxes, without inherited offsets. */
+.ps-web .studio-controls{--control-label:58px;--control-gap:24px}
+.ps-web .studio-controls .adjustments{margin:0!important;padding:0!important;row-gap:16px!important;column-gap:var(--control-gap)!important}
+.ps-web .studio-controls .adjustments>div{height:39px!important;min-height:39px!important;margin:0!important;padding:0!important}
+.ps-web .studio-controls #clockStyling,.ps-web .studio-controls .ps-animation-colors{height:39px;min-height:39px;margin:16px 0 0!important;padding:0!important;align-items:center;box-sizing:border-box}
+.ps-web .studio-controls #clockStyling{column-gap:var(--control-gap)!important}
+.ps-web .studio-controls #clockStyling .ps-setting-row{height:39px;min-height:39px;margin:0!important;padding:0!important;align-items:center}
+.ps-web .studio-controls #clockStyling .ps-setting-field{height:39px;min-height:0;align-items:center}
+.ps-web .studio-controls label{height:39px;display:flex;align-items:center;margin:0!important;padding:0!important;color:var(--text);font-size:15px;line-height:20px;font-weight:inherit}
+.ps-web .studio-controls input:not([type=range]),.ps-web .studio-controls select,.ps-web .studio-controls .ps-custom-colors,.ps-web .studio-controls .ps-animation-colors button{height:39px!important;min-height:39px!important;max-height:39px!important;box-sizing:border-box;margin-top:0!important;margin-bottom:0!important}
+.ps-web input:not([type=range]):not([type=checkbox]):not([type=color]),.ps-web select{padding-top:2px!important;padding-bottom:0!important;line-height:normal;vertical-align:middle}
+.ps-web .studio-controls select,.ps-web .studio-controls input[type=number]{padding-top:2px!important;padding-bottom:0!important}
+.ps-web .ps-preview-frame{margin:0!important}
+.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 150px}
+.ps-web .ps-settings .ps-input-action button{min-width:0;width:100%}
+@media(min-width:761px){
+.ps-web .studio-controls .ps-animation-colors{grid-template-columns:var(--control-label) minmax(0,1fr) minmax(0,calc(50% - var(--control-gap)/2));column-gap:12px}
+.ps-web .studio-controls .ps-animation-colors select{width:calc(100% - 12px)}
+.ps-web .preview-stage{align-items:flex-start!important;justify-content:flex-start!important;padding:4px!important}
+html[lang=en] .ps-web .studio-controls{--control-label:100px}
+html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-columns:var(--control-label) minmax(0,1fr) minmax(0,calc(50% - var(--control-gap)/2))}
+}
+@media(min-width:761px) and (max-width:1000px){.ps-web .studio-controls{--control-label:42px;--control-gap:18px}.ps-web .studio-controls .ps-animation-colors{column-gap:8px}.ps-web .studio-controls .ps-animation-colors select{width:calc(100% - 10px)}}
+@media(max-width:760px){.ps-web .studio-controls #clockStyling,.ps-web .studio-controls .ps-animation-colors{height:auto;min-height:39px}.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 120px}}
+/* Settings: equal outer insets and optically centered button captions. */
+.ps-web .ps-settings-heading{padding:16px;min-height:68px;box-sizing:border-box}
+.ps-web .ps-settings .ps-close{display:flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;min-height:36px;margin:0;padding:0;line-height:1}
+.ps-web .ps-settings-body{padding:24px}
+.ps-web .ps-settings-group{padding:20px;margin:0 0 24px}
+.ps-web .ps-settings .ps-output-settings{margin-bottom:0}
+.ps-web .ps-settings .ps-input-action button,.ps-web .ps-settings .ps-presets button,.ps-web .ps-settings .ps-about-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:39px;padding:2px 14px 0;line-height:1.25;text-align:center}
+.ps-web .ps-about-body p{margin:0 0 16px;line-height:1.7}
+.ps-web .ps-about-body p:last-child{margin-bottom:0}
+.ps-web .ps-about-body h3{margin:20px 0 10px;font-size:16px}
+@media(max-width:760px){.ps-web .ps-settings-body{padding:16px}.ps-web .ps-settings-group{padding:16px;margin-bottom:16px}}
+
+/* Standalone About action: same side and bottom insets as the settings body. */
+.ps-web #studioSettings > .ps-settings-body > .ps-about-button {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  margin: 24px 0 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+@media (max-width: 760px) {
+  .ps-web #studioSettings > .ps-settings-body > .ps-about-button { margin-top: 16px; }
+}
+/* Optical brand alignment and equally inset select chevrons. */
+.ps-web .brand { align-items: center; }
+.ps-web .brand-name { position: relative; top: 2px; }
+.ps-web select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  --select-height: 42px;
+  padding-right: calc(var(--select-height) + 4px) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4L6 8L10 4' fill='none' stroke='%23a9c3cf' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-size: 12px 12px !important;
+  background-position: right calc((var(--select-height) - 12px) / 2) center !important;
+}
+.ps-web .studio-controls select:not([multiple]):not([size]) { --select-height: 39px; }

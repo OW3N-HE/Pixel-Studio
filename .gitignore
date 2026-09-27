@@ -1,0 +1,8 @@
+openrgb-plugin/.tools/
+openrgb-plugin/.build*/
+openrgb-plugin/dist/
+node_modules/
+logs/
+*.log
+*.pdb
+*.obj
