@@ -3,8 +3,8 @@ body.ps-web{margin:0;padding:0;background:var(--bg);color:var(--text)}
 .ps-web *,.ps-settings *{box-sizing:border-box}
 .ps-web .wrap,.ps-web .wrap *,.ps-settings,.ps-settings *{background-image:none!important}
 .ps-web .wrap{width:100%;max-width:1920px;height:100dvh;min-height:520px;margin:0 auto;padding:18px 24px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
-.ps-web .topbar{flex:0 0 60px;min-height:60px;height:60px;margin:0;padding:0 2px;border:0;background:transparent}
-.ps-web .brand{gap:18px}.ps-web .brand-mark{width:54px;height:54px}.ps-web .brand-name{font-size:clamp(24px,2.5vw,36px);letter-spacing:1px}
+.ps-web .topbar{flex:0 0 72px;min-height:72px;height:72px;margin:0;padding:4px 12px;border:0;background:transparent;align-items:center}
+.ps-web .brand{display:flex;align-items:center;gap:14px;min-width:0}.ps-web .brand-mark{display:block;width:64px;height:64px;padding:6px;margin:0;box-sizing:border-box}.ps-web .brand-name{font-size:clamp(24px,2.5vw,36px);letter-spacing:1px;line-height:1.1}
 .ps-web .brand-sub,.ps-web .top-tags,.ps-web .intro,.ps-web .wrap>footer{display:none}
 .ps-web .workspace{display:flex;flex:1;flex-direction:column;align-items:stretch;width:100%;max-width:none;min-width:0;min-height:0;gap:12px;margin:0}
 .ps-web .studio-stage{display:grid;grid-template-columns:var(--preview-column,minmax(180px,36%)) minmax(0,1fr);gap:26px;flex:1;width:100%;max-width:none;align-self:stretch;min-height:0;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:20px}
@@ -13,7 +13,7 @@ body.ps-web{margin:0;padding:0;background:var(--bg);color:var(--text)}
 .ps-web .preview-card>.card-head,.ps-web .library-card>.card-head,.ps-web .library-card>.filters,.ps-web #animationHint{display:none}
 .ps-web .preview-stage{display:flex;flex:1;align-items:center;justify-content:center;min-height:0;height:100%;padding:12px;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
 .ps-web .preview-stage::before,.ps-web .preview-stage::after{content:none}
-.ps-web .ps-preview-frame{position:relative;flex:none;padding:var(--rim-inset,1px);border:0;border-radius:var(--rim-radius,4px);background:#030b0f;outline:2px solid var(--line);box-shadow:none}
+.ps-web .ps-preview-frame{position:relative;flex:none;padding:var(--rim-inset,1px);border:0;border-radius:var(--rim-radius,4px);background:#000000;outline:2px solid var(--line);box-shadow:none}
 .ps-web .ps-preview-frame::after{content:'';position:absolute;inset:-2px;border:2px solid var(--brand);border-radius:calc(var(--rim-radius,4px) + 2px);box-shadow:0 0 3px rgba(var(--brand-rgb),.5),0 0 7px rgba(var(--brand-rgb),.28),0 0 12px rgba(var(--brand-rgb),.12);opacity:0;pointer-events:none}
 .ps-web .ps-preview-frame.is-playing::after{animation:studio-breath 3.8s ease-in-out infinite}
 @keyframes studio-breath{0%,100%{opacity:1}50%{opacity:.44}}
@@ -179,6 +179,17 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
 .ps-web .ps-about-body h3{margin:20px 0 10px;font-size:16px}
 @media(max-width:760px){.ps-web .ps-settings-body{padding:16px}.ps-web .ps-settings-group{padding:16px;margin-bottom:16px}}
 
+/* Media import uses app-localized controls rather than native file captions. */
+.ps-web .ps-import-dialog .ps-media-description{margin:0 0 24px;font-size:14px;line-height:1.7}
+.ps-web .ps-import-dialog .ps-media-fields{margin:0;padding:20px;display:grid;gap:20px;min-width:0}
+.ps-web .ps-import-dialog .ps-setting-row{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:0}
+.ps-web .ps-import-dialog .ps-setting-label{font-size:15px;line-height:1.5;margin:0}
+.ps-web .ps-import-dialog .ps-setting-field{min-width:0;width:100%}
+.ps-web .ps-import-dialog .ps-file-picker{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:16px;width:100%;min-width:0;padding:12px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--surface-deep)}
+.ps-web .ps-import-dialog .ps-file-picker button{margin:0;min-height:44px;padding:10px 16px;font-size:15px;line-height:1.4}
+.ps-web .ps-import-dialog .ps-file-name{font-size:14px;line-height:1.6;color:var(--text);min-width:0;overflow-wrap:anywhere}
+.ps-web .ps-import-dialog #scaleMode{width:100%;font-size:15px}
+@media(max-width:480px){.ps-web .ps-import-dialog .ps-file-picker{grid-template-columns:minmax(0,1fr);gap:12px}.ps-web .ps-import-dialog .ps-file-picker button{width:100%}}
 /* Standalone About action: same side and bottom insets as the settings body. */
 .ps-web #studioSettings > .ps-settings-body > .ps-about-button {
   display: flex;
@@ -194,7 +205,19 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
 }
 /* Optical brand alignment and equally inset select chevrons. */
 .ps-web .brand { align-items: center; }
-.ps-web .brand-name { position: relative; top: 2px; }
+.ps-web .brand > div { display: flex; align-items: center; min-width: 0; }
+.ps-web .brand-name {
+  position: static;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateY(.075em);
+}
+/* Center the visible capitals, not the font's unused ascender/descender space. */
+@supports (text-box: trim-both cap alphabetic) {
+  .ps-web .brand-name { text-box: trim-both cap alphabetic; transform: none; }
+}
 .ps-web select:not([multiple]):not([size]) {
   appearance: none;
   -webkit-appearance: none;
@@ -206,3 +229,214 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
   background-position: right calc((var(--select-height) - 12px) / 2) center !important;
 }
 .ps-web .studio-controls select:not([multiple]):not([size]) { --select-height: 39px; }
+
+/* Keep the scrollport inside the dialog frame, clear of rounded corners. */
+.ps-web .ps-settings {
+  box-sizing: border-box;
+  max-height: calc(100dvh - 40px);
+  padding-bottom: 12px;
+}
+.ps-web .ps-settings[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.ps-web .ps-settings > .ps-settings-body {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  padding: 24px 16px 12px;
+}
+.ps-web #studioSettings > .ps-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.ps-web #studioSettings > .ps-settings-body > * { flex-shrink: 0; }
+.ps-web #studioSettings > .ps-settings-body > .ps-settings-group {
+  width: 100%;
+  margin: 0;
+  padding: 20px;
+}
+.ps-web #studioSettings > .ps-settings-body > .ps-about-button {
+  margin: 0;
+  min-height: 44px;
+}
+.ps-web .ps-settings [data-update-ui] .ps-update-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.ps-web .ps-settings [data-update-ui] .ps-update-actions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 16px;
+  white-space: normal;
+  line-height: 1.4;
+  background: var(--surface-raised);
+  box-shadow: none;
+}
+.ps-web .ps-settings button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.ps-web .ps-settings button:disabled:hover { border-color: var(--line); }
+.ps-web .ps-settings [data-update-ui] .ps-help { overflow-wrap: anywhere; }
+.ps-web .ps-settings .ps-update-details {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-deep);
+}
+.ps-web .ps-settings .ps-update-details summary {
+  cursor: pointer;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ps-web .ps-settings [data-update-ui] > a {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  text-underline-offset: 4px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .ps-web .ps-settings { max-height: calc(100dvh - 20px); padding-bottom: 8px; }
+  .ps-web .ps-settings > .ps-settings-body { padding: 16px 8px 8px; }
+  .ps-web #studioSettings > .ps-settings-body { gap: 16px; }
+  .ps-web #studioSettings > .ps-settings-body > .ps-settings-group { padding: 16px; }
+}
+@media (max-width: 380px) {
+  .ps-web .ps-settings [data-update-ui] .ps-update-actions { grid-template-columns: 1fr; }
+}
+
+/* Compact bilingual desktop options: consistent boxes, not sentence-length rows. */
+.ps-web .ps-desktop-switches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 12px;
+  padding: 4px 0 0;
+}
+.ps-web .ps-settings .ps-desktop-option {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 64px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-deep);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: normal;
+  cursor: pointer;
+}
+.ps-web .ps-settings .ps-desktop-option:hover { border-color: var(--brand); }
+.ps-web .ps-settings .ps-desktop-option:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
+.ps-web .ps-settings .ps-desktop-option input[type=checkbox] {
+  position: static;
+  align-self: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+}
+.ps-web .ps-desktop-caption {
+  display: block;
+  min-width: 0;
+  font-size: inherit;
+  line-height: inherit;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.ps-web .ps-settings .ps-desktop-note {
+  margin: 16px 0 0;
+  max-width: 72ch;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.ps-web .ps-desktop-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+.ps-web .ps-settings .ps-desktop-actions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: normal;
+}
+@media (max-width: 760px), (max-height: 680px) {
+  .ps-web .topbar { flex-basis: 64px; min-height: 64px; height: 64px; padding: 4px 8px; }
+  .ps-web .brand-mark { width: 54px; height: 54px; padding: 5px; }
+}
+@media (max-width: 640px) {
+  .ps-web .ps-desktop-switches, .ps-web .ps-desktop-actions { grid-template-columns: minmax(0, 1fr); }
+  .ps-web .ps-settings .ps-desktop-option { min-height: 56px; }
+}
+@media (max-width: 480px) {
+  .ps-web .topbar { flex-basis: auto; height: auto; flex-wrap: wrap; gap: 10px; padding: 4px 6px; }
+  .ps-web .brand { gap: 10px; }
+  .ps-web .brand-mark { width: 48px; height: 48px; padding: 4px; }
+  .ps-web .brand-name { font-size: 19px; }
+}
+
+/* Decorative rim follows preview scale; CAD mask dimensions are unchanged. */
+.ps-web .ps-preview-frame {
+  outline-width: var(--rim-stroke, 4px);
+}
+.ps-web .ps-preview-frame::after {
+  inset: calc(0px - var(--rim-stroke, 4px));
+  border-width: var(--rim-stroke, 4px);
+  border-radius: calc(var(--rim-radius, 4px) + var(--rim-stroke, 4px));
+  box-shadow:
+    0 0 var(--rim-glow-near, 3px) rgba(var(--brand-rgb), .5),
+    0 0 var(--rim-glow-mid, 7px) rgba(var(--brand-rgb), .28),
+    0 0 var(--rim-glow-far, 12px) rgba(var(--brand-rgb), .12);
+}
+
+/* Keep update controls spaced independently from nested status notices. */
+.ps-web .ps-settings #psSoftwareUpdates {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.ps-web .ps-settings #psSoftwareUpdates > .ps-help,
+.ps-web .ps-settings #psSoftwareUpdates > .ps-update-details,
+.ps-web .ps-settings #psSoftwareUpdates > a { margin: 0; }
+.ps-web .ps-settings #psSoftwareUpdates > label {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: -6px;
+}
+.ps-web .ps-settings #psSoftwareUpdates > select { width: 100%; min-width: 0; }
+.ps-web .ps-settings #psSoftwareUpdates > [hidden] { display: none !important; }
+
+/* Web and Electron: remove native steppers and their reserved space. */
+.ps-web input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.ps-web input[type="number"]::-webkit-inner-spin-button,
+.ps-web input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

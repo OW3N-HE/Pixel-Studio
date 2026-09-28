@@ -1,0 +1,36 @@
+{
+  "name": "pixel-studio-desktop",
+  "version": "0.1.8",
+  "description": "Pixel Studio desktop with tray and login startup",
+  "author": "OWEN",
+  "license": "GPL-2.0-or-later",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "icons": "node icons.cjs",
+    "dist": "npm run icons && electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": { "electron": "44.4.5", "electron-builder": "26.15.3" },
+  "build": {
+    "appId": "com.ow3nhe.pixelstudio.desktop",
+    "productName": "Pixel Studio Desktop",
+    "directories": { "output": "dist" },
+    "files": ["main.cjs", "preload.cjs", "ddp-service.cjs", "updater.cjs", "icons.cjs", "assets/**", "package.json"],
+    "extraResources": [{
+      "from": "../release-staging/installer-payload-0.1.5-test/app",
+      "to": "web",
+      "filter": ["*.html", "*.js", "*.css", "*.cjs", "LICENSE"]
+    }],
+    "win": { "icon": "assets/pixel-studio.ico", "target": "nsis" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "installerLanguages": ["zh_CN", "en_US"],
+      "artifactName": "PixelStudio-Desktop-Setup-${version}-TEST.${ext}"
+    }
+  }
+}

@@ -3,6 +3,7 @@
 #include <QDesktopServices>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QLabel>
 #include <QProcess>
 #include <QPushButton>
@@ -26,7 +27,7 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
     auto* layout = new QVBoxLayout(dialog);
     layout->setContentsMargins(20, 20, 20, 20);
     layout->setSpacing(12);
-    auto* status = new QLabel(tr("当前版本：0.1.3。正在检查 GitHub...", "Current version: 0.1.3. Checking GitHub..."), dialog);
+    auto* status = new QLabel(tr("当前版本：0.1.8。正在检查 GitHub...", "Current version: 0.1.8. Checking GitHub..."), dialog);
     status->setWordWrap(true);
     status->setTextFormat(Qt::PlainText);
     layout->addWidget(status);
@@ -37,6 +38,16 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
         "Only stable releases from OW3N-HE/Pixel-Studio are checked. Back up and replace files manually; no automatic installation or firmware flashing."), dialog);
     hint->setWordWrap(true);
     layout->addWidget(hint);
+    auto* installer = new QPushButton(tr("下载安装包", "Download installer"), dialog);
+    installer->setEnabled(false);
+    layout->addWidget(installer);
+    auto* installerStatus = new QLabel(tr("检查完成后显示安装包状态。", "Installer availability will appear after checking."), dialog);
+    installerStatus->setWordWrap(true);
+    layout->addWidget(installerStatus);
+    QObject::connect(installer, &QPushButton::clicked, dialog, [installer] {
+        const QUrl url(installer->property("installerUrl").toString());
+        if (installer->isEnabled() && !url.isEmpty()) QDesktopServices::openUrl(url);
+    });
     auto* download = new QPushButton(tr("打开官方发布页 / 下载", "Open official releases / download"), dialog);
     layout->addWidget(download);
     QObject::connect(download, &QPushButton::clicked, dialog, [] {
@@ -51,16 +62,18 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
     auto* timer = new QTimer(process);
     timer->setSingleShot(true);
     QObject::connect(timer, &QTimer::timeout, process, [process] { process->kill(); });
-    QObject::connect(process, &QProcess::errorOccurred, dialog, [status, timer, tr](QProcess::ProcessError error) {
+    QObject::connect(process, &QProcess::errorOccurred, dialog, [status, installerStatus, timer, tr](QProcess::ProcessError error) {
         if (error == QProcess::FailedToStart) {
             timer->stop();
+            installerStatus->hide();
             status->setText(tr("无法启动 Node.js，请在设置中选择有效的 Node.js 程序。",
                 "Unable to start Node.js. Select a valid Node.js executable in Settings."));
         }
     });
     QObject::connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), dialog,
-        [process, timer, status, notes, tr](int exitCode, QProcess::ExitStatus exitStatus) {
+        [process, timer, status, notes, installer, installerStatus, tr](int exitCode, QProcess::ExitStatus exitStatus) {
         timer->stop();
+        installerStatus->hide();
         const auto result = QJsonDocument::fromJson(process->readAllStandardOutput()).object();
         const int http = result.value(QStringLiteral("status")).toInt();
         if (exitStatus == QProcess::NormalExit && exitCode == 0 && http == 404) {
@@ -77,9 +90,30 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
                 || release.value(QStringLiteral("prerelease")).toBool()) {
                 status->setText(tr("发布版本号格式无法识别，请查看发布页面。", "Unsupported release version. Please check the release page."));
             } else {
-                status->setText(QVersionNumber::compare(version, QVersionNumber(0, 1, 3)) > 0
-                    ? tr("发现新版本：%1（当前版本：0.1.3）", "New version: %1 (current: 0.1.3)").arg(tag)
-                    : tr("当前已是最新版本（0.1.3）。", "You are up to date (0.1.3)."));
+                const int comparison = QVersionNumber::compare(version, QVersionNumber(0, 1, 8));
+                status->setText(comparison > 0
+                    ? tr("发现新版本：%1（当前版本：0.1.8）", "New version: %1 (current: 0.1.8)").arg(tag)
+                    : comparison == 0 ? tr("当前已是最新版本（0.1.8）。", "You are up to date (0.1.8).")
+                    : tr("本地版本 0.1.8 高于已发布版本 %1，不提供降级安装。", "Local version 0.1.8 is newer than published version %1. No downgrade is offered.").arg(tag));
+                if (comparison >= 0) {
+                    const QString name = QStringLiteral("PixelStudio-Setup-%1.exe").arg(version.toString());
+                    const QString expectedUrl = QStringLiteral("https://github.com/OW3N-HE/Pixel-Studio/releases/download/%1/%2").arg(tag, name);
+                    for (const auto& value : release.value(QStringLiteral("assets")).toArray()) {
+                        const auto asset = value.toObject();
+                        if (asset.value(QStringLiteral("name")).toString() == name
+                            && asset.value(QStringLiteral("state")).toString() == QStringLiteral("uploaded")
+                            && asset.value(QStringLiteral("size")).toDouble() > 0
+                            && asset.value(QStringLiteral("browser_download_url")).toString() == expectedUrl) {
+                            installer->setProperty("installerUrl", expectedUrl);
+                            installer->setEnabled(true);
+                            break;
+                        }
+                    }
+                    installerStatus->setText(installer->isEnabled()
+                        ? tr("仅下载。请备份文件、退出 OpenRGB，再手动运行安装程序；不会刷写固件。", "Download only. Back up your files, close OpenRGB, then run the installer manually. Firmware is not flashed.")
+                        : tr("此版本暂无安装包，可前往发布页下载便携压缩包。", "No installer is attached to this release yet. Portable packages remain available on the release page."));
+                    installerStatus->show();
+                }
                 notes->setPlainText(release.value(QStringLiteral("body")).toString().left(6000));
             }
         }
@@ -87,7 +121,7 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
     const QString script = QString::fromLatin1(R"JS(
 const https = require('https');
 const req = https.get('https://api.github.com/repos/OW3N-HE/Pixel-Studio/releases/latest', {
-  headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'PixelStudio/0.1.3'}
+  headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'PixelStudio/0.1.8'}
 }, res => {
   let size = 0;
   const chunks = [];

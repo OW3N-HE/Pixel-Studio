@@ -27,6 +27,7 @@ let previewTimer;
 let statsTimer;
 let watchdog;
 let statsBusy = false;
+let usbColorProfile = null;
 let outputBlocked = false;
 const pendingOutput = new Map();
 let queue = Promise.resolve();
@@ -106,9 +107,8 @@ function configuration(data) {
     c.match = c.match !== false;
     c.gamma = number(c.gamma ?? 2.8, 1, 4);
     if (c.transport === 'usb') {
-        const gain = Math.pow(c.brightness / 255, 2.2);
-        const exponent = c.match ? 1 / c.gamma : 1;
-        c.lut = Array.from({ length: 256 }, (_, value) => Math.round(255 * Math.pow(value / 255, exponent) * gain));
+        // Final device-aware LUT is resolved by start() before transmission.
+        c.lut = Array.from({ length: 256 }, (_, value) => Math.round(value * c.brightness / 255));
     } else delete c.lut;
     return c;
 }
@@ -218,7 +218,11 @@ async function startUsb(next) {
             if (message.type === 'ready') finish();
             else if (message.type === 'stats') output({ type: 'stats', stats: message.stats }, true);
             else if (message.type === 'outputFrame') output(message, true);
-            else if (message.type === 'error') finish(new Error(message.message || 'USB playback failed.'));
+            else if (message.type === 'error') {
+                const error = new Error(message.message || 'USB playback failed.');
+                if (settled) output({ type: 'warning', message: error.message });
+                else finish(error);
+            }
         });
         worker.once('error', finish);
         worker.once('exit', code => {
@@ -238,6 +242,35 @@ async function start(data) {
     const abort = new AbortController();
     startAbort = abort;
     try {
+        if (next.transport === 'usb') {
+            if (!usbColorProfile || usbColorProfile.host !== next.host || Date.now() - usbColorProfile.at > 5000) {
+                let deviceConfig = null;
+                try {
+                    // Use the bridge's private-LAN validation; never send to an arbitrary URL.
+                    configuration({ ...next, transport: 'ddp' });
+                    await ensureBridge(abort.signal);
+                    deviceConfig = await request('/api/device?host=' + encodeURIComponent(next.host) + '&path=/json/cfg', {
+                        timeout: 5000, signal: abort.signal
+                    });
+                } catch (error) {
+                    if (abort.signal.aborted) throw error;
+                }
+                usbColorProfile = { host: next.host, at: Date.now(), cfg: deviceConfig };
+            }
+            const cfg = usbColorProfile.cfg;
+            const gc = cfg?.light?.gc;
+            const live = cfg?.if?.live;
+            const known = gc?.col !== undefined && live?.['no-gc'] !== undefined;
+            const deviceGamma = typeof gc?.col === 'number' && gc.col > 0 ? gc.col : Number(gc?.val);
+            const gamma = known && Number.isFinite(deviceGamma) && deviceGamma >= 1
+                ? Math.min(4, deviceGamma) : next.gamma;
+            const enabled = known && !live['no-gc'] && gc.col !== false && gc.col !== 0 && gamma !== 1;
+            const exponent = next.match && enabled ? 1 / gamma : 1;
+            next.lut = Array.from({ length: 256 }, (_, value) =>
+                Math.round(255 * Math.pow(value / 255 * next.brightness / 255, exponent)));
+            output({ type: 'colorProfile', automatic: known, gamma, compensated: exponent !== 1 });
+            if (!known) output({ type: 'warning', message: 'WLED color configuration unavailable. USB keeps original RGB without Gamma compensation.' });
+        }
         const sameGeometry = config && next.w === config.w && next.h === config.h;
         if (usbWorker && next.transport === 'usb' && config.transport === 'usb' && sameGeometry
             && next.serialPort === config.serialPort) {

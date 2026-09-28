@@ -12,7 +12,7 @@ if(!renderer.modes.includes(config.mode))throw new Error('Unknown animation: '+c
 const transport=config.transport==='usb'?'usb':'ddp';
 const socket=transport==='ddp'?dgram.createSocket('udp4'):null;
 function perceptualLut(brightness){
-  const gain=Math.pow(Math.max(0,Math.min(255,Number(brightness)??255))/255,2.2);
+  const gain=Math.max(0,Math.min(255,Number(brightness)??255))/255;
   return Uint8Array.from({length:256},(_,i)=>Math.round(i*gain));
 }
 let lut=config.lut?Uint8Array.from(config.lut):perceptualLut(config.brightness??255);
@@ -27,7 +27,10 @@ function stop(){
   stopped=true;clearTimeout(timer);
   try{socket?.close();}catch{}
   for(const waiter of usbAckWaiters.splice(0))waiter.reject(new Error('USB writer stopped.'));
-  if(usbProcess){try{usbProcess.stdin.end();}catch{} setTimeout(()=>{try{usbProcess?.kill();}catch{}},350).unref();usbProcess=null;}
+  if(usbProcess){const child=usbProcess;usbProcess=null;try{child.stdin.end();}catch{}
+    const killTimer=setTimeout(()=>{try{child.kill();}catch{}},350);
+    child.once('exit',()=>clearTimeout(killTimer));}
+  parentPort.close();
 }
 function fatal(error){if(stopped)return;parentPort.postMessage({type:'error',message:error.message});stop();}
 socket?.on('error',fatal);
@@ -46,13 +49,15 @@ parentPort.on('message',message=>{
 });
 function startUsb(){
   return new Promise((resolve,reject)=>{
-    const bundled=path.join(__dirname,'.venv-platformio','Scripts','python.exe');
-    const python=process.env.PIXEL_STUDIO_PYTHON||(fs.existsSync(bundled)?bundled:'python');
-    const script=path.join(__dirname,'tools','usb_adalight_stream.py');
-    const child=spawn(python,[script,'--port',config.serialPort,'--pixels',String(config.w*config.h)],{
+    const writer=process.env.PIXEL_STUDIO_SERIAL_WRITER||path.join(__dirname,'openrgb-plugin','dist','PixelStudioSerial.exe');
+    if(!path.isAbsolute(writer)||!fs.existsSync(writer)){
+      reject(new Error('Native USB writer missing: build or install openrgb-plugin/dist/PixelStudioSerial.exe.'));return;
+    }
+    const child=spawn(writer,['--port',config.serialPort,'--pixels',String(config.w*config.h)],{
       cwd:__dirname,windowsHide:true,stdio:['pipe','pipe','pipe']
     });
     usbProcess=child;
+    child.stdin.on('error',error=>{if(!stopped){if(settled)fatal(error);else finish(error);}});
     let settled=false,stdout='',stderr='';
     const timeout=setTimeout(()=>finish(new Error('USB port did not become ready in time.')),10000);
     function finish(error){

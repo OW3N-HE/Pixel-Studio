@@ -52,4 +52,5 @@ $commandLine = 'chcp 65001 >nul && call "{0}" -arch=x64 -host_arch=x64 >nul && "
 & $env:ComSpec /d /s /c $commandLine
 if ($LASTEXITCODE -ne 0) { throw "Plugin compilation failed with exit code $LASTEXITCODE." }
 Write-Output ("Build completed: " + (Join-Path $PSScriptRoot 'dist\PixelStudioPlugin.dll'))
+Write-Output ("USB writer: " + (Join-Path $PSScriptRoot 'dist\PixelStudioSerial.exe'))
 Write-Output 'The DLL has not been installed or loaded into OpenRGB.'

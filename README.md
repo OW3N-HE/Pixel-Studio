@@ -1,66 +1,35 @@
-# Pixel Studio
+# Pixel Studio 0.1.8
 
-Small pixels. Endless imagination.
-
-Pixel Studio is an independent pixel animation studio for WLED, available as a web application and an OpenRGB plugin. Both editions share the same rendering source and animation library.
-
-## v0.1.3 public edition
-
-- 71 procedural animations and clock modes, live preview and custom palettes.
-- USB / Adalight and network DDP output, with a target of up to 60 FPS.
-- Chinese and English interfaces, themes and favorites.
-- Manual update checks against **https://github.com/OW3N-HE/Pixel-Studio/releases** only.
-- OpenRGB update checks use the existing Node.js runtime; no Qt Network installation is needed.
-- Private hand-drawn assets and characters with unclear redistribution rights are excluded from this public edition. Local private editions may contain additional animations.
-
-The current update checker reads the latest stable GitHub Release, displays its notes, and links to the official release page. It does **not** automatically install files, update firmware, or independently download animation packs. Future library additions are delivered as part of a complete project release. It checks only when the user clicks the button.
+Public source for the Windows Desktop, Web and OpenRGB editions. Private hand-drawn assets and excluded character modes are not included. See RELEASE-NOTES.md and GETTING-STARTED.html.
 
 ## Downloads
 
-Download `Pixel-Studio-0.1.3-Windows-x64.zip` from [Releases](https://github.com/OW3N-HE/Pixel-Studio/releases). It includes the web app, plugin DLL, corresponding source and these instructions. `Pixel-Studio-0.1.3-Source.zip` contains the source without the compiled DLL or build caches.
+Use [GitHub Releases](https://github.com/OW3N-HE/Pixel-Studio/releases) for the three-in-one Windows installer, Web ZIP (with Windows Node.js runtime), or corresponding source ZIP. The installer defaults to Desktop and optionally installs Web and OpenRGB. No macOS/Linux binary is supplied.
 
-Read [INSTALL-UPDATE.md](INSTALL-UPDATE.md) before installation or replacement.
+Web ZIP: extract all files and run Start-Pixel-Studio.cmd to start the local service and browser together. Direct index.html supports browser USB but does not start DDP. A browser cannot execute a local service by itself.
 
-## Requirements
+OpenRGB: plugin API 4, Qt 5.15.0 MSVC x64 ABI; compatible OpenRGB must be installed separately. The package uses PixelStudioSerial.exe for native USB; Python is not required. OpenRGB updates are checked/downloaded from the plugin, then installed manually with OpenRGB closed.
 
-- Windows x64 for the supplied plugin DLL.
-- OpenRGB plugin API 4, Qt **5.15.0**, MSVC x64 ABI. The binary was built for an OpenRGB 1.0rc3-compatible host; other API/Qt combinations may require rebuilding.
-- Node.js 22 or newer for the local DDP service and OpenRGB plugin.
-- Desktop Chrome or Edge with Web Serial for browser USB output.
-- Python 3 and `pyserial` for the plugin's USB helper. They are not bundled.
-- WLED and a correctly configured LED matrix. 405 pixels / 60 FPS is a target, not a guarantee for all hardware, firmware and transports.
+Desktop: check for updates in Settings, download and verify, then explicitly confirm installation. No automatic firmware update or silent installation.
 
-## Build the OpenRGB plugin
+## Building the corresponding source
 
-Install Visual Studio Build Tools with Desktop development with C++, CMake, and Qt 5.15.0 MSVC 2019 x64. Run:
+Install Node.js 22+, npm, Visual Studio C++ Build Tools/CMake, Qt 5.15.0 MSVC 2019 x64 and Inno Setup 6.7+. No developer tools or caches are in this archive.
 
-```powershell
-./openrgb-plugin/Build-Plugin.ps1 -QtDir 'C:\Qt\5.15.0\msvc2019_64'
-```
+1. In desktop, run npm ci, then node icons.cjs.
+2. Build Desktop with npx electron-builder --dir --win --x64 --config electron-builder.unified.cjs --publish never. Use the unified config; the older standalone NSIS extraResources path is not used by this release.
+3. Run openrgb-plugin/Build-Plugin.ps1 -QtDir followed by your Qt directory to build the plugin and USB helper. No DLL is installed automatically.
+4. Assemble a payload with desktop/ from desktop/dist-unified/win-unpacked; app/ containing the public web files and openrgb-plugin sources/helper; plugin/PixelStudioPlugin.dll; runtime/node.exe and runtime/LICENSE from Node.js 22; and LICENSE at the payload root. The web launcher scripts and GETTING-STARTED.html belong in app/.
+5. Compile installer/PixelStudio.iss using Inno Setup ISCC, defining PayloadDir, AppVersion=0.1.8 and OutputPath. Test builds additionally define TestPackage=1. Build-Installer.ps1 performs payload checks; production builds also require a truthful release-review.json.
 
-The build script produces `openrgb-plugin/dist/PixelStudioPlugin.dll`. It does not install or flash anything. The release build intentionally has no developer-specific default project folder: select your extracted project folder in the plugin settings.
+Build-Unified-Test.ps1 is the maintainer's convenience wrapper and expects locally provisioned Qt/Node/Inno tool directories as named in the script. Prepare-Test-Payload.cjs and the tests require acorn, installable with npm install --prefix firmware/wled-usb-pixel --no-save acorn. Do not publish private development directories or machine profiles.
 
-## Validation and limitations
+## Scope and validation
 
-The public source passed JavaScript syntax parsing and headless rendering of all 71 available modes at 15 x 27 pixels, three timestamps and two mappings (426 frames). The Windows plugin compiled successfully with an existing variable-shadowing warning. This is not a device timing, electrical safety, endurance or full UI regression test. Animation source inspection cannot establish that every artistic concept is legally protectable or unprotectable; report any rights concern before redistribution.
+Mocked desktop-settings/IPC and updater regression tests passed. This is not certification of visual layout, actual controller playback or the installed upgrade flow. See openrgb-plugin/THIRD-PARTY.md; Electron and Node distributions retain their own license notices. No code-signing certificate is supplied.
 
-Custom ESP32-C3 WLED firmware is **not included in this software release**. Its source, license, build correspondence, watchdog behavior and flashing instructions need a separate experimental firmware release. Do not flash software archives or assume an application BIN belongs at offset 0x0.
+## 简体中文
 
-## License and third-party notices
+这是桌面版、网页版和 OpenRGB 插件的公开源码。推荐使用 Releases 中的三合一安装包，默认桌面版，其他组件可选。网页版 ZIP 已包含 Windows Node.js，完整解压后运行 Start-Pixel-Studio.cmd；直接打开 HTML 不会启动 DDP 服务。升级不会刷写固件。
 
-Pixel Studio project-owned code is licensed under **GPL-2.0-or-later**. See [LICENSE](LICENSE) for the GPLv2 text; at your option you may use a later GPL version. The project is provided without warranty. Existing third-party copyright notices and licenses remain applicable; see [openrgb-plugin/THIRD-PARTY.md](openrgb-plugin/THIRD-PARTY.md).
-
-Qt, Node.js, Python, pyserial, OpenRGB and WLED are not bundled in this release. WLED firmware is a separate project and is not relicensed by this statement.
-
-Contributions adding original or properly licensed animations are welcome. Please discuss significant UI changes before proposing them to the official project. This is a contribution preference, not a restriction on GPL modification or redistribution rights. Clearly identify unofficial builds.
-
-## Authors and collaborators
-
-GPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra  
-OWEN
-
-Created through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.
-
-Special thanks: **David Wang**.
-
-Thanks to the WLED, OpenRGB, Qt and Node.js communities. This is not an official WLED or OpenRGB release.
+源码编译需要 Node.js、Visual Studio C++、Qt 5.15.0 和 Inno Setup；安装包用户不需要这些开发工具。私人手绘素材和授权不明确的角色模式未包含。设置与更新逻辑已通过模拟回归测试，真实设备和完整安装升级仍需实机反馈。

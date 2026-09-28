@@ -1,4 +1,5 @@
 #include <QStyleOptionFrame>
+#include <QMessageBox>
 #include <QRandomGenerator>
 #include "PixelStudioPanel.h"
 #include "PixelStudioUpdates.h"
@@ -444,8 +445,15 @@ QIcon playbackIcon(bool stop) {
 }
 QString text(const char* value) { return QString::fromUtf8(value); }
 QSettings preferences() {
-    return QSettings(QSettings::IniFormat, QSettings::UserScope,
-                     QStringLiteral("PixelStudio"), QStringLiteral("OpenRGBPlugin"));
+    const QString directory = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation))
+        .filePath(QStringLiteral("Pixel Studio for OpenRGB"));
+    const QString file = QDir(directory).filePath(QStringLiteral("OpenRGBPlugin.ini"));
+    if (!QFileInfo::exists(file) && QDir().mkpath(directory)) {
+        const QSettings legacy(QSettings::IniFormat, QSettings::UserScope,
+                               QStringLiteral("PixelStudio"), QStringLiteral("OpenRGBPlugin"));
+        if (QFileInfo::exists(legacy.fileName())) QFile::copy(legacy.fileName(), file);
+    }
+    return QSettings(file, QSettings::IniFormat);
 }
 QImage rgbImage(int width, int height, const QByteArray& rgb) {
     if (width < 1 || height < 1 || width > 128 || height > 128
@@ -623,7 +631,7 @@ void PixelBoard::paintEvent(QPaintEvent* event) {
     painter.setRenderHint(QPainter::Antialiasing, cad_);
     QPainterPath screenShape;
     screenShape.addRoundedRect(screen, screenRadius, screenRadius);
-    painter.fillPath(screenShape, QColor("#030605"));
+    painter.fillPath(screenShape, QColor("#000000"));
     painter.setPen(Qt::NoPen);
     painter.setRenderHint(QPainter::Antialiasing, cad_);
     // Front aperture measured from the user's CAD: pitch 7.125, opening 6.325, R0.8.
@@ -717,16 +725,52 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
     languageRow->addWidget(language_);
     languageRow->addStretch(1);
     shell->insertLayout(0, heading);
-    connect(web, &QPushButton::clicked, this, [] {
-        QDesktopServices::openUrl(QUrl(QStringLiteral("http://127.0.0.1:8766/?edition=handdrawn")));
+    connect(web, &QPushButton::clicked, this, [this, settingsFile = settings.fileName()] {
+        const QSettings preferences(settingsFile, QSettings::IniFormat);
+        const QSettings userInstall(QStringLiteral("HKEY_CURRENT_USER\\Software\\PixelStudio\\Installer"), QSettings::NativeFormat);
+        const QSettings machineInstall(QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\PixelStudio\\Installer"), QSettings::NativeFormat);
+        const QStringList roots {
+            preferences.value(QStringLiteral("project")).toString(),
+            userInstall.value(QStringLiteral("ProjectPath")).toString(),
+            machineInstall.value(QStringLiteral("ProjectPath")).toString(),
+            QString::fromUtf8(PIXEL_STUDIO_PROJECT_ROOT)
+        };
+        for (const QString& root : roots) {
+            if (root.trimmed().isEmpty()) continue;
+            const QFileInfo page(QDir(root).absoluteFilePath(QStringLiteral("index.html")));
+            if (!page.isFile() || !page.isReadable()) continue;
+            if (!QDesktopServices::openUrl(QUrl::fromLocalFile(page.absoluteFilePath()))) {
+                QMessageBox::warning(this, QStringLiteral("Pixel Studio"),
+                    QStringLiteral("Unable to open the standalone web page in your browser.\n"
+                                   "无法使用浏览器打开独立网页版。\n\n") + page.absoluteFilePath());
+            }
+            return;
+        }
+        QMessageBox::warning(this, QStringLiteral("Pixel Studio"),
+            QStringLiteral("Cannot find index.html. Check the animation library folder or reinstall Pixel Studio.\n"
+                           "找不到 index.html。请检查动画库目录或重新安装 Pixel Studio。"));
     });
 
     auto* setup = new QGroupBox(text("动画库来源 · 通常无需更改"), this);
     auto* setupLayout = new QGridLayout(setup);
-    projectPath_ = new StudioLineEdit(settings.value(QStringLiteral("project"),
-                                QString::fromUtf8(PIXEL_STUDIO_PROJECT_ROOT)).toString(), setup);
-    QString node = QStandardPaths::findExecutable(QStringLiteral("node"));
+    const QSettings installed(QStringLiteral("HKEY_CURRENT_USER\\Software\\PixelStudio\\Installer"), QSettings::NativeFormat);
+    const QSettings machineInstalled(QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\PixelStudio\\Installer"), QSettings::NativeFormat);
+    QString installedProject = installed.value(QStringLiteral("ProjectPath")).toString();
+    if (!QFileInfo::exists(QDir(installedProject).filePath(QStringLiteral("index.html"))))
+        installedProject = machineInstalled.value(QStringLiteral("ProjectPath")).toString();
+    QString project = settings.value(QStringLiteral("project"),
+        installedProject.isEmpty() ? QString::fromUtf8(PIXEL_STUDIO_PROJECT_ROOT) : installedProject).toString();
+    const QString temporaryRoot = QDir::fromNativeSeparators(QDir::tempPath()) + QStringLiteral("/PixelStudio-OpenRGB-");
+    const bool migrateTemporary = QDir::fromNativeSeparators(project).startsWith(temporaryRoot, Qt::CaseInsensitive)
+        && !installedProject.isEmpty()
+        && QFileInfo::exists(QDir(installedProject).filePath(QStringLiteral("index.html")));
+    if (migrateTemporary) { project = installedProject; settings.setValue(QStringLiteral("project"), project); }
+    projectPath_ = new StudioLineEdit(project, setup);
+    QString node = installed.value(QStringLiteral("NodePath")).toString();
+    if (!QFileInfo::exists(node)) node = machineInstalled.value(QStringLiteral("NodePath")).toString();
+    if (node.isEmpty()) node = QStandardPaths::findExecutable(QStringLiteral("node"));
     if (node.isEmpty()) node = QStringLiteral("C:/Program Files/nodejs/node.exe");
+    if (migrateTemporary && QFileInfo::exists(node)) settings.setValue(QStringLiteral("node"), node);
     nodePath_ = new StudioLineEdit(settings.value(QStringLiteral("node"), node).toString(), setup);
     auto* browseProject = new StudioButton(text("选择目录"), setup);
     auto* browseNode = new StudioButton(text("选择程序"), setup);
@@ -1199,8 +1243,8 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
         QFont headingFont = heading->font(); headingFont.setPointSize(20); headingFont.setBold(true);
         heading->setFont(headingFont); layout->addWidget(heading);
         auto* version = new QLabel(english_
-            ? QStringLiteral("Version 0.1.3 · OpenRGB plugin\nBuilt: %1").arg(QString::fromLatin1(__DATE__))
-            : text("版本 0.1.3 · OpenRGB 插件\n编译日期：%1").arg(QString::fromLatin1(__DATE__)), &about);
+        ? QStringLiteral("Version 0.1.8 · OpenRGB plugin\nBuilt: %1").arg(QString::fromLatin1(__DATE__))
+        : text("版本 0.1.8 · OpenRGB 插件\n编译日期：%1").arg(QString::fromLatin1(__DATE__)), &about);
         layout->addWidget(version);
         auto* description = new QLabel(english_
             ? QStringLiteral("Small pixels. Endless imagination.\n\nA pixel animation studio for WLED. The web app and OpenRGB plugin share an animation library, with live previews, custom palettes and USB / Adalight or DDP output.\n\nAuthors & collaborators\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra\nOWEN\n\nCreated through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.\n\nSpecial thanks: David Wang\n\nIndependent project. Thanks to the WLED, OpenRGB, Qt and Node.js communities. Not an official WLED or OpenRGB release.")
@@ -1528,8 +1572,10 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
     gamma_->setValue(settings.value(QStringLiteral("gamma"), 2.8).toDouble());
     gamma_->setFixedSize(rightColumnWidth, 30);
     gamma_->setAlignment(Qt::AlignCenter);
+    gamma_->setToolTip(QStringLiteral("USB uses detected device Gamma; unknown or disabled realtime Gamma bypasses compensation.\nUSB 使用设备 Gamma；未知或实时 Gamma 关闭时不补偿。"));
     addOutputSetting(7, text("颜色还原"), colorMatching_);
-    addOutputSetting(8, QStringLiteral("Gamma"), gamma_);
+    // Internal compatibility value only; color matching uses device settings.
+    gamma_->hide();
     gamma_->setEnabled(colorMatching_->currentData().toBool());
     liveLayout_ = controls;
     brightnessLabel_ = controls->itemAtPosition(0, 0)->widget();
@@ -1945,7 +1991,7 @@ void PixelStudioPanel::handleMessage(const QJsonObject& message) {
         setLabelText(stats_, text("发送 %1 / %2 FPS  |  %3 kbps"),
             {QString::number(stats.value(QStringLiteral("fps")).toDouble(), 'f', 1),
              QString::number(stats.value(QStringLiteral("targetFps")).toInt(fps_->value())),
-             QString::number(stats.value(QStringLiteral("kbps")).toDouble(), 'f', 1)});
+             QString::number(stats.value(QStringLiteral("kbps")).toDouble() * 1024.0 * 8.0 / 1000.0, 'f', 1)});
     } else if (type == QStringLiteral("device")) {
         width_->setValue(message.value(QStringLiteral("w")).toInt(15));
         height_->setValue(message.value(QStringLiteral("h")).toInt(27));
@@ -1984,6 +2030,11 @@ void PixelStudioPanel::handleMessage(const QJsonObject& message) {
                 : text("DDP 后台正在播放。切换动画、速度、配色或亮度会无缝应用。"));
         if (operation == QStringLiteral("stop"))
             showStatus(text("本插件的播放已停止。独立网页版和共享服务保留运行。"));
+    } else if (type == QStringLiteral("colorProfile")) {
+        const QSignalBlocker blocker(gamma_);
+        if (message.value(QStringLiteral("automatic")).toBool())
+            gamma_->setValue(message.value(QStringLiteral("gamma")).toDouble(1.0));
+        gamma_->setEnabled(false);
     } else if (type == QStringLiteral("error") || type == QStringLiteral("fatal") || type == QStringLiteral("warning")) {
         const auto operation = message.value(QStringLiteral("op")).toString();
         if (operation == QStringLiteral("start") || operation == QStringLiteral("stop")
@@ -2378,3 +2429,4 @@ void PixelStudioPanel::shutdown() {
     busy_ = false;
     streaming_ = false;
 }
+

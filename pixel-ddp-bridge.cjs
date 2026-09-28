@@ -7,9 +7,11 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { Worker } = require('node:worker_threads');
 const { performance } = require('node:perf_hooks');
-const PORT = 8766;
+const PORT = process.parentPort && process.env.PIXEL_STUDIO_BRIDGE_PORT === '0' ? 0 : 8766;
 const HOST = '127.0.0.1';
-const ORIGIN = `http://${HOST}:${PORT}`;
+let boundPort = PORT;
+let ORIGIN = `http://${HOST}:${PORT}`;
+const rootId = crypto.createHash('sha256').update(path.resolve(__dirname).toLowerCase()).digest('hex');
 const TOKEN = crypto.randomBytes(32).toString('hex');
 const sessions = new Map();
 const udp = dgram.createSocket('udp4');
@@ -17,7 +19,7 @@ udp.on('error', error => console.error('UDP:', error.message));
 
 function fail(message, status = 400) { const e = new Error(message); e.status = status; throw e; }
 function perceptualLut(brightness, inverseGamma) {
-  const gain = Math.pow(Math.max(0, Math.min(255, brightness)) / 255, 2.2);
+  const gain = Math.max(0, Math.min(255, brightness)) / 255;
   return Uint8Array.from({length:256}, (_, value) =>
     Math.round(255 * Math.pow(value / 255 * gain, inverseGamma)));
 }
@@ -122,8 +124,9 @@ async function startAnimationWorker(session, input, w, h, fps, speed) {
 const server = http.createServer(async (req, res) => {
   const receivedAt = performance.now();
   try {
-    if (req.headers.host !== HOST + ':' + PORT) fail('Invalid Host', 403);
+    if (req.headers.host !== HOST + ':' + boundPort) fail('Invalid Host', 403);
     const url = new URL(req.url, ORIGIN);
+    if(req.method==='GET' && url.pathname==='/health'){json(res,{service:'PixelStudioDDP',rootId});return;}
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
       const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
         .replace('</head>', `<meta name="pixel-bridge-token" content="${TOKEN}"></head>`);
@@ -184,8 +187,10 @@ const server = http.createServer(async (req, res) => {
         }
         const gc = cfg.light?.gc;
         const enabledGamma = gc?.col !== false && gc?.col !== 0;
-        const gamma = Math.max(1,Math.min(4,Number(input.gamma) || (typeof gc?.col === 'number' ? gc.col : gc?.val) || 2.8));
+        const gamma = Math.max(1,Math.min(4,(typeof gc?.col === 'number' && gc.col > 0 ? gc.col : gc?.val) || Number(input.gamma) || 2.8));
         const inverseGamma = input.match !== false && !live['no-gc'] && enabledGamma ? 1/gamma : 1;
+        session.colorGamma = gamma;
+        session.colorGammaEnabled = !live['no-gc'] && enabledGamma;
         session.inverseGamma = inverseGamma;
         session.lut = perceptualLut(brightness, inverseGamma);
         await deviceJSON(host, '/json/state', {on:true,bri:255,tt:0,lor:0,live:false,seg:{id:si.state?.mainseg || 0,on:true,bri:255,frz:false}});
@@ -205,7 +210,8 @@ const server = http.createServer(async (req, res) => {
       if (!/^[a-zA-Z0-9_-]{1,64}$/.test(input.mode || '') || !Number.isInteger(brightness)
           || brightness < 0 || brightness > 255 || !Number.isInteger(fps) || fps < 1 || fps > 60
           || !Number.isFinite(speed) || speed < 0.05 || speed > 8) fail('Invalid live update');
-      session.lut = perceptualLut(brightness, session.inverseGamma || 1);
+      session.inverseGamma = input.match !== false && session.colorGammaEnabled ? 1/session.colorGamma : 1;
+      session.lut = perceptualLut(brightness, session.inverseGamma);
       session.worker.postMessage({type:'update',config:{...input,lut:Array.from(session.lut)}});
       session.stats.targetFps = fps;
       session.stats.mode = input.mode;
@@ -256,10 +262,15 @@ const reaper = setInterval(() => {
     !(session.continuous && session.confirmed) && performance.now()-session.lastAt > 8000) void release(session);
 },1000);
 reaper.unref();
-server.listen(PORT,HOST,()=>console.log('Pixel Studio DDP: '+ORIGIN));
+server.listen(PORT,HOST,()=>{
+  boundPort=server.address().port;ORIGIN=`http://${HOST}:${boundPort}`;
+  console.log('Pixel Studio DDP: '+ORIGIN);
+  process.parentPort?.postMessage({type:'pixel-ddp-ready',port:boundPort,token:TOKEN});
+});
 async function shutdown() {
   clearInterval(reaper);
   await Promise.allSettled([...sessions.values()].map(release));
   server.close();udp.close();process.exit(0);
 }
 process.on('SIGINT',shutdown);process.on('SIGTERM',shutdown);
+process.parentPort?.on('message',event=>{if(event.data?.type==='pixel-ddp-stop')void shutdown();});

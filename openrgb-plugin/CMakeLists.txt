@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(PixelStudioPlugin VERSION 0.1.3 LANGUAGES CXX)
+project(PixelStudioPlugin VERSION 0.1.8 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
@@ -22,3 +22,16 @@ set_target_properties(PixelStudioPlugin PROPERTIES
     PREFIX ""
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+
+if(WIN32)
+    add_executable(PixelStudioSerial src/PixelStudioSerial.cpp)
+    set_target_properties(PixelStudioSerial PROPERTIES
+        AUTOMOC OFF
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+    if(MSVC)
+        target_compile_options(PixelStudioSerial PRIVATE /utf-8 /W4)
+        set_property(TARGET PixelStudioSerial PROPERTY
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    endif()
+    add_dependencies(PixelStudioPlugin PixelStudioSerial)
+endif()

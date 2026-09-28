@@ -3,8 +3,34 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  /* Keep layout measurable while the progressive UI replaces the legacy DOM. */
+  html.ps-ui-starting body { visibility: hidden !important; }
+</style>
+<script>
+(() => {
+  const root = document.documentElement;
+  root.classList.add('ps-ui-starting');
+  let revealed = false;
+  function reveal() {
+    if (revealed) return;
+    revealed = true;
+    root.classList.remove('ps-ui-starting');
+    clearTimeout(fallback);
+  }
+  // A missing script must never leave the page permanently hidden.
+  const fallback = setTimeout(reveal, 8000);
+  document.addEventListener('DOMContentLoaded', () => {
+    // Run after all DOM-ready handlers and translation mutation microtasks.
+    requestAnimationFrame(reveal);
+  }, { once: true });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) reveal();
+  });
+})();
+</script>
 <meta name="color-scheme" content="dark" />
-<title>Pixel Studio · WLED 像素放映室</title>
+<title>Pixel Studio</title>
 <style>
 :root{--bg:#101917;--panel:#17231f;--line:#2d3d36;--text:#ecf3ee;--muted:#93a69b;--brand:#86efc2;--danger:#ff8990;--ok:#86efc2;--amber:#f8c68b}
 *{box-sizing:border-box}[hidden]{display:none!important}
@@ -439,8 +465,18 @@ function nowText() {
     }
   }
 
+  let statusSource = null;
+  let statusKind = '';
+  function renderStatus() {
+    if (statusSource === null) return;
+    ui.status.setAttribute('data-update-ui', '');
+    ui.status.textContent = window.pixelStudioFormatNotice ? window.pixelStudioFormatNotice(statusSource, statusKind) : statusSource;
+  }
+  window.addEventListener('pixel-studio-language-change', renderStatus);
   function setStatus(text, kind = '') {
-    ui.status.textContent = text;
+    statusSource = String(text);
+    statusKind = kind;
+    renderStatus();
     ui.status.classList.remove('ok', 'err');
     if (kind) ui.status.classList.add(kind);
   }
@@ -589,8 +625,12 @@ function nowText() {
     const availableWidth = Math.max(1, (stage?.clientWidth || 380) - (aligned ? 16 : 40));
     const maxHeight = Math.max(1, aligned ? stage.clientHeight - 12 : (stage?.clientHeight || 486) - 40);
     const scale = Math.min(availableWidth / w, maxHeight / h);
-    ui.preview.style.width = `${w * scale}px`;
-    ui.preview.style.height = `${h * scale}px`;
+    if (typeof window.pixelStudioResizePreview === 'function') {
+      window.pixelStudioResizePreview();
+    } else {
+      ui.preview.style.width = `${w * scale}px`;
+      ui.preview.style.height = `${h * scale}px`;
+    }
     ui.preview.style.aspectRatio = `${w} / ${h}`;
     ui.preview.style.imageRendering = 'pixelated';
     ui.preview.style.objectFit = 'contain';
@@ -695,7 +735,7 @@ tiny_greenhouse:"一座玻璃小温室，三株小花慢慢生长。"};
   }
 
 
-  // Third-party and private hand-drawn pixel assets are excluded from this public build.
+  // Hand-drawn originals belong to the user and their friend. Pixels are embedded for offline use.
   const handmadeSource = {};
   const handmadeDecoded = new Map();
   function handmadeFrame(name, time=0) {
@@ -1056,12 +1096,24 @@ tiny_greenhouse:"一座玻璃小温室，三株小花慢慢生长。"};
 
   const serialLab = { confirmedWriter:null, pending:null, readTask:null, bytes:0, nativeUsb:false, activeBaud:115200, frames:0, sampleAt:0, busy:false, heldFrame:null, holdTimer:null, lastWrite:0 };
 
+  let serialNotice = null;
+  window.addEventListener('pixel-studio-language-change', () => {
+    if (serialNotice) serialNote(serialNotice.message, serialNotice.kind);
+    else serialNote('尚未诊断。先确认固件命令通道，再判断像素输出。');
+  });
   function serialNote(message, kind) {
+    serialNotice = { message, kind };
     const node=document.getElementById('serialDiagnostic');
-    if(node) {node.textContent=message;node.dataset.state=kind||'info';}
+    if(node) {node.textContent=window.pixelStudioFormatNotice ? window.pixelStudioFormatNotice(message, kind) : message;node.dataset.state=kind||'info';}
   }
 
+  let serialColorProfile = null;
+  let serialColorLut = null;
+  let serialColorUiKey = '';
   function serialResetSession() {
+    serialColorProfile = null;
+    serialColorLut = null;
+    serialColorUiKey = '';
     serialLab.confirmedWriter=null;
     serialLab.bytes=0;serialLab.frames=0;serialLab.sampleAt=0;
     serialLab.heldFrame=null;clearTimeout(serialLab.holdTimer);
@@ -1099,14 +1151,49 @@ tiny_greenhouse:"一座玻璃小温室，三株小花慢慢生长。"};
     if(serialLab.busy) return;
     const count=frame.length/3;
     if(!Number.isInteger(count)||count<1||count>65535)throw new Error('Adalight 帧必须为 1–65535 个 RGB 像素。');
-    const packet=new Uint8Array(frame.length+6),n=count-1,hi=n>>8,lo=n&255;
-    packet.set([65,100,97,hi,lo,hi^lo^0x55]);
-    const brightness=Math.max(0,Math.min(255,Number(getFrameConfig().d)))/255;
-    for(let i=0;i<frame.length;i++)packet[i+6]=Math.round(frame[i]*brightness);
     const sourceWriter=writer;
-    const writeStarted=performance.now();
     serialLab.busy=true;
     try {
+      const host = deviceBase();
+      if (!serialColorProfile || serialColorProfile.writer !== sourceWriter || serialColorProfile.host !== host) {
+        const entry = {writer:sourceWriter, host, profile:null};
+        serialColorProfile = entry;
+        try { entry.profile = await readDeviceProfile(true); }
+        catch (_) {
+          logLine(document.documentElement.lang === 'en'
+            ? 'Cannot read WLED color settings. USB keeps original colors; Gamma compensation is bypassed.'
+            : '未读取到 WLED 颜色设置：USB 保留原始颜色，不猜测或应用 Gamma 补偿。');
+        }
+      }
+      if (writer !== sourceWriter || serialLab.confirmedWriter !== sourceWriter) return;
+      const profile = serialColorProfile?.profile;
+      const known = profile?.realtimeGammaKnown === true;
+      const match = document.getElementById('colorMode').value === 'match';
+      const gammaField = document.getElementById('colorGamma');
+      const gamma = Math.max(1,Math.min(4,known ? profile.gamma : Number(gammaField.value)||2.8));
+      const exponent = match && known && profile.realtimeGammaEnabled ? 1/gamma : 1;
+      // Update the settings DOM only when the color state or language changes.
+      // Repeated textContent writes also wake the language MutationObserver.
+      const language = document.documentElement.lang;
+      const colorUiKey = host + ':' + known + ':' + match + ':' + gamma + ':' + exponent + ':' + language;
+      if (serialColorUiKey !== colorUiKey) {
+        serialColorUiKey = colorUiKey;
+        gammaField.disabled = true;
+        gammaField.title = language === 'en'
+          ? 'USB uses detected device Gamma only. Unknown or disabled realtime Gamma: no compensation. Stop and reconnect after changing WLED settings.'
+          : 'USB 仅使用实际读取的设备 Gamma；未知或实时 Gamma 关闭时不补偿。修改 WLED 设置后请停止并重新连接串口。';
+        document.getElementById('deviceInfo').textContent = language === 'en'
+          ? (!known ? 'USB: device color settings unavailable; original RGB.' : exponent === 1 ? 'USB: Gamma compensation bypassed; original RGB.' : 'USB: matching device Gamma ' + gamma.toFixed(2))
+          : (!known ? 'USB：未读取到设备颜色配置，保留原始 RGB。' : exponent === 1 ? 'USB：未启用 Gamma 补偿，保留原始 RGB。' : 'USB：正在补偿设备 Gamma ' + gamma.toFixed(2));
+      }
+      const brightness=Math.max(0,Math.min(255,Number(getFrameConfig().d)))/255;
+      const key = brightness + ':' + exponent;
+      if (!serialColorLut || serialColorLut.key !== key) serialColorLut = {key,
+        values:Uint8Array.from({length:256},(_,v)=>Math.round(255*Math.pow(v/255*brightness,exponent)))};
+      const packet=new Uint8Array(frame.length+6),n=count-1,hi=n>>8,lo=n&255;
+      packet.set([65,100,97,hi,lo,hi^lo^0x55]);
+      for(let i=0;i<frame.length;i++)packet[i+6]=serialColorLut.values[frame[i]];
+      const writeStarted=performance.now();
       await sourceWriter.write(packet);
       showStreamStats(true, packet.length, performance.now()-writeStarted);
       serialLab.lastWrite=performance.now();
@@ -2295,18 +2382,21 @@ function frameToHexList(frame) {
       const [stateResult, configResult] = await Promise.allSettled([
         fetchDeviceJSON('/json/si'), fetchDeviceJSON('/json/cfg')
       ]);
-      if (stateResult.status !== 'fulfilled') throw stateResult.reason;
-      const info = stateResult.value.info || {};
+      if (stateResult.status !== 'fulfilled' && configResult.status !== 'fulfilled') throw stateResult.reason;
+      const info = stateResult.status === 'fulfilled' ? stateResult.value.info || {} : {};
       const gc = configResult.status === 'fulfilled' ? configResult.value.light?.gc : null;
+      const live = configResult.status === 'fulfilled' ? configResult.value.if?.live : null;
       let gamma = Number(document.getElementById('colorGamma').value) || 2.8;
       if (gc) gamma = (gc.col === false || gc.col === 0) ? 1 : typeof gc.col === 'number' ? gc.col : Number(gc.val) || 2.8;
       gamma = Math.max(1, Math.min(4, gamma));
-      const profile = { host, gamma, matrix:info.leds?.matrix, count:info.leds?.count, arch:info.arch, version:info.ver, maxMessage:info.arch === 'esp8266' ? 480 : 1200 };
+      const realtimeGammaKnown = gc?.col !== undefined && live?.['no-gc'] !== undefined;
+      const realtimeGammaEnabled = realtimeGammaKnown && !live['no-gc'] && gc.col !== false && gc.col !== 0 && gamma !== 1;
+      const profile = { host, gamma, realtimeGammaKnown, realtimeGammaEnabled, matrix:info.leds?.matrix, count:info.leds?.count, arch:info.arch, version:info.ver, maxMessage:info.arch === 'esp8266' ? 480 : 1200 };
       if (deviceBase() !== host) throw new Error('设备地址已改变，请重新开始');
       deviceProfile = profile;
       document.getElementById('colorGamma').value = gamma.toFixed(2);
       document.getElementById('deviceInfo').textContent = (info.release || info.arch || 'WLED') + ' · ' + (info.ver || '') + (profile.matrix ? ' · 设备 ' + profile.matrix.w + ' × ' + profile.matrix.h : '') + ' · Gamma ' + gamma;
-      if (!gc) logLine('未读取到颜色配置，按手动 Gamma ' + gamma + ' 处理');
+      if (!gc) logLine(document.documentElement.lang === 'en' ? 'Device color configuration unavailable; USB Gamma compensation will be bypassed.' : '未读取到颜色配置，USB 将跳过 Gamma 补偿。');
       return profile;
     })();
     try { return await profilePromise; } finally { profilePromise = null; }
@@ -2625,7 +2715,7 @@ function frameToHexList(frame) {
     stopFlag = false;
     currentFrame = 0;
     ui.progress.value = 0;
-    setStatus('开始发送...', 'ok');
+    setStatus('正在发送', 'ok');
     document.getElementById('streamStats').textContent = '0.0 / ' + ui.fps.value + ' FPS | 0.0 kbps';
     loopFrames();
   }
@@ -2669,6 +2759,10 @@ function frameToHexList(frame) {
       setStatus(`已连接（baud ${baudRate}）`, 'ok');
       logLine('串口已连接');
     } catch (err) {
+      if (err.name === 'NotFoundError') {
+        setStatus('已取消选择串口');
+        return;
+      }
       setStatus(`连接失败：${err.message}`, 'err');
       logLine(`连接失败: ${err.message}`);
     }
@@ -2744,7 +2838,7 @@ function frameToHexList(frame) {
 
   async function testSerial() {
     if(ui.controlMode.value!=='serial') {serialNote('先把控制方式切换到串口。IP / DDP 无需此诊断。');return;}
-    if(!writer || !reader){serialNote('请先连接 ESP32 的串口。当前发现的 COM5 是 Espressif 原生 USB 设备。');return;}
+    if(!writer || !reader){serialNote('请先连接 ESP32 的串口。');return;}
     if(running || serialLab.busy || serialLab.heldFrame){serialNote('请先停止播放，再运行只读诊断，避免查询和像素数据混在一起。');return;}
     if(serialLab.pending)return;
     const sourceWriter=writer,startBytes=serialLab.bytes;
@@ -2939,7 +3033,9 @@ function frameToHexList(frame) {
   });
 
 
-  const bridgeToken = document.querySelector('meta[name="pixel-bridge-token"]')?.content || '';
+  const desktopDdp = window.pixelStudioDesktop?.ddpRequest;
+  const pageBridgeToken = document.querySelector('meta[name="pixel-bridge-token"]')?.content || '';
+  const bridgeToken = desktopDdp ? 'desktop-ipc' : pageBridgeToken;
   const runtimeNotice = document.getElementById('runtimeNotice');
   if (bridgeToken) {
     runtimeNotice.textContent = '高速控制已连接 · DDP 后台 60 FPS · 动画与亮度支持无缝更新';
@@ -2953,6 +3049,17 @@ function frameToHexList(frame) {
   function ddpTargetFps() { return Math.max(1,Math.min(60,Math.round(Number(ui.fps.value)||60))); }
   async function bridgeRequest(route, options = {}) {
     if (!bridgeToken) throw new Error('DDP 需要本地服务：请双击 Start-Pixel-DDP.cmd，从 127.0.0.1:8766 打开');
+    if(desktopDdp){
+      if(options.controller?.signal.aborted)throw new Error('DDP request cancelled');
+      const result=await desktopDdp(route,{
+        ...(options.json===undefined?{}:{json:options.json}),
+        ...(options.binary===undefined?{}:{binary:Array.from(options.binary)}),timeout:options.timeout||6000
+      });
+      if(!result.ok)throw new Error(result.error||'DDP service unavailable');
+      const response=new Response(result.status===204?null:result.body,{status:result.status});
+      if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'DDP service error '+response.status);}
+      return response;
+    }
     const controller = options.controller || new AbortController();
     const timer = setTimeout(() => controller.abort(), options.timeout || 6000);
     try {
@@ -3045,7 +3152,7 @@ function frameToHexList(frame) {
       .catch(error=>setStatus('后台停止失败：'+error.message,'err'));
   });
 
-  if (bridgeToken) { ui.controlMode.value='ddp'; ui.fps.value='60'; }
+  // The service enables DDP but does not select an output or start playback.
   window.addEventListener('pagehide',stopDdpPlayback);
 
   function syncClockStyling() {
@@ -3069,6 +3176,20 @@ function frameToHexList(frame) {
       resizePreview: applyPreviewAspect,
       refreshPalette: resetFrameCache
     };
+    if (window.pixelStudioDesktop?.edition) {
+      const rememberPlayback = () => {
+        const values = {};
+        for (const id of ['controlMode','wledHost','baudRate','protocol','matrixW','matrixH','mapping','fps','brightness','animationMode','animationSpeed','clockFont','clockPalette','colorMode']) {
+          const element = document.getElementById(id);
+          if (element) values[id] = element.value;
+        }
+        window.pixelStudioDesktop.savePlayback({playing:running,values});
+      };
+      window.addEventListener('pixel-studio-desktop-ready', () => {
+        setInterval(rememberPlayback, 1000);
+        window.addEventListener('beforeunload', rememberPlayback);
+      }, {once:true});
+    }
   }
 })();
 
