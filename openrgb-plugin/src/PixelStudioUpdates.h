@@ -27,7 +27,7 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
     auto* layout = new QVBoxLayout(dialog);
     layout->setContentsMargins(20, 20, 20, 20);
     layout->setSpacing(12);
-    auto* status = new QLabel(tr("当前版本：0.1.8。正在检查 GitHub...", "Current version: 0.1.8. Checking GitHub..."), dialog);
+    auto* status = new QLabel(tr("当前版本：0.1.9。正在检查 GitHub...", "Current version: 0.1.9. Checking GitHub..."), dialog);
     status->setWordWrap(true);
     status->setTextFormat(Qt::PlainText);
     layout->addWidget(status);
@@ -90,11 +90,11 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
                 || release.value(QStringLiteral("prerelease")).toBool()) {
                 status->setText(tr("发布版本号格式无法识别，请查看发布页面。", "Unsupported release version. Please check the release page."));
             } else {
-                const int comparison = QVersionNumber::compare(version, QVersionNumber(0, 1, 8));
+                const int comparison = QVersionNumber::compare(version, QVersionNumber(0, 1, 9));
                 status->setText(comparison > 0
-                    ? tr("发现新版本：%1（当前版本：0.1.8）", "New version: %1 (current: 0.1.8)").arg(tag)
-                    : comparison == 0 ? tr("当前已是最新版本（0.1.8）。", "You are up to date (0.1.8).")
-                    : tr("本地版本 0.1.8 高于已发布版本 %1，不提供降级安装。", "Local version 0.1.8 is newer than published version %1. No downgrade is offered.").arg(tag));
+                    ? tr("发现新版本：%1（当前版本：0.1.9）", "New version: %1 (current: 0.1.9)").arg(tag)
+                    : comparison == 0 ? tr("当前已是最新版本（0.1.9）。", "You are up to date (0.1.9).")
+                    : tr("本地版本 0.1.9 高于已发布版本 %1，不提供降级安装。", "Local version 0.1.9 is newer than published version %1. No downgrade is offered.").arg(tag));
                 if (comparison >= 0) {
                     const QString name = QStringLiteral("PixelStudio-Setup-%1.exe").arg(version.toString());
                     const QString expectedUrl = QStringLiteral("https://github.com/OW3N-HE/Pixel-Studio/releases/download/%1/%2").arg(tag, name);
@@ -121,7 +121,7 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
     const QString script = QString::fromLatin1(R"JS(
 const https = require('https');
 const req = https.get('https://api.github.com/repos/OW3N-HE/Pixel-Studio/releases/latest', {
-  headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'PixelStudio/0.1.8'}
+  headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'PixelStudio/0.1.9'}
 }, res => {
   let size = 0;
   const chunks = [];

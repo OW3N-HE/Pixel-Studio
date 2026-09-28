@@ -8,6 +8,13 @@ inline const QHash<QString, QString>& englishCatalog() {
     static const auto catalog = [] {
         struct Entry { const char* source; const char* english; };
         const Entry entries[] = {
+            {"悬浮微光", "Floating Glow"},
+            {"装甲巡航", "Armored Patrol"},
+            {"樱花小夜", "Cherry Blossom Night"},
+            {"变身时刻", "Transformation Time"},
+            {"原画跑酷", "Pixel Runner"},
+            {"红色扫描", "Red Scan"},
+            {"白光呼吸", "White Pulse"},
             {"关于 Pixel Studio", "About Pixel Studio"},
             {"检查更新", "Check for updates"},
             {"串口 %1 不存在。请连接设备并重新选择串口。", "Serial port %1 was not found. Connect the device and select its port again."},
@@ -37,7 +44,7 @@ inline const QHash<QString, QString>& englishCatalog() {
             {"快捷尺寸", "Size presets"},
             {"排列", "Pixel order"},
             {"速度", "Animation speed"},
-            {"吉伊 · 害羞眨眼", "Chiikawa · Shy Blink"},
+            {"害羞眨眼", "Shy Blink"},
             {"草莓小盆栽", "Strawberry Planter"},
             {"星海小鲸", "Starry Whale"},
             {"晚风风铃", "Evening Wind Chime"},
@@ -153,7 +160,7 @@ inline const QHash<QString, QString>& englishCatalog() {
             {"月光灯塔", "Moonlit Lighthouse"}, {"像素唱片机", "Pixel Turntable"},
             {"纸飞机旅行", "Paper Plane Journey"}, {"口袋温室", "Pocket Greenhouse"},
             {"萤火夜花园", "Firefly Garden"}, {"星星小团子", "Little Star Dumpling"},
-            {"吉伊 · 勇气踏步", "Chiikawa · Brave Steps"},
+            {"勇气踏步", "Brave Steps"},
             {"热气球旅行", "Hot Air Balloon"}, {"企鹅踏雪", "Penguin in the Snow"},
             {"听雨竹林", "Bamboo Rain"}, {"樱花小溪", "Sakura Stream"},
             {"星海蓝鲸", "Star Ocean Whale"}, {"霓虹时空门", "Neon Portal"},

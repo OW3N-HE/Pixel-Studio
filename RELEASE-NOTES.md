@@ -1,51 +1,49 @@
-# Pixel Studio 0.1.8
+# Pixel Studio V0.1.9
 
 ## English
 
 ### What's new
-- Restored Desktop & background settings and initialization of saved USB playback.
-- Improved update-panel spacing; retained the two-column desktop switches.
-- Pure-black CAD grid/backplate across Desktop, Web and OpenRGB. Animation colors, geometry and theme glow are unchanged.
-- Removed number-input stepper buttons and their reserved space in Desktop/Web only.
-- Simplified the getting-started guide, English first, then Chinese.
+- Restored the complete animation library across Desktop, Web and OpenRGB, including all hand-drawn animations.
+- Removed the release filter that emptied the Hand-drawn category.
+- Replaced character and brand names in animation display titles and introductions with neutral descriptions. Existing animation IDs are preserved for saved selections and favorites.
+- Updated all editions to 0.1.9. Animation artwork and playback effects are unchanged.
 
 ### Download
 | File | Use |
 | --- | --- |
-| **PixelStudio-Setup-0.1.8.exe** | Recommended: Windows x64 installer. Desktop default; Web/OpenRGB optional. Required runtimes included. |
-| PixelStudio-Web-0.1.8.zip | Web app with bundled Windows Node.js. Extract all, run `Start-Pixel-Studio.cmd`. |
-| PixelStudio-Source-0.1.8.zip | Corresponding public source for developers. |
+| **PixelStudio-Setup-0.1.9.exe** | Recommended Windows x64 installer. Desktop by default; Web and OpenRGB optional. Runtimes included. |
+| PixelStudio-Web-0.1.9.zip | Extract all, then run `Start-Pixel-Studio.cmd`. Windows Node.js included. |
+| PixelStudio-Source-0.1.9.zip | Corresponding source code. |
 | SHA256SUMS.txt | Download checksums. |
 
-### Install / update
-1. Desktop 0.1.7: **Settings → Check for updates → Download → Install downloaded update**. Web/OpenRGB: download the installer and run it manually.
-2. Quit OpenRGB and other Pixel Studio senders from their tray menus. Keep the original installation scope, folder and components. Never skip locked files.
-3. Open your edition, check the saved device and play. In-place updates keep settings and do not flash firmware.
+### Update
+1. Desktop: **Settings > Check for updates > Download > Install downloaded update**.
+2. Quit OpenRGB and other senders from the tray before installation. Keep the existing installation scope, folder and components. Do not skip locked files.
+3. Web and OpenRGB users run the downloaded installer manually. Updates do not flash controller firmware.
 
-Unsigned Windows build. Logic regression tests passed; actual device playback, visual layout and the full installed upgrade need real-world feedback. Private hand-drawn assets and excluded character modes are not included. No macOS/Linux binary. Installer taskbar-icon appearance remains a known issue.
+This release focuses on restoring the animation library. Broader playback resumption, guide language selection, update-dialog language and typography/alignment improvements remain pending. Windows builds are unsigned; no macOS or Linux binaries are provided.
 
 ---
 
 ## 简体中文
 
 ### 本次更新
-- 恢复桌面后台设置，以及读取已保存 USB 播放状态的初始化。
-- 优化更新区间距，保留桌面开关两列布局。
-- 桌面、网页和 OpenRGB 的 CAD 网格及背板统一为纯黑；动画颜色、几何和主题泛光不变。
-- 仅网页及桌面版移除数字输入框的上下调节控件及其占位。
-- 精简使用指南，先英文、后中文。
+- 桌面版、网页版和 OpenRGB 恢复全部动画，包括整个手绘动画库。
+- 移除导致“手绘”分类为空的发布过滤规则。
+- 动画展示标题和介绍改用中性描述，不使用原角色或品牌名称；保留内部动画 ID，兼容已保存的选择和收藏。
+- 三个版本统一更新至 0.1.9，动画画面和播放效果不变。
 
 ### 下载
 | 文件 | 用途 |
 | --- | --- |
-| **PixelStudio-Setup-0.1.8.exe** | 推荐：Windows x64 三合一安装包。默认桌面版，网页/OpenRGB 可选，所需运行环境已包含。 |
-| PixelStudio-Web-0.1.8.zip | 内置 Windows Node.js 的网页版，完整解压后运行 `Start-Pixel-Studio.cmd`。 |
-| PixelStudio-Source-0.1.8.zip | 对应的公开源码，供开发者使用。 |
+| **PixelStudio-Setup-0.1.9.exe** | 推荐 Windows x64 三合一安装包。默认桌面版，网页和 OpenRGB 可选，已包含运行环境。 |
+| PixelStudio-Web-0.1.9.zip | 完整解压后运行 `Start-Pixel-Studio.cmd`，已包含 Windows Node.js。 |
+| PixelStudio-Source-0.1.9.zip | 对应源码。 |
 | SHA256SUMS.txt | 下载校验值。 |
 
-### 安装 / 升级
-1. 桌面版 0.1.7：**设置 → 检查更新 → 下载 → 安装已下载的更新**。网页版/OpenRGB 下载安装包后手动运行。
-2. 从托盘退出 OpenRGB 和其他 Pixel Studio 发送程序，沿用原安装范围、目录和组件；文件占用时不要跳过。
-3. 重新打开使用的版本，确认保存的设备后播放。原位更新保留设置，不刷写固件。
+### 升级
+1. 桌面版：**设置 > 检查更新 > 下载 > 安装已下载的更新**。
+2. 安装前从托盘退出 OpenRGB 和其他发送程序，沿用原安装范围、目录和组件。不要跳过被占用的文件。
+3. 网页及 OpenRGB 用户手动运行下载的安装包。更新不会刷写控制器固件。
 
-Windows 安装包未签名。逻辑回归测试已通过，实际设备播放、视觉布局及完整升级仍需实机反馈。公开包不包含私人手绘素材和已排除的角色模式，不提供 macOS/Linux 安装包。安装程序任务栏图标显示仍为已知问题。
+本次集中恢复动画库。更完整的继续播放、指南语言选择、更新弹窗语言及字号和对齐优化仍待处理。Windows 安装包未签名，暂不提供 macOS/Linux 安装包。
