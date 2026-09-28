@@ -6,7 +6,7 @@ app.setAppUserModelId('com.ow3nhe.pixelstudio.desktop');
 app.setPath('userData',path.join(app.getPath('appData'),'Pixel Studio Desktop'));
 let window, tray, quitting=false, preferences, restoringUntil=0;
 const defaults={launchAtLogin:true,startHidden:true,closeToTray:true,resumePlayback:true,theme:'ice',language:'auto',serialDevice:null,playback:null};
-const controlIds=['controlMode','wledHost','baudRate','protocol','matrixW','matrixH','mapping','fps','brightness','animationMode','animationSpeed','clockFont','clockPalette','colorMode'];
+const controlIds=['controlMode','wledHost','baudRate','protocol','matrixW','matrixH','mapping','fps','brightness','animationMode','animationSpeed','clockFont','clockPalette','colorMode','colorGamma','safeMode','scaleMode','libraryCategory','librarySearch','psShuffleEnabled','psShuffleInterval'];
 function playbackState(value){
   if(!value || typeof value!=='object')return null;
   const values={};
@@ -99,7 +99,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
       if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)throw new Error('Untrusted caller');
       try{
         if(request?.action==='download')return {ok:true,...await updater.download(request.version)};
-        if(request?.action==='install')return {ok:true,...await updater.install()};
+        if(request?.action==='install')return {ok:true,...await updater.install(request.language === 'en' ? 'en' : request.language === 'zh-CN' ? 'zh-CN' : effectiveLanguage())};
         throw new Error('Unsupported update action');
       }catch(error){return {ok:false,error:error.message};}
     });
@@ -119,7 +119,8 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
     ipcMain.handle('desktop:resume',async event=>{
       if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)return false;
       if(!preferences.resumePlayback||!preferences.playback?.playing||preferences.playback.values.animationMode==='file')return false;
-      if(preferences.playback.values.controlMode!=='serial'||!preferences.serialDevice)return false;
+      if (!['serial','ddp'].includes(preferences.playback.values.controlMode)) return false;
+    if (preferences.playback.values.controlMode === 'serial' && !preferences.serialDevice) return false;
       restoringUntil=Date.now()+30000;
       // A fixed local action, never renderer-supplied JavaScript. The selection
       // handler above permits only the explicitly remembered device on resume.

@@ -14,6 +14,10 @@ let ORIGIN = `http://${HOST}:${PORT}`;
 const rootId = crypto.createHash('sha256').update(path.resolve(__dirname).toLowerCase()).digest('hex');
 const TOKEN = crypto.randomBytes(32).toString('hex');
 const sessions = new Map();
+const webAutoExit=process.argv.includes('--web-auto-exit')&&!process.parentPort;
+const webClients=new Map();let webIdleAt=performance.now(),closing=false;
+const validClient=id=>typeof id==='string'&&/^[a-zA-Z0-9-]{16,64}$/.test(id);
+
 const udp = dgram.createSocket('udp4');
 udp.on('error', error => console.error('UDP:', error.message));
 
@@ -148,6 +152,12 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/favicon.ico') { res.writeHead(204); res.end(); return; }
     // No CORS, no unauthenticated commands, no general-purpose network proxy.
     if (req.headers['x-pixel-token'] !== TOKEN || (req.headers.origin && req.headers.origin !== ORIGIN)) fail('Open the local DDP page first', 403);
+    if (url.pathname === '/api/web-client' && req.method === 'POST') {
+      const input=JSON.parse((await body(req,1024)).toString());
+      if(!validClient(input.id))fail('Invalid client',400);
+      webClients.set(input.id,{expires:performance.now()+(input.closed?30000:300000),closed:input.closed===true});
+      webIdleAt=performance.now();res.writeHead(204);res.end();return;
+    }
     if (url.pathname === '/api/device' && req.method === 'GET') {
       const route = url.searchParams.get('path');
       if (!['/json/si','/json/cfg','/json/info','/json/state'].includes(route)) fail('Unsupported device route');
@@ -165,6 +175,7 @@ const server = http.createServer(async (req, res) => {
           !Number.isInteger(brightness) || brightness < 0 || brightness > 255) fail('Invalid size or brightness; DDP supports up to 4096 pixels');
       if ([...sessions.values()].some(s => s.host === host)) fail('Another sender is active or stopping. Stop it first.', 409);
       const session = {id:crypto.randomBytes(16).toString('hex'),host,active:true,preparing:true,lastAt:performance.now(),sequence:0,busy:false,bytes:w*h*3};
+      session.webClient=validClient(req.headers['x-pixel-client'])?req.headers['x-pixel-client']:null;
       sessions.set(session.id, session);
       res.on('close',()=>{if(!res.writableFinished)void release(session);});
       try {
@@ -258,6 +269,12 @@ server.headersTimeout = 5000;
 server.on('connection', socket => socket.setNoDelay(true));
 server.on('error', error => { console.error(error.code === 'EADDRINUSE' ? ORIGIN + ' is already running.' : error.message); process.exit(1); });
 const reaper = setInterval(() => {
+  const now=performance.now();
+  for(const [id,client]of webClients)if(client.expires<now)webClients.delete(id);
+  for(const session of sessions.values())if(session.webClient&&!webClients.has(session.webClient)&&!session.preparing)void release(session);
+  if(webClients.size||sessions.size)webIdleAt=now;
+  else if(webAutoExit&&!closing&&now-webIdleAt>45000){closing=true;void shutdown();}
+
   for (const session of sessions.values()) if (session.active && !session.preparing && !session.busy &&
     !(session.continuous && session.confirmed) && performance.now()-session.lastAt > 8000) void release(session);
 },1000);

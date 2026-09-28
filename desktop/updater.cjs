@@ -67,11 +67,11 @@ module.exports=function createUpdater(getWindow,getLanguage){
       return {version:number};
     }finally{if(partial)await fs.promises.unlink(partial).catch(()=>{});busy=false;}
   }
-  async function install(){
+  async function install(language){
     if(busy||!verified)throw new Error('Download and verify an installer first');
     busy=true;
     try{
-      const en=getLanguage()==='en';
+      const en=(['en','zh-CN'].includes(language)?language:getLanguage())==='en';
       const answer=await dialog.showMessageBox(getWindow(),{type:'question',title:'Pixel Studio',
         message:en?`Install Pixel Studio ${verified.version}?`:`安装 Pixel Studio ${verified.version}？`,
         detail:en?'Pixel Studio Desktop will exit and its output will stop. Save your work and quit OpenRGB from the tray first. Keep your current installation scope and personal settings. The installer may request administrator permission.':'Pixel Studio 桌面版将退出并停止发送。请先保存工作并从托盘退出 OpenRGB。保持现有安装范围并保留个人设置；安装程序可能请求管理员权限。',

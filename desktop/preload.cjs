@@ -6,7 +6,7 @@ contextBridge.exposeInMainWorld('pixelStudioDesktop',Object.freeze({edition:true
   languagePreference:startupArgument('--pixel-studio-language','auto'),
   ensureDdp:()=>ipcRenderer.invoke('desktop:ddp',{action:'ensure'}),
   downloadUpdate:version=>ipcRenderer.invoke('desktop:update',{action:'download',version}),
-  installUpdate:()=>ipcRenderer.invoke('desktop:update',{action:'install'}),
+  installUpdate:()=>ipcRenderer.invoke('desktop:update',{action:'install',language:document.documentElement.lang}),
   ddpRequest:(route,options)=>ipcRenderer.invoke('desktop:ddp',{action:'request',route,options}),
   savePlayback:value=>ipcRenderer.send('desktop:playback',value)}));
 // No Node or generic IPC API is exposed to the web page.
@@ -49,10 +49,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     let settings=null,error=false;
     function render(){
       const en=document.documentElement.lang==='en';legend.textContent=en?'Desktop & background':'桌面与后台运行';
-      const captions=en?['Start with Windows','Hide on login','Close to tray','Resume USB playback']:['随 Windows 启动','登录时隐藏到托盘','关闭时保留在托盘','恢复 USB 播放'];
-      const descriptions=en?['Launch Pixel Studio when you sign in to Windows.','Start in the system tray without opening a window when you sign in.','Keep running in the system tray when you close the window.','Resume the previous USB playback on startup. If the saved device is missing or busy, no other port is used.']:['登录 Windows 后自动启动 Pixel Studio。','登录后启动时仅显示托盘图标，不打开窗口。','关闭窗口后仍在系统托盘运行。','启动后恢复上次 USB 播放；设备缺失或被占用时，不会切换到其他端口。'];
+      const captions=en?['Start with Windows','Hide on login','Close to tray','Resume playback']:['随 Windows 启动','登录时隐藏到托盘','关闭时保留在托盘','继续播放'];
+      const descriptions=en?['Launch Pixel Studio when you sign in to Windows.','Start in the system tray without opening a window when you sign in.','Keep running in the system tray when you close the window.','Resume the previous USB or DDP playback on startup. If the saved device is missing or busy, no other port is used.']:['登录 Windows 后自动启动 Pixel Studio。','登录后启动时仅显示托盘图标，不打开窗口。','关闭窗口后仍在系统托盘运行。','启动后继续上次 USB 或 DDP 播放；设备缺失或被占用时，不会切换到其他端口。'];
       Object.entries(fields).forEach(([key,field],i)=>{field.text.textContent=captions[i];field.label.title=descriptions[i];field.input.checked=Boolean(settings?.[key]);field.input.disabled=!settings||(key==='launchAtLogin'&&!settings.canLaunchAtLogin);});
-      note.textContent=error?(en?'Unable to save desktop settings. Please try again.':'无法保存桌面设置，请重试。'):(en?'Settings and the USB device are saved automatically. Resume uses only that device; local media and DDP must be started manually.':'设置和 USB 设备自动保存。恢复播放只连接原设备，不会切换其他端口；本地媒体和 DDP 需手动启动。');
+      note.textContent=error?(en?'Unable to save desktop settings. Please try again.':'无法保存桌面设置，请重试。'):(en?'Settings, shuffle and the selected USB or DDP output are remembered. Resume starts only if you were playing before exit. Local media must be selected again; USB never switches to another device.':'保存设置、随机播放和 USB / DDP 输出方式。仅在退出前正在播放时恢复；本地媒体需重新选择，USB 不会切换其他设备。');
       if(settings&&!settings.canLaunchAtLogin)note.textContent+=en?' Login startup requires an installed build.':' 开机启动需安装打包版本。';
       forget.textContent=en?'Clear saved USB device':'清除记住的 USB 设备';
       forget.title=en?'Disconnect and clear the remembered device. Select a USB port again before sending. Other settings are kept.':'断开连接并清除记住的设备，下次发送前需重新选择串口；其他设置不变。';
@@ -66,7 +66,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       for(const [id,saved] of Object.entries(value.playback?.values||{})){
         const element=document.getElementById(id);if(!element)continue;
         if(element.tagName==='SELECT'&&![...element.options].some(option=>option.value===saved))continue;
-        element.value=saved;element.dispatchEvent(new Event('input',{bubbles:true}));element.dispatchEvent(new Event('change',{bubbles:true}));
+        if(element.type === 'checkbox') element.checked = saved === 'true'; else element.value = saved;element.dispatchEvent(new Event('input',{bubbles:true}));element.dispatchEvent(new Event('change',{bubbles:true}));
       }
       render();void sync();
       await ipcRenderer.invoke('desktop:resume');

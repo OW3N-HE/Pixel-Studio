@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$PayloadDir,
     [Parameter(Mandatory = $true)][string]$IsccPath,
-    [string]$Version = '0.1.9',
+    [string]$Version = '0.1.10',
     [switch]$TestPackage
 )
 $ErrorActionPreference = 'Stop'

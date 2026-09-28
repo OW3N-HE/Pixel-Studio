@@ -7,6 +7,9 @@
 #include <QLabel>
 #include <QProcess>
 #include <QPushButton>
+#include <QStylePainter>
+#include <QStyleOptionButton>
+#include <QFontMetrics>
 #include <QRegularExpression>
 #include <QTextEdit>
 #include <QTimer>
@@ -15,6 +18,16 @@
 #include <QVersionNumber>
 
 namespace PixelStudioUpdates {
+class UpdateButton final : public QPushButton {
+public: using QPushButton::QPushButton;
+protected: void paintEvent(QPaintEvent*) override {
+    QStylePainter painter(this); QStyleOptionButton option; initStyleOption(&option);
+    const QString label=option.text; option.text.clear(); painter.drawControl(QStyle::CE_PushButton,option);
+    painter.setFont(font()); painter.setPen(palette().color(isEnabled()?QPalette::Active:QPalette::Disabled,QPalette::ButtonText));
+    const QRect ink=QFontMetrics(font()).boundingRect(label);
+    painter.drawText(QPoint((width()-ink.width())/2-ink.left(),(height()-ink.height())/2-ink.top()),label);
+}
+};
 inline void show(QWidget* parent, bool english, const QString& nodePath) {
     auto tr = [english](const char* zh, const char* en) {
         return QString::fromUtf8(english ? en : zh);
@@ -27,7 +40,7 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
     auto* layout = new QVBoxLayout(dialog);
     layout->setContentsMargins(20, 20, 20, 20);
     layout->setSpacing(12);
-    auto* status = new QLabel(tr("当前版本：0.1.9。正在检查 GitHub...", "Current version: 0.1.9. Checking GitHub..."), dialog);
+    auto* status = new QLabel(tr("当前版本：0.1.10。正在检查 GitHub...", "Current version: 0.1.10. Checking GitHub..."), dialog);
     status->setWordWrap(true);
     status->setTextFormat(Qt::PlainText);
     layout->addWidget(status);
@@ -38,7 +51,7 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
         "Only stable releases from OW3N-HE/Pixel-Studio are checked. Back up and replace files manually; no automatic installation or firmware flashing."), dialog);
     hint->setWordWrap(true);
     layout->addWidget(hint);
-    auto* installer = new QPushButton(tr("下载安装包", "Download installer"), dialog);
+    auto* installer = new UpdateButton(tr("下载安装包", "Download installer"), dialog);
     installer->setEnabled(false);
     layout->addWidget(installer);
     auto* installerStatus = new QLabel(tr("检查完成后显示安装包状态。", "Installer availability will appear after checking."), dialog);
@@ -48,12 +61,12 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
         const QUrl url(installer->property("installerUrl").toString());
         if (installer->isEnabled() && !url.isEmpty()) QDesktopServices::openUrl(url);
     });
-    auto* download = new QPushButton(tr("打开官方发布页 / 下载", "Open official releases / download"), dialog);
+    auto* download = new UpdateButton(tr("打开官方发布页 / 下载", "Open official releases / download"), dialog);
     layout->addWidget(download);
     QObject::connect(download, &QPushButton::clicked, dialog, [] {
         QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/OW3N-HE/Pixel-Studio/releases")));
     });
-    auto* close = new QPushButton(tr("关闭", "Close"), dialog);
+    auto* close = new UpdateButton(tr("关闭", "Close"), dialog);
     layout->addWidget(close);
     QObject::connect(close, &QPushButton::clicked, dialog, &QDialog::close);
     // A short-lived Node process uses the existing runtime, without Qt Network
@@ -90,11 +103,11 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
                 || release.value(QStringLiteral("prerelease")).toBool()) {
                 status->setText(tr("发布版本号格式无法识别，请查看发布页面。", "Unsupported release version. Please check the release page."));
             } else {
-                const int comparison = QVersionNumber::compare(version, QVersionNumber(0, 1, 9));
+                const int comparison = QVersionNumber::compare(version, QVersionNumber(0, 1, 10));
                 status->setText(comparison > 0
-                    ? tr("发现新版本：%1（当前版本：0.1.9）", "New version: %1 (current: 0.1.9)").arg(tag)
-                    : comparison == 0 ? tr("当前已是最新版本（0.1.9）。", "You are up to date (0.1.9).")
-                    : tr("本地版本 0.1.9 高于已发布版本 %1，不提供降级安装。", "Local version 0.1.9 is newer than published version %1. No downgrade is offered.").arg(tag));
+                    ? tr("发现新版本：%1（当前版本：0.1.10）", "New version: %1 (current: 0.1.10)").arg(tag)
+                    : comparison == 0 ? tr("当前已是最新版本（0.1.10）。", "You are up to date (0.1.10).")
+                    : tr("本地版本 0.1.10 高于已发布版本 %1，不提供降级安装。", "Local version 0.1.10 is newer than published version %1. No downgrade is offered.").arg(tag));
                 if (comparison >= 0) {
                     const QString name = QStringLiteral("PixelStudio-Setup-%1.exe").arg(version.toString());
                     const QString expectedUrl = QStringLiteral("https://github.com/OW3N-HE/Pixel-Studio/releases/download/%1/%2").arg(tag, name);
@@ -121,7 +134,7 @@ inline void show(QWidget* parent, bool english, const QString& nodePath) {
     const QString script = QString::fromLatin1(R"JS(
 const https = require('https');
 const req = https.get('https://api.github.com/repos/OW3N-HE/Pixel-Studio/releases/latest', {
-  headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'PixelStudio/0.1.9'}
+  headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'PixelStudio/0.1.10'}
 }, res => {
   let size = 0;
   const chunks = [];

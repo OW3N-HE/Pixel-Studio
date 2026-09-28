@@ -2,7 +2,7 @@
   'use strict';
   function initialize() {
     const $ = id => document.getElementById(id);
-    const supported = new Set(['pocket_circuit','wave','portrait_portal','pocket_starwhale','ripples','waterfall']);
+    const supported = new Set(['pocket_circuit','wave','portrait_portal','pocket_starwhale','ripples','waterfall','scene_cafe','scene_jellies','scene_train','scene_camp','scene_seasons','scene_gears']);
     const controls = document.querySelector('.studio-controls');
     const row = document.createElement('div'); row.className = 'ps-animation-colors';
     row.innerHTML = '<label for="animationPalette">配色</label><select id="animationPalette"></select><button type="button">自定义配色</button>';

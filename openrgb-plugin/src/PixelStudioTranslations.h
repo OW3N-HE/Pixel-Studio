@@ -8,6 +8,12 @@ inline const QHash<QString, QString>& englishCatalog() {
     static const auto catalog = [] {
         struct Entry { const char* source; const char* english; };
         const Entry entries[] = {
+            {"雨窗咖啡", "Rainy Window Cafe"},
+            {"水母花园", "Jellyfish Garden"},
+            {"星际列车", "Star Train"},
+            {"月夜露营", "Moonlit Camp"},
+            {"四季小树", "Four Seasons Tree"},
+            {"机械花园", "Mechanical Garden"},
             {"悬浮微光", "Floating Glow"},
             {"装甲巡航", "Armored Patrol"},
             {"樱花小夜", "Cherry Blossom Night"},

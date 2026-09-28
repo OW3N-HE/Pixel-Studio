@@ -124,7 +124,7 @@ module.exports = function createRenderer() {
         ui.protocol.value=ui.protocol.options.find(option=>option.value!=='raw-bin').value;
         animationElapsed=time;animationSpeed=1;animationLastTime=performance.now();
         const frame = buildGeneratedFrame(mode);
-        return ['pocket_circuit','wave','portrait_portal','pocket_starwhale','ripples','waterfall'].includes(mode)
+        return ['pocket_circuit','wave','portrait_portal','pocket_starwhale','ripples','waterfall','scene_cafe','scene_jellies','scene_train','scene_camp','scene_seasons','scene_gears'].includes(mode)
           ? recolorCircuit(frame, clockPalette, mode) : frame;
       }
     };

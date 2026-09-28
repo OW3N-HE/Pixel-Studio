@@ -20,7 +20,7 @@ try {
         if (-not $node) { $command = Get-Command node -ErrorAction SilentlyContinue; if ($command) { $node = $command.Source } }
         if (-not $node) { throw 'Node.js was not found. Use Pixel Studio Desktop for built-in DDP, or install Node.js for the standalone web bridge.' }
         $log = Join-Path $env:TEMP ('PixelStudio-DDP-' + [Guid]::NewGuid().ToString('N'))
-        $child = Start-Process -FilePath $node -ArgumentList ('"' + $entry + '"') -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput ($log + '.log') -RedirectStandardError ($log + '.err.log')
+        $child = Start-Process -FilePath $node -ArgumentList @(('"' + $entry + '"'),'--web-auto-exit') -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput ($log + '.log') -RedirectStandardError ($log + '.err.log')
         $deadline = [DateTime]::UtcNow.AddSeconds(12)
         do {
             $health = Get-Bridge

@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '0.1.9';
+  const VERSION = '0.1.10';
   const $ = id => document.getElementById(id);
   const make = (tag, className = '', text) => {
     const node = document.createElement(tag);
@@ -441,9 +441,9 @@
     $('librarySearch').addEventListener('input', syncGallery);
     $('animationMode').addEventListener('change', syncGallery); syncGallery();
     $('randomAnimationBtn').hidden = true;
-    const shuffle = make('label', 'ps-shuffle'), shuffleCheck = make('input'); shuffleCheck.type = 'checkbox';
+    const shuffle = make('label', 'ps-shuffle'), shuffleCheck = make('input'); shuffleCheck.type = 'checkbox'; shuffleCheck.id = 'psShuffleEnabled';
     shuffle.append(shuffleCheck, document.createTextNode('随机播放'));
-    const interval = make('input'); interval.type = 'number'; interval.min = '3'; interval.max = '3600'; interval.step = '1'; interval.value = '20'; interval.disabled = true;
+    const interval = make('input'); interval.type = 'number'; interval.id = 'psShuffleInterval'; interval.min = '3'; interval.max = '3600'; interval.step = '1'; interval.value = '20'; interval.disabled = true;
     interval.setAttribute('aria-label', '随机播放间隔，秒');
     const shuffleGroup = make('div', 'ps-shuffle-group'); shuffleGroup.append(shuffle, interval, make('span', 'ps-unit', '秒'));
     document.querySelector('.library-toolbar').append(shuffleGroup);
@@ -459,6 +459,12 @@
       }, seconds * 1000);
     }
     shuffleCheck.addEventListener('change', scheduleShuffle); interval.addEventListener('change', scheduleShuffle);
+    try {
+      const state=JSON.parse(localStorage.getItem('pixelStudioShuffle')||'null');
+      if(state){shuffleCheck.checked=state.enabled===true;interval.value=String(Math.max(3,Math.min(3600,Number(state.seconds)||20)));if([...category.options].some(o=>o.value===state.category)){category.value=state.category;category.dispatchEvent(new Event('change',{bubbles:true}));} $('librarySearch').value=String(state.search||'');$('librarySearch').dispatchEvent(new Event('input',{bubbles:true}));scheduleShuffle();}
+    }catch{}
+    const saveShuffle=()=>{try{localStorage.setItem('pixelStudioShuffle',JSON.stringify({enabled:shuffleCheck.checked,seconds:interval.value,category:category.value,search:$('librarySearch').value}));}catch{}};
+    for(const element of [shuffleCheck,interval,category,$('librarySearch')])element.addEventListener('change',saveShuffle);
     const speedNumber = make('input'); speedNumber.id = 'animationSpeedNumber'; speedNumber.type = 'number';
     for (const key of ['min','max','step','value']) speedNumber[key] = $('animationSpeed')[key];
     speedNumber.setAttribute('aria-label', '动画速度倍数'); $('animationSpeedValue').hidden = true;

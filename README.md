@@ -1,4 +1,4 @@
-# Pixel Studio 0.1.9
+# Pixel Studio 0.1.10
 
 Public source for the Windows Desktop, Web and OpenRGB editions. The full animation library is included with the project owner's publication approval. Display names use neutral descriptions. See RELEASE-NOTES.md and GETTING-STARTED.html.
 
@@ -20,7 +20,7 @@ Install Node.js 22+, npm, Visual Studio C++ Build Tools/CMake, Qt 5.15.0 MSVC 20
 2. Build Desktop with npx electron-builder --dir --win --x64 --config electron-builder.unified.cjs --publish never. Use the unified config; the older standalone NSIS extraResources path is not used by this release.
 3. Run openrgb-plugin/Build-Plugin.ps1 -QtDir followed by your Qt directory to build the plugin and USB helper. No DLL is installed automatically.
 4. Assemble a payload with desktop/ from desktop/dist-unified/win-unpacked; app/ containing the public web files and openrgb-plugin sources/helper; plugin/PixelStudioPlugin.dll; runtime/node.exe and runtime/LICENSE from Node.js 22; and LICENSE at the payload root. The web launcher scripts and GETTING-STARTED.html belong in app/.
-5. Compile installer/PixelStudio.iss using Inno Setup ISCC, defining PayloadDir, AppVersion=0.1.9 and OutputPath. Test builds additionally define TestPackage=1. Build-Installer.ps1 performs payload checks; production builds also require a truthful release-review.json.
+5. Compile installer/PixelStudio.iss using Inno Setup ISCC, defining PayloadDir, AppVersion=0.1.10 and OutputPath. Test builds additionally define TestPackage=1. Build-Installer.ps1 performs payload checks; production builds also require a truthful release-review.json.
 
 Build-Unified-Test.ps1 is the maintainer's convenience wrapper and expects locally provisioned Qt/Node/Inno tool directories as named in the script. Prepare-Test-Payload.cjs and the tests require acorn, installable with npm install --prefix firmware/wled-usb-pixel --no-save acorn. Do not publish private development directories or machine profiles.
 

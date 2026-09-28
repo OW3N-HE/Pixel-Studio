@@ -1243,8 +1243,8 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
         QFont headingFont = heading->font(); headingFont.setPointSize(20); headingFont.setBold(true);
         heading->setFont(headingFont); layout->addWidget(heading);
         auto* version = new QLabel(english_
-        ? QStringLiteral("Version 0.1.9 · OpenRGB plugin\nBuilt: %1").arg(QString::fromLatin1(__DATE__))
-        : text("版本 0.1.9 · OpenRGB 插件\n编译日期：%1").arg(QString::fromLatin1(__DATE__)), &about);
+        ? QStringLiteral("Version 0.1.10 · OpenRGB plugin\nBuilt: %1").arg(QString::fromLatin1(__DATE__))
+        : text("版本 0.1.10 · OpenRGB 插件\n编译日期：%1").arg(QString::fromLatin1(__DATE__)), &about);
         layout->addWidget(version);
         auto* description = new QLabel(english_
             ? QStringLiteral("Small pixels. Endless imagination.\n\nA pixel animation studio for WLED. The web app and OpenRGB plugin share an animation library, with live previews, custom palettes and USB / Adalight or DDP output.\n\nAuthors & collaborators\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra\nOWEN\n\nCreated through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.\n\nSpecial thanks: David Wang\n\nIndependent project. Thanks to the WLED, OpenRGB, Qt and Node.js communities. Not an official WLED or OpenRGB release.")
@@ -2065,7 +2065,7 @@ QJsonObject PixelStudioPanel::configuration() const {
     const bool animationPalette = mode == QStringLiteral("pocket_circuit")
         || mode == QStringLiteral("wave") || mode == QStringLiteral("portrait_portal")
         || mode == QStringLiteral("pocket_starwhale") || mode == QStringLiteral("ripples")
-        || mode == QStringLiteral("waterfall");
+        || mode == QStringLiteral("waterfall") || mode.startsWith(QStringLiteral("scene_"));
     const QString palette = animationPalette ? circuitPalette_->currentData().toString()
         : clockPalette_->currentData().toString();
     return QJsonObject{
@@ -2113,7 +2113,7 @@ void PixelStudioPanel::updateControls() {
         const bool circuitSelected = mode == QStringLiteral("pocket_circuit");
         const bool paletteSelected = circuitSelected || mode == QStringLiteral("wave")
             || mode == QStringLiteral("portrait_portal") || mode == QStringLiteral("pocket_starwhale")
-            || mode == QStringLiteral("ripples") || mode == QStringLiteral("waterfall");
+            || mode == QStringLiteral("ripples") || mode == QStringLiteral("waterfall") || mode.startsWith(QStringLiteral("scene_"));
         arrangeLiveControls(clockSelected, paletteSelected);
         clockColorLabel_->setVisible(clockSelected || paletteSelected);
         clockColorControls_->setVisible(clockSelected || paletteSelected);

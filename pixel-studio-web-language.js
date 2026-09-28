@@ -161,6 +161,7 @@
     'Adalight 没有设备端逐帧确认。颜色与走线受 WLED 实时接收设置影响，请保留现有电流限制；不要同时运行 IP/DDP 播放。':'Adalight has no per-frame device acknowledgement. WLED realtime settings affect colors and pixel order. Keep current limits and do not run IP/DDP output simultaneously.',
     'IP / HTTP 无需串口连接。USB / Adalight 请使用支持 Web Serial 的桌面版 Chrome 或 Edge，并由用户亲自选择设备。':'IP / HTTP does not need a serial connection. For USB / Adalight, use desktop Chrome or Edge with Web Serial and select the device yourself.'
   });
+  Object.assign(catalog,{"雨窗咖啡":"Rainy Window Cafe","水母花园":"Jellyfish Garden","星际列车":"Star Train","月夜露营":"Moonlit Camp","四季小树":"Four Seasons Tree","机械花园":"Mechanical Garden"});
   const keys=Object.keys(catalog).sort((a,b)=>b.length-a.length);
   const pattern=new RegExp(keys.map(key=>key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
   function translate(text){return text.replace(pattern,match=>catalog[match]);}
