@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '0.1.10';
+  const VERSION = '0.1.11';
   const $ = id => document.getElementById(id);
   const make = (tag, className = '', text) => {
     const node = document.createElement(tag);
@@ -93,6 +93,7 @@
         })(),
         make('p', '', english ? 'Created through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.' : '由 AI 与人类共同创作：AI 协作成员参与设计和开发；OWEN 主导产品方向、视觉取舍与设备体验反馈。'),
         make('p', '', english ? 'Special thanks: David Wang' : '特别鸣谢：David Wang'),
+        make('p', '', english ? 'Temperature monitoring: thanks to LibreHardwareMonitor and its contributors for the hardware monitoring library, and to PawnIO for low-level hardware access.' : '温度采集：感谢 LibreHardwareMonitor 及其贡献者提供硬件监控库，感谢 PawnIO 提供底层硬件访问支持。'),
         make('p', '', english ? 'Independent project. Thanks to the WLED, OpenRGB, Qt and Node.js communities. Not an official WLED or OpenRGB release.' : '独立项目，感谢 WLED、OpenRGB、Qt 与 Node.js 社区。本项目不是 WLED 或 OpenRGB 的官方发行版。')
       );
     }
@@ -514,7 +515,9 @@
     colorsDialog.addEventListener('close', () => custom.focus());
     const controls = document.querySelector('.studio-controls');
     function syncControlLayout() {
-      controls.classList.toggle('ps-clock-controls', $('animationMode').value === 'clock');
+      const thermal = Object.hasOwn(window.PixelStudioTemperature?.modes || {}, $('animationMode').value);
+      controls.classList.toggle('ps-clock-controls', $('animationMode').value === 'clock' || thermal);
+      controls.classList.toggle('ps-thermal-controls', thermal);
     }
     $('animationMode').addEventListener('change', syncControlLayout);
     $('mediaFile').addEventListener('change', syncControlLayout);

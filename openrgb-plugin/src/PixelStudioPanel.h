@@ -81,6 +81,9 @@ private:
     void applyTheme();
     void advanceRandomAnimation();
     void arrangeLiveControls(bool clockSelected, bool paletteSelected = false);
+    void updateThermalControls();
+    void editThermalColors();
+    QJsonObject thermalConfiguration() const;
     QJsonObject configuration() const;
 
     PixelBoard* outputBoard_ = nullptr;
@@ -118,6 +121,16 @@ private:
     QLabel* clockColorLabel_ = nullptr;
     QWidget* clockColorControls_ = nullptr;
     QGridLayout* liveLayout_ = nullptr;
+    QWidget* thermalSamplingControls_ = nullptr;
+    QWidget* thermalColorControls_ = nullptr;
+    QLabel* thermalSamplingLabel_ = nullptr;
+    QLabel* thermalSamplingUnit_ = nullptr;
+    QComboBox* thermalFont_ = nullptr;
+    QComboBox* thermalCpu_ = nullptr;
+    QComboBox* thermalGpu_ = nullptr;
+    QDoubleSpinBox* thermalSampling_ = nullptr;
+    QPushButton* thermalCustom_ = nullptr;
+    QJsonObject thermalPreferences_;
     QWidget* brightnessControls_ = nullptr;
     QWidget* speedControls_ = nullptr;
     QWidget* brightnessLabel_ = nullptr;

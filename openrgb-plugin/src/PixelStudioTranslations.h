@@ -8,6 +8,17 @@ inline const QHash<QString, QString>& englishCatalog() {
     static const auto catalog = [] {
         struct Entry { const char* source; const char* english; };
         const Entry entries[] = {
+            {"图标温度", "Temperature Icons"},
+            {"大数字温度", "Large Temperatures"},
+            {"标签温度", "Temperature Labels"},
+            {"温度条", "Temperature Bars"},
+            {"关闭后使用预设配色，已保存的自定义颜色会保留。", "When disabled, preset colors are used. Saved custom colors are kept."},
+            {"采样", "Sampling"},
+            {"固定点阵", "Fixed pixels"},
+            {"CPU 颜色", "CPU color"},
+            {"GPU 颜色", "GPU color"},
+            {"启用自定义配色", "Enable custom colors"},
+            {"关闭后使用品牌配色，已保存的自定义颜色会保留。", "When disabled, brand colors are used. Saved custom colors are kept."},
             {"雨窗咖啡", "Rainy Window Cafe"},
             {"水母花园", "Jellyfish Garden"},
             {"星际列车", "Star Train"},

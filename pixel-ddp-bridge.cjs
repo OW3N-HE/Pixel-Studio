@@ -14,6 +14,9 @@ let ORIGIN = `http://${HOST}:${PORT}`;
 const rootId = crypto.createHash('sha256').update(path.resolve(__dirname).toLowerCase()).digest('hex');
 const TOKEN = crypto.randomBytes(32).toString('hex');
 const sessions = new Map();
+const temperatureService = require('./pixel-temperature-service.cjs')();
+const thermalModes = require('./pixel-temperature.cjs').modes;
+let temperaturePumpBusy = false;
 const webAutoExit=process.argv.includes('--web-auto-exit')&&!process.parentPort;
 const webClients=new Map();let webIdleAt=performance.now(),closing=false;
 const validClient=id=>typeof id==='string'&&/^[a-zA-Z0-9-]{16,64}$/.test(id);
@@ -97,11 +100,13 @@ async function sendPixels(session, frame) {
 }
 
 async function startAnimationWorker(session, input, w, h, fps, speed) {
+  session.thermalInterval = Math.max(0.5,Math.min(3,Math.round((Number(input.thermal?.sampleSeconds)||1)*2)/2))*1000;
+  session.thermalNextAt = 0;
   session.continuous = true;
   session.confirmed = false;
   session.stats = {targetFps:fps,fps:0,kbps:0,frameMs:0,frames:0,missed:0,uptime:0,mode:input.mode};
   const worker = new Worker(path.join(__dirname,'pixel-stream-worker.cjs'), {workerData:{
-    host:session.host,w,h,fps,speed,mode:input.mode,mapping:String(input.mapping || ''),clockFont:['rounded','classic','segment'].includes(input.clockFont)?input.clockFont:'rounded',clockPalette:(['original','mint','amber','ice','rose','violet'].includes(input.clockPalette) || /^custom:(#[0-9a-f]{6}):(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i.test(input.clockPalette))?input.clockPalette:'mint',lut:Array.from(session.lut)
+    host:session.host,w,h,fps,speed,mode:input.mode,thermal:input.thermal,mapping:String(input.mapping || ''),clockFont:['rounded','classic','segment'].includes(input.clockFont)?input.clockFont:'rounded',clockPalette:(['original','mint','amber','ice','rose','violet'].includes(input.clockPalette) || /^custom:(#[0-9a-f]{6}):(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i.test(input.clockPalette))?input.clockPalette:'mint',lut:Array.from(session.lut)
   }});
   session.worker = worker;
   await new Promise((resolve,reject) => {
@@ -143,7 +148,9 @@ const server = http.createServer(async (req, res) => {
       '/pixel-studio-web-ui.js':'text/javascript',
       '/pixel-studio-web-palettes.js':'text/javascript',
       '/pixel-studio-web-language.js':'text/javascript',
-      '/pixel-circuit-palette.cjs':'text/javascript'
+      '/pixel-circuit-palette.cjs':'text/javascript',
+      '/pixel-temperature.cjs':'text/javascript',
+      '/pixel-temperature-ui.js':'text/javascript'
     };
     if (req.method === 'GET' && Object.hasOwn(webAssets, url.pathname)) {
       res.writeHead(200, {'Content-Type':webAssets[url.pathname]+'; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
@@ -152,6 +159,10 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/favicon.ico') { res.writeHead(204); res.end(); return; }
     // No CORS, no unauthenticated commands, no general-purpose network proxy.
     if (req.headers['x-pixel-token'] !== TOKEN || (req.headers.origin && req.headers.origin !== ORIGIN)) fail('Open the local DDP page first', 403);
+    if (url.pathname === '/api/temperature' && req.method === 'GET') {
+      webIdleAt = performance.now();
+      json(res, await temperatureService.sample()); return;
+    }
     if (url.pathname === '/api/web-client' && req.method === 'POST') {
       const input=JSON.parse((await body(req,1024)).toString());
       if(!validClient(input.id))fail('Invalid client',400);
@@ -223,6 +234,8 @@ const server = http.createServer(async (req, res) => {
           || !Number.isFinite(speed) || speed < 0.05 || speed > 8) fail('Invalid live update');
       session.inverseGamma = input.match !== false && session.colorGammaEnabled ? 1/session.colorGamma : 1;
       session.lut = perceptualLut(brightness, session.inverseGamma);
+      session.thermalInterval = Math.max(0.5,Math.min(3,Math.round((Number(input.thermal?.sampleSeconds)||1)*2)/2))*1000;
+      session.thermalNextAt = 0;
       session.worker.postMessage({type:'update',config:{...input,lut:Array.from(session.lut)}});
       session.stats.targetFps = fps;
       session.stats.mode = input.mode;
@@ -272,19 +285,38 @@ const reaper = setInterval(() => {
   const now=performance.now();
   for(const [id,client]of webClients)if(client.expires<now)webClients.delete(id);
   for(const session of sessions.values())if(session.webClient&&!webClients.has(session.webClient)&&!session.preparing)void release(session);
-  if(webClients.size||sessions.size)webIdleAt=now;
+  if(webClients.size||sessions.size||temperatureService.active)webIdleAt=now;
   else if(webAutoExit&&!closing&&now-webIdleAt>45000){closing=true;void shutdown();}
 
   for (const session of sessions.values()) if (session.active && !session.preparing && !session.busy &&
     !(session.continuous && session.confirmed) && performance.now()-session.lastAt > 8000) void release(session);
 },1000);
 reaper.unref();
+const temperaturePump = setInterval(async () => {
+  if (closing || temperaturePumpBusy) return;
+  const targets = [...sessions.values()].filter(session => session.active && session.worker && Object.hasOwn(thermalModes, session.stats?.mode) && performance.now() >= (session.thermalNextAt || 0));
+  if (!targets.length) return;
+  temperaturePumpBusy = true;
+  try {
+    const sample = await temperatureService.sample();
+    for (const session of targets) {
+      if (session.active && session.worker && Object.hasOwn(thermalModes, session.stats?.mode)) {
+        session.thermalNextAt = performance.now() + (session.thermalInterval || 1000);
+        session.worker.postMessage({type:'temperature', sample});
+      }
+    }
+  } finally { temperaturePumpBusy = false; }
+}, 250);
+temperaturePump.unref();
 server.listen(PORT,HOST,()=>{
   boundPort=server.address().port;ORIGIN=`http://${HOST}:${boundPort}`;
   console.log('Pixel Studio DDP: '+ORIGIN);
   process.parentPort?.postMessage({type:'pixel-ddp-ready',port:boundPort,token:TOKEN});
 });
 async function shutdown() {
+  closing = true;
+  clearInterval(temperaturePump);
+  temperatureService.stop();
   clearInterval(reaper);
   await Promise.allSettled([...sessions.values()].map(release));
   server.close();udp.close();process.exit(0);

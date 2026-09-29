@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const recolorCircuit = require('./pixel-circuit-palette.cjs');
+const temperature = require('./pixel-temperature.cjs');
 const { performance } = require('node:perf_hooks');
 
 function createCanvas() {
@@ -103,7 +104,7 @@ module.exports = function createRenderer() {
   };
   const sandbox={console,document,performance,Date,Math,Uint8Array,Uint8ClampedArray,TextEncoder,TextDecoder,URL,Blob,recolorCircuit,
     AbortController,Event:class{constructor(type){this.type=type;}},navigator:{},innerWidth:1200,innerHeight:900,
-    pixelStudioHeadless:true,
+    pixelStudioHeadless:true,PixelStudioTemperature:temperature,
     addEventListener(){},setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},
     requestAnimationFrame:()=>0,cancelAnimationFrame(){},
     fetch:()=>Promise.reject(new Error('Network access belongs to the DDP transport, not the renderer'))};
@@ -114,7 +115,7 @@ module.exports = function createRenderer() {
   if(end<0)throw new Error('Animation bootstrap is missing');
   const exports=String.raw`
     globalThis.pixelRenderer={
-      modes:Object.keys(animationDescriptions),
+      modes:[...new Set([...Object.keys(animationDescriptions),...Object.keys(PixelStudioTemperature.modes)])],
       mappings:ui.mapping.options.map(option=>option.value),
       render(mode,w,h,time,mapping,clockFont,clockPalette){
         ui.matrixW.value=String(w);ui.matrixH.value=String(h);ui.mapping.value=mapping;
@@ -133,9 +134,11 @@ module.exports = function createRenderer() {
   const renderer=sandbox.pixelRenderer;
   return {
     modes:renderer.modes,
-    render(mode,w,h,time,mapping,clockFont,clockPalette){
+    render(mode,w,h,time,mapping,clockFont,clockPalette,thermal,temperatureSample){
       if(!renderer.modes.includes(mode))throw new Error('Unknown animation: '+mode);
       if(!renderer.mappings.includes(mapping))throw new Error('Unknown pixel mapping: '+mapping);
+      sandbox.pixelStudioTemperatureSettings=thermal || {};
+      sandbox.pixelStudioTemperatureSample=temperatureSample || null;
       const rgb=renderer.render(mode,w,h,time,mapping,clockFont,clockPalette);
       if(!rgb || rgb.length!==w*h*3)throw new Error('Incorrect animation frame size');
       return rgb;

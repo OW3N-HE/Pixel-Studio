@@ -1,6 +1,6 @@
 {
   "name": "Pixel Studio",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "api": 4,
   "description": "Native OpenRGB panel sharing the standalone Pixel Studio animation engine."
 }

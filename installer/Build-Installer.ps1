@@ -2,9 +2,27 @@ param(
     [Parameter(Mandatory = $true)][string]$PayloadDir,
     [Parameter(Mandatory = $true)][string]$IsccPath,
     [string]$Version = '0.1.10',
-    [switch]$TestPackage
+    [switch]$TestPackage,
+    [string]$PawnIOMinVersion = '',
+    [string]$PawnIOMaxVersion = '',
+    [string]$PawnIOInstallerPath = '',
+    [string]$OutputDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
+if (($PawnIOMinVersion -eq '') -ne ($PawnIOMaxVersion -eq '')) {
+    throw 'Supply both tested PawnIO version bounds, or neither.'
+}
+if ($PawnIOMinVersion -ne '') {
+    foreach ($bound in @($PawnIOMinVersion, $PawnIOMaxVersion)) {
+        if ($bound -notmatch '^\d{1,5}(\.\d{1,5}){1,3}$' -or
+            @($bound.Split('.') | Where-Object { [int]$_ -gt 65535 }).Count -gt 0) {
+            throw 'Invalid PawnIO version bound.'
+        }
+    }
+    if ([version]$PawnIOMinVersion -ge [version]$PawnIOMaxVersion) {
+        throw 'PawnIO upper version bound must be exclusive and greater than the minimum.'
+    }
+}
 if ($Version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
     throw 'Version must be a stable three-part version.'
 }
@@ -37,10 +55,18 @@ if (-not $TestPackage) {
         throw 'Review record must confirm this version, privacy, asset rights and matching binaries.'
     }
 }
-$output = Join-Path $PSScriptRoot 'dist'
+$output = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $PSScriptRoot 'dist' }
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $extra = @()
 if ($TestPackage) { $extra += '/DTestPackage=1' }
+if ([version]$Version -ge [version]'0.1.11') {
+    $pawnIOSetup = & (Join-Path $PSScriptRoot 'Prepare-PawnIO.ps1') -InstallerPath $PawnIOInstallerPath
+    $extra += "/DPawnIOSetupPath=$pawnIOSetup"
+}
+if ($PawnIOMinVersion -ne '') {
+    $extra += "/DPawnIOMinVersion=$PawnIOMinVersion"
+    $extra += "/DPawnIOMaxVersion=$PawnIOMaxVersion"
+}
 & $compiler "/DPayloadDir=$payload" "/DAppVersion=$Version" "/DOutputPath=$output" @extra (Join-Path $PSScriptRoot 'PixelStudio.iss')
 if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed: $LASTEXITCODE" }
 Write-Output "Installer build completed in $output. Nothing was installed or published."

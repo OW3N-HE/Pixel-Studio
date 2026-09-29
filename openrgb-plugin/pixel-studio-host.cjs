@@ -33,6 +33,12 @@ const pendingOutput = new Map();
 let queue = Promise.resolve();
 let revision = 0;
 const epoch = performance.now();
+let temperatureTimer;
+let temperatureBusy = false;
+let temperatureNextAt = 0;
+let temperatureSample = null;
+let temperatureAbort = null;
+const thermalModes = new Set(['thermal_icons','thermal_digits','thermal_labels','thermal_gauges']);
 
 function output(message, disposable = false) {
     if (process.stdout.destroyed) return;
@@ -88,6 +94,16 @@ function configuration(data) {
     c.fps = number(c.fps, 1, 60, true);
     c.speed = number(c.speed, 0.05, 8);
     c.brightness = number(c.brightness, 0, 255, true);
+    const thermal = c.thermal && typeof c.thermal === 'object' ? c.thermal : {};
+    c.thermal = {
+        font: ['segment','classic','rounded'].includes(thermal.font) ? thermal.font : 'segment',
+        cpuBrand: thermal.cpuBrand === 'intel' ? 'intel' : 'amd',
+        gpuBrand: ['amd','intel','nvidia'].includes(thermal.gpuBrand) ? thermal.gpuBrand : 'nvidia',
+        custom: thermal.custom === true,
+        sampleSeconds: Math.max(0.5, Math.min(3, Math.round((Number(thermal.sampleSeconds) || 1) * 2) / 2))
+    };
+    for (const key of ['cpu','gpu','divider'])
+        if (/^#[0-9a-f]{6}$/i.test(thermal[key])) c.thermal[key] = thermal[key];
     c.transport = c.transport === 'usb' ? 'usb' : 'ddp';
     c.serialPort = String(c.serialPort || 'COM5').trim().toUpperCase();
     if (c.transport === 'usb' && !/^COM\d+$/.test(c.serialPort)) {
@@ -146,6 +162,10 @@ async function request(route, { method = 'GET', data, timeout = 6500, signal, ra
     return result;
 }
 async function discoverBridge(signal) {
+    const expected = require('node:crypto').createHash('sha256').update(root.toLowerCase()).digest('hex');
+    const health = JSON.parse(await request('/health', { raw: true, timeout: 1800, signal }));
+    if (health.service !== 'PixelStudioDDP' || health.rootId !== expected)
+        throw new Error('Another Pixel Studio version owns port 8766. Close its Web bridge before using this version.');
     const html = await request('/', { raw: true, timeout: 1800, signal });
     const tag = (html.match(/<meta\b[^>]*\bname=["']pixel-bridge-token["'][^>]*>/i) || [])[0];
     const found = tag && tag.match(/\bcontent=["']([^"']+)["']/i);
@@ -162,7 +182,7 @@ async function ensureBridge(signal) {
         const code = error.cause && error.cause.code;
         if (code !== 'ECONNREFUSED') throw error;
     }
-    const child = spawn(process.execPath, [path.join(root, 'pixel-ddp-bridge.cjs')], {
+    const child = spawn(process.execPath, [path.join(root, 'pixel-ddp-bridge.cjs'), '--web-auto-exit'], {
         cwd: root, detached: true, windowsHide: true, stdio: 'ignore'
     });
     let spawnError = null;
@@ -370,11 +390,11 @@ function preview() {
     if (exiting || outputBlocked || !renderer) return;
     try {
         const rgb = renderer.render(config.mode, config.w, config.h,
-            (performance.now() - epoch) / 1000 * config.speed, linearMapping, config.clockFont, config.clockPalette);
+            (performance.now() - epoch) / 1000 * config.speed, linearMapping, config.clockFont, config.clockPalette, config.thermal, temperatureSample);
         output({ type: 'frame', w: config.w, h: config.h, rgb: Buffer.from(rgb).toString('base64'), revision }, true);
         if (sessionId) {
             const sent = renderer.render(config.mode, config.w, config.h,
-                (performance.now() - epoch) / 1000 * config.speed, config.mapping, config.clockFont, config.clockPalette);
+                (performance.now() - epoch) / 1000 * config.speed, config.mapping, config.clockFont, config.clockPalette, config.thermal, temperatureSample);
             output({ type: 'outputFrame', w: config.w, h: config.h, rgb: Buffer.from(sent).toString('base64'), transport: 'ddp' }, true);
         }
     } catch (error) {
@@ -389,10 +409,32 @@ async function thumbnails() {
         try {
             const isClock = /clock/i.test(mode.id);
             const rgb = renderer.render(mode.id, 15, 27, 1.8, linearMapping,
-                isClock ? 'segment' : 'rounded', isClock ? 'ice' : 'mint');
+                isClock ? 'segment' : 'rounded', isClock ? 'ice' : 'original');
             output({ type: 'thumbnail', mode: mode.id, w: 15, h: 27, rgb: Buffer.from(rgb).toString('base64') }, true);
         } catch { /* An individual thumbnail must not prevent library loading. */ }
         await new Promise(resolve => setImmediate(resolve));
+    }
+}
+async function pollTemperature() {
+    if (exiting || temperatureBusy || !thermalModes.has(config?.mode)) return;
+    if (performance.now() < temperatureNextAt) return;
+    temperatureNextAt = performance.now() + (config.thermal?.sampleSeconds || 1) * 1000;
+    temperatureBusy = true;
+    const controller = new AbortController();
+    temperatureAbort = controller;
+    try {
+        await ensureBridge(controller.signal);
+        const sample = await request('/api/temperature', {timeout:18000, signal:controller.signal});
+        if (exiting || !thermalModes.has(config?.mode)) return;
+        temperatureSample = sample;
+        if (usbWorker) usbWorker.postMessage({type:'temperature', sample});
+        output({type:'temperature', status:sample.status}, true);
+    } catch {
+        temperatureSample = null;
+        if (!exiting && usbWorker) usbWorker.postMessage({type:'temperature', sample:null});
+    } finally {
+        if (temperatureAbort === controller) temperatureAbort = null;
+        temperatureBusy = false;
     }
 }
 async function handle(message) {
@@ -456,6 +498,8 @@ async function shutdown(reason = 'Shutdown requested') {
     process.stderr.write('[Pixel Studio] ' + reason + '\n');
     clearInterval(previewTimer);
     clearInterval(statsTimer);
+    clearInterval(temperatureTimer);
+    temperatureAbort?.abort();
     clearInterval(watchdog);
     if (startAbort) startAbort.abort();
     const deadline = setTimeout(() => process.exit(1), 7500);
@@ -486,6 +530,7 @@ try {
     output({ type: 'ready', modes, mappings, config });
     previewTimer = setInterval(preview, 1000 / 12);
     statsTimer = setInterval(() => { void pollStats(); }, 1000);
+    temperatureTimer = setInterval(() => { void pollTemperature(); }, 250);
     watchdog = setInterval(() => {
         if (Date.now() - lastPing <= 12000 || exiting) return;
         // Windows' interactive move/resize loop can pause the Qt GUI timer.

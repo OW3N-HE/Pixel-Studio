@@ -15,9 +15,11 @@
   }
   let language = resolveLanguage();
   function updateDocumentLanguage() {
-    document.documentElement.lang = language;
-    document.documentElement.setAttribute('data-language-preference', preference);
-    document.title = 'Pixel Studio';
+    if (document.documentElement.lang !== language) document.documentElement.lang = language;
+    if (document.documentElement.getAttribute('data-language-preference') !== preference) {
+      document.documentElement.setAttribute('data-language-preference', preference);
+    }
+    if (document.title !== 'Pixel Studio') document.title = 'Pixel Studio';
   }
   updateDocumentLanguage();
   const catalog = {
@@ -26,7 +28,7 @@
     '高级设置与连接诊断':'Advanced settings and diagnostics','自动限制帧率':'Automatically limit frame rate',
     '稳定优先':'Prioritize stability','USB 协议':'USB protocol','波特率':'Baud rate',
     'HTTP 路径':'HTTP path','连接操作':'Connection actions','测试色':'Test color','预览操作':'Preview actions',
-    '新增':'New','手绘作品':'Hand-drawn',
+    '新增':'New','手绘作品':'Hand-drawn','手绘':'Hand-drawn',
     '设置':'Settings','语言':'Language','主题':'Theme','界面设置':'Interface settings',
     'WLED 输出设置':'WLED output settings','输出方式':'Output','USB 端口':'USB port','IP 地址':'IP address',
     '选择串口':'Select port','读取屏幕尺寸':'Read matrix size','屏幕尺寸':'Matrix size','快捷尺寸':'Size presets',

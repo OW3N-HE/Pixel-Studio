@@ -8,7 +8,7 @@ module.exports=function createDdpService(webRoot){
     if(ready)return ready;
     ready=new Promise((resolve,reject)=>{
       const worker=utilityProcess.fork(path.join(webRoot,'pixel-ddp-bridge.cjs'),[],{
-        cwd:webRoot,env:{...process.env,PIXEL_STUDIO_BRIDGE_PORT:'0'},serviceName:'Pixel Studio DDP',stdio:'ignore'
+        cwd:webRoot,env:{...process.env,PIXEL_STUDIO_BRIDGE_PORT:'0',PIXEL_STUDIO_SENSOR_CHANNEL:'Desktop'},serviceName:'Pixel Studio DDP',stdio:'ignore'
       });
       child=worker;
       const timer=setTimeout(()=>{reject(new Error('DDP service startup timed out'));worker.kill();},12000);
@@ -25,9 +25,9 @@ module.exports=function createDdpService(webRoot){
     ready=ready.catch(error=>{ready=null;throw error;});return ready;
   }
   async function request(route,options={}){
-    if(typeof route!=='string'||route.length>1024||!/^\/api\/(device|start|update|stats|frame|stop)(?:\?|$)/.test(route))throw new Error('Unsupported DDP command');
+    if(typeof route!=='string'||route.length>1024||!/^\/api\/(device|temperature|start|update|stats|frame|stop)(?:\?|$)/.test(route))throw new Error('Unsupported DDP command');
     const parsed=new URL(route,'http://127.0.0.1');
-    const read=parsed.pathname==='/api/device'||parsed.pathname==='/api/stats';
+    const read=parsed.pathname==='/api/device'||parsed.pathname==='/api/stats'||parsed.pathname==='/api/temperature';
     let body;
     if(parsed.pathname==='/api/frame'){
       if(!Array.isArray(options.binary)||options.binary.length>12288||!options.binary.every(n=>Number.isInteger(n)&&n>=0&&n<=255))throw new Error('Invalid pixel frame');

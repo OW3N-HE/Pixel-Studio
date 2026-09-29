@@ -1,5 +1,25 @@
 /* Solid ice-blue surfaces; the web shell does not style the OpenRGB plugin. */
-body.ps-web{margin:0;padding:0;background:var(--bg);color:var(--text)}
+/* Thermal controls reuse the clock's label widths and two equal columns. */
+.ps-web .studio-controls.ps-thermal-controls{height:auto;min-height:132px}
+.ps-web .studio-controls.ps-thermal-controls .adjustments{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.ps-web .studio-controls.ps-thermal-controls .adjustments>div{grid-template-columns:var(--control-label) minmax(0,1fr) 86px}
+.ps-web .studio-controls #thermalStyling{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:var(--control-gap);margin:16px 0 0;padding:0}
+.ps-web .studio-controls #thermalStyling .ps-setting-row{display:grid;grid-template-columns:var(--control-label) minmax(0,1fr);gap:12px;margin:0;padding:0;height:39px}
+.ps-web #thermalStyling .ps-setting-field{min-width:0;height:39px}
+.ps-web #thermalStyling .thermal-colors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ps-web #thermalStyling select,.ps-web #thermalStyling button{width:100%;min-width:0;height:39px;min-height:39px;margin:0;font:inherit;box-sizing:border-box}
+.ps-web #thermalStyling button{display:flex;align-items:center;justify-content:center;padding:0 6px;border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text);white-space:nowrap;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
+.ps-web #thermalStyling button[aria-pressed=true]{border-color:var(--brand)}
+.ps-web .studio-controls.ps-thermal-controls select,.ps-web .studio-controls.ps-thermal-controls input[type=number]{padding-top:2px!important;padding-bottom:0!important;line-height:normal!important}
+.ps-web .thermal-status{display:block;margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.ps-web #thermalColorsDialog{width:min(600px,calc(100vw - 32px));background:var(--panel);color:var(--text)}
+.ps-web #thermalColorsDialog .thermal-enable{white-space:normal}
+.ps-web #thermalColorsDialog .ps-help{margin:12px 0 22px;font-size:14px}
+.ps-web #thermalColorsDialog .ps-setting-row{grid-template-columns:minmax(0,1fr) 96px;align-items:center}
+.ps-web #thermalColorsDialog .thermal-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}
+.ps-web #thermalColorsDialog .thermal-actions button{display:flex;align-items:center;justify-content:center;white-space:normal;line-height:1.3;min-height:42px}
+@media(max-width:760px){.ps-web .studio-controls.ps-thermal-controls .adjustments,.ps-web .studio-controls #thermalStyling{grid-template-columns:1fr;row-gap:16px}}
+body.ps-web{margin:0;padding:0;background:var(--bg);background-image:none!important;color:var(--text)}
 .ps-web *,.ps-settings *{box-sizing:border-box}
 .ps-web .wrap,.ps-web .wrap *,.ps-settings,.ps-settings *{background-image:none!important}
 .ps-web .wrap{width:100%;max-width:1920px;height:100dvh;min-height:520px;margin:0 auto;padding:18px 24px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
@@ -65,8 +85,10 @@ body.ps-web{margin:0;padding:0;background:var(--bg);color:var(--text)}
 .ps-web .ps-shuffle-group>input{width:64px;text-align:center;padding:8px}
 .ps-web button:focus-visible,.ps-web input:focus-visible,.ps-web select:focus-visible,.ps-settings :focus-visible{outline:2px solid var(--brand);outline-offset:3px}
 .ps-web input[type=range],.ps-settings input[type=range],.ps-web input[type=checkbox],.ps-settings input[type=checkbox]{accent-color:var(--brand)}
-.ps-web #webSettingsToggle{display:grid;place-items:center;width:54px;height:54px;min-width:54px;margin:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text)}
-.ps-web #webSettingsToggle svg{width:26px;height:26px;fill:currentColor}
+.ps-web #webSettingsToggle{display:grid;place-items:center;grid-template-columns:1fr;grid-template-rows:1fr;box-sizing:border-box;width:54px;height:54px;min-width:54px;margin:0;padding:0;line-height:0;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text)}
+.ps-web #webSettingsToggle svg{display:block;width:26px;height:26px;margin:0;fill:currentColor}
+.ps-web .header-actions button:hover:not(:disabled),.ps-web #webSettingsToggle:hover:not(:disabled){background:var(--surface-raised);border-color:var(--brand);filter:brightness(1.08)}
+html .ps-web .ps-settings.ps-media-dialog label,html .ps-web .ps-settings.ps-media-dialog label span,html .ps-web .ps-settings.ps-media-dialog p{font-family:inherit;font-size:16px!important;line-height:1.5}
 .ps-settings{width:min(860px,calc(100vw - 40px));max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 24px 80px #0008;overflow:hidden}
 .ps-settings[open]{display:flex;flex-direction:column}.ps-settings::backdrop{background:#02080db3}
 .ps-settings-heading{display:flex;flex:none;justify-content:space-between;align-items:center;gap:20px;padding:15px 24px;border-bottom:1px solid var(--line)}
@@ -154,7 +176,19 @@ html[lang=en] .ps-web .ps-animation-colors{grid-template-columns:100px minmax(0,
 .ps-web .studio-controls label{height:39px;display:flex;align-items:center;margin:0!important;padding:0!important;color:var(--text);font-size:15px;line-height:20px;font-weight:inherit}
 .ps-web .studio-controls input:not([type=range]),.ps-web .studio-controls select,.ps-web .studio-controls .ps-custom-colors,.ps-web .studio-controls .ps-animation-colors button{height:39px!important;min-height:39px!important;max-height:39px!important;box-sizing:border-box;margin-top:0!important;margin-bottom:0!important}
 .ps-web input:not([type=range]):not([type=checkbox]):not([type=color]),.ps-web select{padding-top:2px!important;padding-bottom:0!important;line-height:normal;vertical-align:middle}
-.ps-web .studio-controls select,.ps-web .studio-controls input[type=number]{padding-top:2px!important;padding-bottom:0!important}
+.ps-web .studio-controls select,.ps-web .studio-controls input[type=number]{padding-top:2px!important;padding-bottom:0!important;line-height:normal!important}
+/* One caption size for ordinary animations, clocks and temperature controls. */
+html .ps-web .studio-controls select,html .ps-web .studio-controls input[type=number],html .ps-web .studio-controls button.ps-custom-colors,html .ps-web .studio-controls .ps-animation-colors button{font-family:inherit!important;font-size:16px!important;font-weight:inherit!important;letter-spacing:normal}
+.ps-web .studio-controls select option{line-height:normal}
+/* Use identical label and field anchors for animation, clock and thermal rows. */
+html .ps-web .studio-controls .adjustments>div{grid-template-columns:var(--control-label) minmax(0,1fr) 86px;column-gap:12px}
+html .ps-web .studio-controls #clockStyling .ps-setting-row,html .ps-web .studio-controls #thermalStyling .ps-setting-row{grid-template-columns:var(--control-label) minmax(0,1fr);column-gap:12px;align-items:center}
+.ps-web .studio-controls .ps-custom-colors,.ps-web .studio-controls .ps-animation-colors button{display:flex;align-items:center;justify-content:center;padding-top:2px!important;padding-bottom:0!important;line-height:normal}
+.ps-web .thermal-sample-value{display:grid;grid-template-columns:minmax(0,1fr) 14px;gap:8px;align-items:center;min-width:0;height:39px}
+.ps-web .studio-controls .thermal-sample-value input[type=number]{width:100%;min-width:0;padding-left:4px;padding-right:4px}
+.ps-web .thermal-sample-unit{display:flex;align-items:center;height:39px;color:var(--muted);font-size:12px;line-height:1}
+@media(max-width:1000px){html .ps-web .studio-controls .adjustments>div,html .ps-web .studio-controls #clockStyling .ps-setting-row,html .ps-web .studio-controls #thermalStyling .ps-setting-row{column-gap:8px}}
+@media(max-width:760px){.ps-web .studio-controls{--control-label:48px}html[lang=en] .ps-web .studio-controls{--control-label:100px}}
 .ps-web .ps-preview-frame{margin:0!important}
 .ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 150px}
 .ps-web .ps-settings .ps-input-action button{min-width:0;width:100%}

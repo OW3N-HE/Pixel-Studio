@@ -4,6 +4,9 @@ const startupArgument=(name,fallback)=>process.argv.find(value=>value.startsWith
 contextBridge.exposeInMainWorld('pixelStudioDesktop',Object.freeze({edition:true,
   systemLanguage:startupArgument('--pixel-studio-system-language','en'),
   languagePreference:startupArgument('--pixel-studio-language','auto'),
+  prepareSerialSelection:restore=>ipcRenderer.invoke('desktop:serial',{action:'prepare',restore:restore===true}),
+  confirmSerialConnection:()=>ipcRenderer.invoke('desktop:serial',{action:'connected'}),
+  cancelResume:()=>ipcRenderer.invoke('desktop:serial',{action:'cancel-resume'}),
   ensureDdp:()=>ipcRenderer.invoke('desktop:ddp',{action:'ensure'}),
   downloadUpdate:version=>ipcRenderer.invoke('desktop:update',{action:'download',version}),
   installUpdate:()=>ipcRenderer.invoke('desktop:update',{action:'install',language:document.documentElement.lang}),
@@ -39,7 +42,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const hide=document.createElement('button');hide.type='button';hide.className='ps-about-button';
     hide.addEventListener('click',()=>ipcRenderer.send('desktop:hide'));
     const forget=document.createElement('button');forget.type='button';forget.className='ps-about-button';
-    forget.addEventListener('click',async()=>{try{document.getElementById('disconnectBtn')?.click();settings=await ipcRenderer.invoke('desktop:settings',{forgetSerial:true});error=false;}catch{error=true;}render();});
+    forget.addEventListener('click',async()=>{try{settings=await ipcRenderer.invoke('desktop:settings',{forgetSerial:true});error=false;}catch{error=true;}render();});
     actions.append(forget,hide);group.append(note,actions);
     // The DDP notice is nested inside another fieldset, not a child of body.
     // Only use a direct settings group as insertBefore's reference node.

@@ -472,7 +472,9 @@ QImage rgbImage(int width, int height, const QByteArray& rgb) {
 }
 QString categoryForMode(const QString& id) {
     if (id.startsWith(QStringLiteral("hand_"))) return QStringLiteral("handmade");
-    if (id == QStringLiteral("clock")) return QStringLiteral("info");
+    if (id == QStringLiteral("clock") || id == QStringLiteral("thermal_icons")
+        || id == QStringLiteral("thermal_digits") || id == QStringLiteral("thermal_labels")
+        || id == QStringLiteral("thermal_gauges")) return QStringLiteral("info");
     static const QStringList nature = {
         QStringLiteral("fox"), QStringLiteral("capybara"), QStringLiteral("owl"),
         QStringLiteral("axolotl"), QStringLiteral("snail"), QStringLiteral("bees"),
@@ -996,63 +998,8 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
     auto* editColors = new StudioButton(text("自定义配色"), clockControls_);
     customColorsButton_ = editColors;
     clockLayout->addWidget(editColors);
-    connect(editColors, &QPushButton::clicked, this, [this] {
-        QDialog dialog(this);
-        dialog.setWindowTitle(localized(text("自定义配色")));
-        dialog.setFont(font());
-        auto* layout = new QVBoxLayout(&dialog);
-        const auto* item = gallery_->currentItem();
-        const QString mode = item ? item->data(Qt::UserRole).toString() : QStringLiteral("clock");
-        auto paletteSettings = preferences();
-        QString palette = paletteSettings.value(QStringLiteral("customPalette/") + mode,
-            mode == QStringLiteral("clock") ? customClockPalette_
-                : QStringLiteral("custom:#e5f5ff:#6ad3f5:#356e88")).toString();
-        const QString selected = circuitPalette_->isVisible()
-            ? circuitPalette_->currentData().toString() : clockPalette_->currentData().toString();
-        if (selected == QStringLiteral("mint")) palette = QStringLiteral("custom:#f2ebd6:#8af2c9:#397660");
-        if (selected == QStringLiteral("amber")) palette = QStringLiteral("custom:#ffe2ab:#ffad59:#925628");
-        if (selected == QStringLiteral("ice")) palette = QStringLiteral("custom:#e5f5ff:#6ad3f5:#356e88");
-        QStringList colors = palette.split(QLatin1Char(':')).mid(1);
-        const QStringList labels = circuitPalette_->isVisible()
-            ? QStringList{localized(text("高光颜色")), localized(text("主色")), localized(text("阴影颜色"))}
-            : QStringList{localized(text("小时颜色")), localized(text("分钟颜色")), localized(text("分隔线颜色"))};
-        for (int i = 0; i < 3; ++i) {
-            auto* row = new QHBoxLayout;
-            row->addWidget(new StudioLabel(labels[i], &dialog));
-            auto* swatch = new QPushButton(colors[i], &dialog);
-            auto refresh = [swatch, &colors, i] {
-                swatch->setText(colors[i]);
-                const QColor color(colors[i]);
-                swatch->setStyleSheet(QStringLiteral("background-color:%1;color:%2;min-width:120px;min-height:30px;")
-                    .arg(colors[i], color.lightness() > 140 ? QStringLiteral("black") : QStringLiteral("white")));
-            };
-            refresh();
-            connect(swatch, &QPushButton::clicked, &dialog, [&, i, refresh] {
-                const QColor color = QColorDialog::getColor(QColor(colors[i]), &dialog, labels[i]);
-                if (color.isValid()) { colors[i] = color.name(); refresh(); }
-            });
-            row->addWidget(swatch);
-            layout->addLayout(row);
-        }
-        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-        buttons->button(QDialogButtonBox::Ok)->setText(english_ ? QStringLiteral("Apply") : text("应用"));
-        buttons->button(QDialogButtonBox::Cancel)->setText(english_ ? QStringLiteral("Cancel") : text("取消"));
-        connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-        connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-        layout->addWidget(buttons);
-        if (dialog.exec() == QDialog::Accepted) {
-            const QString customPalette = QStringLiteral("custom:") + colors.join(QLatin1Char(':'));
-            paletteSettings.setValue(QStringLiteral("customPalette/") + mode, customPalette);
-            if (mode == QStringLiteral("clock")) {
-                customClockPalette_ = customPalette;
-                clockPalette_->setCurrentIndex(clockPalette_->findData(QStringLiteral("custom")));
-            } else {
-                circuitPalette_->setCurrentIndex(circuitPalette_->findData(QStringLiteral("custom")));
-            }
-            savePreferences();
-            debounce_->start();
-        }
-    });
+    // Clock, animation and temperature palettes use the same themed dialog.
+    connect(editColors, &QPushButton::clicked, this, &PixelStudioPanel::editThermalColors);
     controls->addWidget(clockLabel_, 3, 0);
     controls->addWidget(clockControls_, 3, 1, 1, 2);
     controls->addWidget(new StudioLabel(text("速度"), outputGroup), 3, 3);
@@ -1243,8 +1190,8 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
         QFont headingFont = heading->font(); headingFont.setPointSize(20); headingFont.setBold(true);
         heading->setFont(headingFont); layout->addWidget(heading);
         auto* version = new QLabel(english_
-        ? QStringLiteral("Version 0.1.10 · OpenRGB plugin\nBuilt: %1").arg(QString::fromLatin1(__DATE__))
-        : text("版本 0.1.10 · OpenRGB 插件\n编译日期：%1").arg(QString::fromLatin1(__DATE__)), &about);
+        ? QStringLiteral("Version 0.1.11 · OpenRGB plugin\nBuilt: %1").arg(QString::fromLatin1(__DATE__))
+        : text("版本 0.1.11 · OpenRGB 插件\n编译日期：%1").arg(QString::fromLatin1(__DATE__)), &about);
         layout->addWidget(version);
         auto* description = new QLabel(english_
             ? QStringLiteral("Small pixels. Endless imagination.\n\nA pixel animation studio for WLED. The web app and OpenRGB plugin share an animation library, with live previews, custom palettes and USB / Adalight or DDP output.\n\nAuthors & collaborators\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra\nOWEN\n\nCreated through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.\n\nSpecial thanks: David Wang\n\nIndependent project. Thanks to the WLED, OpenRGB, Qt and Node.js communities. Not an official WLED or OpenRGB release.")
@@ -1252,6 +1199,13 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
         description->setWordWrap(true); description->setMaximumWidth(560);
         description->setTextInteractionFlags(Qt::TextSelectableByMouse);
         layout->addWidget(description);
+        auto* sensorCredits = new QLabel(english_
+            ? QStringLiteral("Temperature monitoring: thanks to LibreHardwareMonitor and its contributors for the hardware monitoring library, and to PawnIO for low-level hardware access.")
+            : text("温度采集：感谢 LibreHardwareMonitor 及其贡献者提供硬件监控库，感谢 PawnIO 提供底层硬件访问支持。"), &about);
+        sensorCredits->setWordWrap(true);
+        sensorCredits->setMaximumWidth(560);
+        sensorCredits->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        layout->addWidget(sensorCredits);
         auto* buttons = new QDialogButtonBox(&about);
         auto* closeButton = new StudioButton(english_ ? QStringLiteral("Close") : text("关闭"), &about);
         closeButton->setMinimumSize(88, 32);
@@ -1920,7 +1874,13 @@ void PixelStudioPanel::handleMessage(const QJsonObject& message) {
         for (const auto value : message.value(QStringLiteral("modes")).toArray()) {
             const auto mode = value.toObject();
             const auto id = mode.value(QStringLiteral("id")).toString();
-            auto* item = new QListWidgetItem(mode.value(QStringLiteral("title")).toString(), gallery_);
+            static const QHash<QString, QString> thermalTitles{
+                {QStringLiteral("thermal_icons"), text("图标温度")},
+                {QStringLiteral("thermal_digits"), text("大数字温度")},
+                {QStringLiteral("thermal_labels"), text("标签温度")},
+                {QStringLiteral("thermal_gauges"), text("温度条")}
+            };
+            auto* item = new QListWidgetItem(thermalTitles.value(id, mode.value(QStringLiteral("title")).toString()), gallery_);
             item->setData(Qt::UserRole, id);
             item->setData(Qt::UserRole + 10, item->text());
             item->setData(Qt::UserRole + 1, categoryForMode(id));
@@ -2070,6 +2030,7 @@ QJsonObject PixelStudioPanel::configuration() const {
         : clockPalette_->currentData().toString();
     return QJsonObject{
         {QStringLiteral("mode"), selected ? selected->data(Qt::UserRole).toString() : QString()},
+        {QStringLiteral("thermal"), thermalConfiguration()},
         {QStringLiteral("w"), width_->value()}, {QStringLiteral("h"), height_->value()},
         {QStringLiteral("brightness"), brightness_->value()}, {QStringLiteral("fps"), fps_->value()},
         {QStringLiteral("speed"), speed_->value()}, {QStringLiteral("mapping"), mapping_->currentData().toString()},
@@ -2151,6 +2112,7 @@ void PixelStudioPanel::updateControls() {
         && gallery_->currentItem()->data(Qt::UserRole).toString() == QStringLiteral("clock");
     clockLabel_->setVisible(clockSelected);
     clockControls_->setVisible(clockSelected);
+    updateThermalControls();
 }
 void PixelStudioPanel::showStatus(const QString& message, bool error, const QStringList& arguments) {
     setLabelText(status_, message, arguments);
@@ -2162,6 +2124,7 @@ void PixelStudioPanel::showStatus(const QString& message, bool error, const QStr
 }
 void PixelStudioPanel::savePreferences() {
     auto settings = preferences();
+    if (thermalSampling_) settings.setValue(QStringLiteral("thermal"), QJsonDocument(thermalConfiguration()).toJson(QJsonDocument::Compact));
     settings.setValue(QStringLiteral("language"), language_->currentData());
     settings.setValue(QStringLiteral("project"), projectPath_->text().trimmed());
     settings.setValue(QStringLiteral("node"), nodePath_->text().trimmed());
@@ -2270,20 +2233,23 @@ void PixelStudioPanel::arrangeLiveControls(bool clockSelected, bool paletteSelec
         liveLayout_->addWidget(speedControls_, 1, 1, 1, 3, Qt::AlignVCenter);
     }
     liveLayout_->setContentsMargins(16, 16, 16, 16);
-    liveLayout_->setRowMinimumHeight(0, 30);
-    liveLayout_->setRowMinimumHeight(1, 30);
+    clockFont_->ensurePolished();
+    customColorsButton_->ensurePolished();
+    const int controlHeight = qMax(30, qMax(clockFont_->sizeHint().height(), customColorsButton_->sizeHint().height()));
+    liveLayout_->setRowMinimumHeight(0, controlHeight);
+    liveLayout_->setRowMinimumHeight(1, controlHeight);
     // Identical row metrics for the plain, clock and palette arrangements.
     for (QWidget* widget : {brightnessLabel_, brightnessControls_, speedLabel_, speedControls_,
                            static_cast<QWidget*>(clockLabel_), clockControls_,
                            static_cast<QWidget*>(clockColorLabel_), clockColorControls_}) {
-        widget->setFixedHeight(30);
+        widget->setFixedHeight(controlHeight);
     }
     const int labelWidth = qMax(qMax(brightnessLabel_->sizeHint().width(), speedLabel_->sizeHint().width()),
         qMax(clockLabel_->fontMetrics().horizontalAdvance(clockLabel_->text()),
              clockColorLabel_->fontMetrics().horizontalAdvance(clockColorLabel_->text()))) + 8;
     liveLayout_->setColumnMinimumWidth(0, labelWidth);
     liveLayout_->setColumnMinimumWidth(2, labelWidth);
-    for (auto* combo : {clockFont_, clockPalette_, circuitPalette_}) combo->setFixedHeight(30);
+    for (auto* combo : {clockFont_, clockPalette_, circuitPalette_}) combo->setFixedHeight(controlHeight);
     liveLayout_->setAlignment(Qt::AlignTop);
     liveLayout_->setVerticalSpacing(8);
     for (QWidget* container : {brightnessControls_, speedControls_, clockControls_, clockColorControls_}) {
@@ -2292,11 +2258,275 @@ void PixelStudioPanel::arrangeLiveControls(bool clockSelected, bool paletteSelec
             container->layout()->setAlignment(Qt::AlignVCenter);
         }
     }
-    customColorsButton_->setFixedHeight(30);
-    animationColorsButton_->setFixedHeight(30);
+    customColorsButton_->setFixedHeight(controlHeight);
+    animationColorsButton_->setFixedHeight(controlHeight);
+    liveLayout_->parentWidget()->setFixedHeight(32 + 8 + controlHeight * 2);
     liveLayout_->setRowStretch(0, 0);
     liveLayout_->setRowStretch(1, 0);
 }
+QJsonObject PixelStudioPanel::thermalConfiguration() const {
+    QJsonObject result = thermalPreferences_;
+    if (!thermalSampling_) return result;
+    result.insert(QStringLiteral("sampleSeconds"), thermalSampling_->value());
+    if (thermalFont_->currentData().toString() != QStringLiteral("fixed"))
+        result.insert(QStringLiteral("font"), thermalFont_->currentData().toString());
+    result.insert(QStringLiteral("cpuBrand"), thermalCpu_->currentData().toString());
+    result.insert(QStringLiteral("gpuBrand"), thermalGpu_->currentData().toString());
+    return result;
+}
+
+void PixelStudioPanel::updateThermalControls() {
+    if (!liveLayout_) return;
+    if (!thermalSampling_) {
+        thermalPreferences_ = QJsonDocument::fromJson(preferences().value(QStringLiteral("thermal")).toByteArray()).object();
+        auto* parent = liveLayout_->parentWidget();
+        thermalSamplingLabel_ = new StudioLabel(text("采样"), parent);
+        thermalSamplingControls_ = new QWidget(parent);
+        auto* sampleRow = new QHBoxLayout(thermalSamplingControls_);
+        sampleRow->setContentsMargins(0, 0, 0, 0);
+        sampleRow->setSpacing(8);
+        auto* slider = new QSlider(Qt::Horizontal, thermalSamplingControls_);
+        slider->setRange(1, 6);
+        thermalSampling_ = new StudioDoubleSpinBox(thermalSamplingControls_);
+        thermalSampling_->setRange(0.5, 3.0);
+        thermalSampling_->setSingleStep(0.5);
+        thermalSampling_->setDecimals(1);
+        thermalSampling_->setFixedSize(68, 30);
+        thermalSampling_->setAlignment(Qt::AlignCenter);
+        thermalSampling_->setValue(qBound(0.5, qRound(thermalPreferences_.value(QStringLiteral("sampleSeconds")).toDouble(1.0) * 2) / 2.0, 3.0));
+        slider->setValue(qRound(thermalSampling_->value() * 2));
+        sampleRow->addWidget(slider, 1);
+        sampleRow->addWidget(thermalSampling_);
+        thermalSamplingUnit_ = new StudioLabel(thermalSamplingControls_);
+        sampleRow->addWidget(thermalSamplingUnit_);
+        thermalFont_ = new StudioCombo(parent);
+        thermalFont_->addItem(text("七段数码"), QStringLiteral("segment"));
+        thermalFont_->addItem(text("经典像素"), QStringLiteral("classic"));
+        thermalFont_->addItem(text("圆角像素"), QStringLiteral("rounded"));
+        thermalFont_->addItem(text("固定点阵"), QStringLiteral("fixed"));
+        thermalFont_->setCurrentIndex(qMax(0, thermalFont_->findData(thermalPreferences_.value(QStringLiteral("font")).toString(QStringLiteral("segment")))));
+        thermalColorControls_ = new QWidget(parent);
+        auto* colors = new QHBoxLayout(thermalColorControls_);
+        colors->setContentsMargins(0, 0, 0, 0);
+        colors->setSpacing(8);
+        thermalCpu_ = new StudioCombo(thermalColorControls_);
+        thermalGpu_ = new StudioCombo(thermalColorControls_);
+        thermalCpu_->addItem(QStringLiteral("CPU AMD"), QStringLiteral("amd"));
+        thermalCpu_->addItem(QStringLiteral("CPU Intel"), QStringLiteral("intel"));
+        thermalGpu_->addItem(QStringLiteral("GPU NVIDIA"), QStringLiteral("nvidia"));
+        thermalGpu_->addItem(QStringLiteral("GPU AMD"), QStringLiteral("amd"));
+        thermalGpu_->addItem(QStringLiteral("GPU Intel"), QStringLiteral("intel"));
+        thermalCpu_->setCurrentIndex(qMax(0, thermalCpu_->findData(thermalPreferences_.value(QStringLiteral("cpuBrand")).toString(QStringLiteral("amd")))));
+        thermalGpu_->setCurrentIndex(qMax(0, thermalGpu_->findData(thermalPreferences_.value(QStringLiteral("gpuBrand")).toString(QStringLiteral("nvidia")))));
+        thermalCustom_ = new StudioButton(text("自定义"), thermalColorControls_);
+        for (QWidget* widget : {static_cast<QWidget*>(thermalCpu_), static_cast<QWidget*>(thermalGpu_), static_cast<QWidget*>(thermalCustom_)}) {
+            widget->setMinimumWidth(0);
+            widget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+            widget->setFixedHeight(30);
+            colors->addWidget(widget, 1, Qt::AlignVCenter);
+        }
+        // Reuse clock selector metrics; a local zero-padding rule shrinks the native frame.
+        for (auto* combo : {thermalFont_, thermalCpu_, thermalGpu_}) {
+            combo->setStyleSheet(clockFont_->styleSheet());
+            combo->setFixedHeight(clockFont_->minimumHeight());
+        }
+        for (QWidget* widget : {static_cast<QWidget*>(thermalSamplingLabel_), thermalSamplingControls_, static_cast<QWidget*>(thermalFont_), thermalColorControls_})
+            widget->setFixedHeight(30);
+        const auto changed = [this] { thermalPreferences_ = thermalConfiguration(); savePreferences(); if (debounce_) debounce_->start(); };
+        connect(slider, &QSlider::valueChanged, this, [this](int value) { thermalSampling_->setValue(value / 2.0); });
+        connect(thermalSampling_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, [this, slider, changed](double value) {
+            const double rounded = qBound(0.5, qRound(value * 2) / 2.0, 3.0);
+            const QSignalBlocker spinBlock(thermalSampling_), sliderBlock(slider);
+            thermalSampling_->setValue(rounded);
+            slider->setValue(qRound(rounded * 2));
+            changed();
+        });
+        for (auto* combo : {thermalFont_, thermalCpu_, thermalGpu_})
+            connect(combo, qOverload<int>(&QComboBox::currentIndexChanged), this, changed);
+        connect(thermalCustom_, &QPushButton::clicked, this, &PixelStudioPanel::editThermalColors);
+    }
+    const auto* item = gallery_->currentItem();
+    const QString mode = item ? item->data(Qt::UserRole).toString() : QString();
+    const bool thermal = mode == QStringLiteral("thermal_icons") || mode == QStringLiteral("thermal_digits")
+        || mode == QStringLiteral("thermal_labels") || mode == QStringLiteral("thermal_gauges");
+    for (QWidget* widget : {static_cast<QWidget*>(thermalSamplingLabel_), thermalSamplingControls_, static_cast<QWidget*>(thermalFont_), thermalColorControls_})
+        widget->setVisible(thermal);
+    speedLabel_->setVisible(!thermal);
+    speedControls_->setVisible(!thermal);
+    thermalSamplingUnit_->setText(english_ ? QStringLiteral("s") : text("秒"));
+    if (!thermal) return;
+    const bool large = mode == QStringLiteral("thermal_digits");
+    {
+        const QSignalBlocker blocker(thermalFont_);
+        thermalFont_->clear();
+        if (large) {
+            for (int i = 0; i < clockFont_->count(); ++i) {
+                thermalFont_->addItem(clockFont_->itemText(i), clockFont_->itemData(i));
+                const auto source = clockFont_->itemData(i, Qt::UserRole + 10);
+                thermalFont_->setItemData(i, source.isValid() ? source : QVariant(clockFont_->itemText(i)), Qt::UserRole + 10);
+            }
+            thermalFont_->setCurrentIndex(qMax(0, thermalFont_->findData(thermalPreferences_.value(QStringLiteral("font")).toString(QStringLiteral("segment")))));
+        } else {
+            thermalFont_->addItem(localized(text("固定点阵")), QStringLiteral("fixed"));
+            thermalFont_->setItemData(0, text("固定点阵"), Qt::UserRole + 10);
+        }
+        thermalFont_->setEnabled(large);
+    }
+    thermalCpu_->setEnabled(!thermalPreferences_.value(QStringLiteral("custom")).toBool());
+    thermalGpu_->setEnabled(!thermalPreferences_.value(QStringLiteral("custom")).toBool());
+    while (auto* cell = liveLayout_->takeAt(0)) delete cell;
+    liveLayout_->setProperty("layoutMode", 3);
+    clockControls_->hide();
+    clockColorControls_->hide();
+    animationColorsButton_->hide();
+    clockLabel_->show();
+    clockColorLabel_->show();
+    liveLayout_->addWidget(brightnessLabel_, 0, 0, Qt::AlignVCenter);
+    liveLayout_->addWidget(brightnessControls_, 0, 1, Qt::AlignVCenter);
+    liveLayout_->addWidget(thermalSamplingLabel_, 0, 2, Qt::AlignVCenter);
+    liveLayout_->addWidget(thermalSamplingControls_, 0, 3, Qt::AlignVCenter);
+    liveLayout_->addWidget(clockLabel_, 1, 0, Qt::AlignVCenter);
+    liveLayout_->addWidget(thermalFont_, 1, 1, Qt::AlignVCenter);
+    liveLayout_->addWidget(clockColorLabel_, 1, 2, Qt::AlignVCenter);
+    liveLayout_->addWidget(thermalColorControls_, 1, 3, Qt::AlignVCenter);
+    clockFont_->ensurePolished();
+    customColorsButton_->ensurePolished();
+    const int controlHeight = qMax(30, qMax(clockFont_->sizeHint().height(), customColorsButton_->sizeHint().height()));
+    for (QWidget* widget : {brightnessLabel_, brightnessControls_, static_cast<QWidget*>(thermalSamplingLabel_),
+                           thermalSamplingControls_, static_cast<QWidget*>(clockLabel_), static_cast<QWidget*>(thermalFont_),
+                           static_cast<QWidget*>(clockColorLabel_), thermalColorControls_, static_cast<QWidget*>(thermalCpu_),
+                           static_cast<QWidget*>(thermalGpu_), static_cast<QWidget*>(thermalCustom_)}) {
+        widget->setFixedHeight(controlHeight);
+    }
+    thermalFont_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    thermalColorControls_->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    const int unitWidth = qMax(thermalSamplingUnit_->fontMetrics().horizontalAdvance(QStringLiteral("s")),
+                              thermalSamplingUnit_->fontMetrics().horizontalAdvance(text("秒")));
+    thermalSamplingUnit_->setFixedWidth(unitWidth);
+    thermalSampling_->setFixedSize(qMax(44, speed_->width() - unitWidth - 8), speed_->height());
+    thermalSampling_->setAlignment(Qt::AlignCenter);
+    liveLayout_->setContentsMargins(16, 16, 16, 16);
+    liveLayout_->setVerticalSpacing(8);
+    liveLayout_->setAlignment(Qt::AlignTop);
+    liveLayout_->setRowMinimumHeight(0, controlHeight);
+    liveLayout_->setRowMinimumHeight(1, controlHeight);
+    liveLayout_->setRowStretch(0, 0);
+    liveLayout_->setRowStretch(1, 0);
+    liveLayout_->setColumnStretch(1, 1);
+    liveLayout_->setColumnStretch(3, 1);
+    liveLayout_->parentWidget()->setFixedHeight(32 + 8 + controlHeight * 2);
+    const int labelWidth = qMax(qMax(brightnessLabel_->sizeHint().width(), speedLabel_->sizeHint().width()),
+        qMax(clockLabel_->fontMetrics().horizontalAdvance(clockLabel_->text()),
+             clockColorLabel_->fontMetrics().horizontalAdvance(clockColorLabel_->text()))) + 8;
+    liveLayout_->setColumnMinimumWidth(0, labelWidth);
+    liveLayout_->setColumnMinimumWidth(2, labelWidth);
+}
+
+void PixelStudioPanel::editThermalColors() {
+    const auto* item = gallery_->currentItem();
+    if (!item) return;
+    const QString mode = item->data(Qt::UserRole).toString();
+    const bool thermal = mode.startsWith(QStringLiteral("thermal_"));
+    const bool clock = mode == QStringLiteral("clock");
+    auto paletteSettings = preferences();
+    auto* paletteCombo = clock ? clockPalette_ : circuitPalette_;
+    const QString selected = paletteCombo->currentData().toString();
+    QString preset = selected == QStringLiteral("custom")
+        ? paletteSettings.value(QStringLiteral("presetPalette/") + mode,
+            clock ? QStringLiteral("mint") : QStringLiteral("original")).toString() : selected;
+    if (preset == QStringLiteral("custom") || paletteCombo->findData(preset) < 0)
+        preset = clock ? QStringLiteral("mint") : QStringLiteral("original");
+    QDialog dialog(this);
+    dialog.setFont(font());
+    dialog.setWindowTitle(localized(text("自定义配色")));
+    const QColor accent = gallery_->property("studioAccent").value<QColor>();
+    const QColor background = gallery_->property("studioBackground").value<QColor>();
+    const QColor border = gallery_->property("studioBorder").value<QColor>();
+    dialog.setStyleSheet(QStringLiteral(
+        "QDialog { background:%1; color:#f0f5f8; } QLabel,QCheckBox { color:#f0f5f8; }"
+        "QPushButton { background:%1; color:#f0f5f8; border:1px solid %2; border-radius:6px; min-height:30px; padding:0 10px; }"
+        "QPushButton:hover { border-color:%3; }").arg(background.name(), border.name(), accent.name()));
+    auto* layout = new QVBoxLayout(&dialog);
+    layout->setSpacing(12);
+    auto* enabled = new StudioCheckBox(localized(text("启用自定义配色")), &dialog);
+    enabled->setChecked(thermal ? thermalPreferences_.value(QStringLiteral("custom")).toBool() : selected == QStringLiteral("custom"));
+    layout->addWidget(enabled);
+    auto* note = new StudioLabel(localized(thermal ? text("关闭后使用品牌配色，已保存的自定义颜色会保留。")
+        : text("关闭后使用预设配色，已保存的自定义颜色会保留。")), &dialog);
+    note->setWordWrap(true);
+    layout->addWidget(note);
+    const QColor cpu = thermalCpu_->currentData().toString() == QStringLiteral("intel") ? QColor("#299bff") : QColor("#ff514b");
+    const QString gpuBrand = thermalGpu_->currentData().toString();
+    const QColor gpu = gpuBrand == QStringLiteral("amd") ? QColor("#ff514b") : gpuBrand == QStringLiteral("intel") ? QColor("#299bff") : QColor("#44ff53");
+    const QColor divider(qRound(gpu.red() * 0.3), qRound(gpu.green() * 0.3), qRound(gpu.blue() * 0.3));
+    QList<QColor> defaults{cpu, gpu, divider};
+    if (!thermal) {
+        defaults = {QColor("#e5f5ff"), QColor("#6ad3f5"), QColor("#356e88")};
+        if (preset == QStringLiteral("mint")) defaults = {QColor("#f2ebd6"), QColor("#8af2c9"), QColor("#397660")};
+        if (preset == QStringLiteral("amber")) defaults = {QColor("#ffe2ab"), QColor("#ffad59"), QColor("#925628")};
+        if (preset == QStringLiteral("rose")) defaults = {QColor("#fff0f5"), QColor("#ff9ec3"), QColor("#9e4d72")};
+        if (preset == QStringLiteral("violet")) defaults = {QColor("#f5efff"), QColor("#be97ff"), QColor("#67508e")};
+    }
+    const QStringList keys{QStringLiteral("cpu"), QStringLiteral("gpu"), QStringLiteral("divider")};
+    const QStringList captions = thermal
+        ? QStringList{localized(text("CPU 颜色")), localized(text("GPU 颜色")), localized(text("分隔线颜色"))}
+        : clock ? QStringList{localized(text("小时颜色")), localized(text("分钟颜色")), localized(text("分隔线颜色"))}
+        : QStringList{localized(text("高光颜色")), localized(text("主色")), localized(text("阴影颜色"))};
+    const QString savedPalette = paletteSettings.value(QStringLiteral("customPalette/") + mode,
+        clock && selected == QStringLiteral("custom") ? customClockPalette_ : QString()).toString();
+    const QStringList savedColors = savedPalette.split(QLatin1Char(':')).mid(1);
+    QList<QColor> values;
+    QList<QPushButton*> swatches;
+    for (int i = 0; i < 3; ++i) {
+        const QColor saved(thermal ? thermalPreferences_.value(keys[i]).toString() : savedColors.value(i));
+        values.append(saved.isValid() ? saved : defaults[i]);
+        auto* row = new QHBoxLayout;
+        row->addWidget(new StudioLabel(captions[i], &dialog), 1);
+        auto* swatch = new StudioButton(&dialog);
+        swatch->setFixedSize(112, 30);
+        swatches.append(swatch);
+        row->addWidget(swatch);
+        layout->addLayout(row);
+    }
+    const auto refresh = [&] {
+        for (int i = 0; i < 3; ++i) {
+            swatches[i]->setEnabled(enabled->isChecked());
+            swatches[i]->setText(values[i].name());
+            swatches[i]->setStyleSheet(QStringLiteral("background:%1;color:%2;").arg(values[i].name(), values[i].lightness() > 140 ? QStringLiteral("#101820") : QStringLiteral("#ffffff")));
+        }
+    };
+    for (int i = 0; i < 3; ++i) connect(swatches[i], &QPushButton::clicked, &dialog, [&, i] {
+        const QColor value = QColorDialog::getColor(values[i], &dialog, captions[i], QColorDialog::DontUseNativeDialog);
+        if (value.isValid()) { values[i] = value; refresh(); }
+    });
+    connect(enabled, &QCheckBox::toggled, &dialog, refresh);
+    refresh();
+    auto* actions = new QHBoxLayout;
+    auto* reset = new StudioButton(english_ ? QStringLiteral("Defaults") : text("恢复默认"), &dialog);
+    auto* cancel = new StudioButton(english_ ? QStringLiteral("Cancel") : text("取消"), &dialog);
+    auto* apply = new StudioButton(english_ ? QStringLiteral("Apply") : text("应用"), &dialog);
+    for (auto* button : {reset, cancel, apply}) { button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); actions->addWidget(button, 1); }
+    layout->addLayout(actions);
+    connect(reset, &QPushButton::clicked, &dialog, [&] { values = defaults; enabled->setChecked(false); refresh(); });
+    connect(cancel, &QPushButton::clicked, &dialog, &QDialog::reject);
+    connect(apply, &QPushButton::clicked, &dialog, &QDialog::accept);
+    if (dialog.exec() != QDialog::Accepted) return;
+    if (thermal) {
+        thermalPreferences_.insert(QStringLiteral("custom"), enabled->isChecked());
+        for (int i = 0; i < 3; ++i) thermalPreferences_.insert(keys[i], values[i].name());
+    } else {
+        const QString customPalette = QStringLiteral("custom:%1:%2:%3").arg(values[0].name(), values[1].name(), values[2].name());
+        paletteSettings.setValue(QStringLiteral("customPalette/") + mode, customPalette);
+        paletteSettings.setValue(QStringLiteral("presetPalette/") + mode, preset);
+        if (clock) customClockPalette_ = customPalette;
+        const QSignalBlocker blocker(paletteCombo);
+        paletteCombo->setCurrentIndex(qMax(0, paletteCombo->findData(enabled->isChecked() ? QStringLiteral("custom") : preset)));
+    }
+    savePreferences();
+    updateControls();
+    if (debounce_) debounce_->start();
+}
+
 void PixelStudioPanel::advanceRandomAnimation() {
     if (!randomPlayback_->isChecked() || !streaming_ || !ready_ || busy_ || closing_) return;
     QList<QListWidgetItem*> candidates;
@@ -2362,6 +2592,7 @@ void PixelStudioPanel::retranslateUi() {
     for (auto* edit : findChildren<QLineEdit*>()) centerEditorInk(edit);
     randomDuration_->setSuffix(english_ ? QStringLiteral(" s") : QStringLiteral(" 秒"));
     filterGallery();
+    if (liveLayout_) { liveLayout_->setProperty("layoutMode", -1); updateControls(); }
 }
 void PixelStudioPanel::filterGallery() {
     const auto query = search_->text().trimmed();

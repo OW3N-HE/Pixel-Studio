@@ -36,10 +36,11 @@ function fatal(error){if(stopped)return;parentPort.postMessage({type:'error',mes
 socket?.on('error',fatal);
 parentPort.on('message',message=>{
   if(message.type==='stop'){stop();return;}
+  if(message.type==='temperature'){config.temperatureSample=message.sample;return;}
   if(message.type!=='update'||!message.config)return;
   const nextConfig=message.config;
   if(!renderer.modes.includes(nextConfig.mode)){fatal(new Error('Unknown animation: '+nextConfig.mode));return;}
-  for(const key of ['mode','mapping','clockFont','clockPalette','speed','brightness','fps']){
+  for(const key of ['mode','mapping','clockFont','clockPalette','speed','brightness','fps','thermal']){
     if(nextConfig[key]!==undefined)config[key]=nextConfig[key];
   }
   interval=1000/Math.max(1,Math.min(60,Number(config.fps)||60));
@@ -134,7 +135,7 @@ async function tick(){
   const skipped=Math.max(0,Math.floor((now-next)/interval));
   missed+=skipped;next+=(skipped+1)*interval;
   try{
-    const rgb=renderer.render(config.mode,config.w,config.h,(now-started)/1000*config.speed,config.mapping,config.clockFont,config.clockPalette);
+    const rgb=renderer.render(config.mode,config.w,config.h,(now-started)/1000*config.speed,config.mapping,config.clockFont,config.clockPalette,config.thermal,config.temperatureSample);
     if(transport==='usb')await sendUsb(rgb);else await sendDdp(rgb);
     frames++;totalMs+=performance.now()-now;sampleCount++;
     const finished=performance.now();
