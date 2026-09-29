@@ -161,9 +161,9 @@
       for (const [node,id] of titleNodes) setText(node,text(id));
     }
     let busy = false, timer = null, disposed = false, generation = 0, controller = null;
-    function schedule() { clearTimeout(timer); if (!disposed && active()) timer = setTimeout(poll,seconds()*1000); }
+    function schedule() { clearTimeout(timer); if (!disposed && (window.pixelStudioDesktop?.ddpRequest || document.querySelector('meta[name="pixel-bridge-token"]')?.content)) timer = setTimeout(poll,(active() ? seconds() : 1)*1000); }
     async function poll() {
-      if (disposed || !active() || busy) return;
+      if (disposed || busy) return;
       busy = true; const requestGeneration = generation;
       try {
         let sample;
@@ -194,7 +194,7 @@
       preferences().sampleSeconds = Math.max(0.5,Math.min(3,Math.round((Number(input.value)||1)*2)/2));
       persist(); refresh(); schedule();
     });
-    mode.addEventListener('change', () => { generation++; clearTimeout(timer); refresh(); void poll(); });
+    mode.addEventListener('change', () => { refresh(); if (active() && !window.pixelStudioTemperatureSample) void poll(); });
     window.addEventListener('pixel-studio-language-change',refresh);
     window.addEventListener('pagehide', () => { disposed = true; generation++; clearTimeout(timer); controller?.abort(); });
     refresh(); void poll();

@@ -38,7 +38,6 @@ let temperatureBusy = false;
 let temperatureNextAt = 0;
 let temperatureSample = null;
 let temperatureAbort = null;
-const thermalModes = new Set(['thermal_icons','thermal_digits','thermal_labels','thermal_gauges']);
 
 function output(message, disposable = false) {
     if (process.stdout.destroyed) return;
@@ -235,7 +234,12 @@ async function startUsb(next) {
             if (error) reject(error); else resolve();
         }
         worker.on('message', message => {
-            if (message.type === 'ready') finish();
+            if (message.type === 'ready') {
+                const age = Date.now() - temperatureSample?.sampledAt;
+                if (Number.isFinite(age) && age >= 0 && age <= 5000)
+                    worker.postMessage({ type: 'temperature', sample: temperatureSample });
+                finish();
+            }
             else if (message.type === 'stats') output({ type: 'stats', stats: message.stats }, true);
             else if (message.type === 'outputFrame') output(message, true);
             else if (message.type === 'error') {
@@ -263,7 +267,8 @@ async function start(data) {
     startAbort = abort;
     try {
         if (next.transport === 'usb') {
-            if (!usbColorProfile || usbColorProfile.host !== next.host || Date.now() - usbColorProfile.at > 5000) {
+            if (!usbColorProfile || usbColorProfile.host !== next.host
+                || (!usbWorker && Date.now() - usbColorProfile.at > 5000)) {
                 let deviceConfig = null;
                 try {
                     // Use the bridge's private-LAN validation; never send to an arbitrary URL.
@@ -416,7 +421,7 @@ async function thumbnails() {
     }
 }
 async function pollTemperature() {
-    if (exiting || temperatureBusy || !thermalModes.has(config?.mode)) return;
+    if (exiting || temperatureBusy) return;
     if (performance.now() < temperatureNextAt) return;
     temperatureNextAt = performance.now() + (config.thermal?.sampleSeconds || 1) * 1000;
     temperatureBusy = true;
@@ -425,7 +430,7 @@ async function pollTemperature() {
     try {
         await ensureBridge(controller.signal);
         const sample = await request('/api/temperature', {timeout:18000, signal:controller.signal});
-        if (exiting || !thermalModes.has(config?.mode)) return;
+        if (exiting) return;
         temperatureSample = sample;
         if (usbWorker) usbWorker.postMessage({type:'temperature', sample});
         output({type:'temperature', status:sample.status}, true);

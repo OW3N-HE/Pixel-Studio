@@ -125,12 +125,16 @@ private:
     QWidget* thermalColorControls_ = nullptr;
     QLabel* thermalSamplingLabel_ = nullptr;
     QLabel* thermalSamplingUnit_ = nullptr;
+    QSlider* thermalSamplingSlider_ = nullptr;
     QComboBox* thermalFont_ = nullptr;
     QComboBox* thermalCpu_ = nullptr;
     QComboBox* thermalGpu_ = nullptr;
     QDoubleSpinBox* thermalSampling_ = nullptr;
     QPushButton* thermalCustom_ = nullptr;
     QJsonObject thermalPreferences_;
+    QJsonObject thermalLegacyPreferences_;
+    QJsonObject thermalPreferencesByMode_;
+    QString thermalMode_;
     QWidget* brightnessControls_ = nullptr;
     QWidget* speedControls_ = nullptr;
     QWidget* brightnessLabel_ = nullptr;

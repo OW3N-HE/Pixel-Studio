@@ -1190,8 +1190,8 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
         QFont headingFont = heading->font(); headingFont.setPointSize(20); headingFont.setBold(true);
         heading->setFont(headingFont); layout->addWidget(heading);
         auto* version = new QLabel(english_
-        ? QStringLiteral("Version 0.1.11 · OpenRGB plugin\nBuilt: %1").arg(QString::fromLatin1(__DATE__))
-        : text("版本 0.1.11 · OpenRGB 插件\n编译日期：%1").arg(QString::fromLatin1(__DATE__)), &about);
+        ? QStringLiteral("Version 0.1.12 · OpenRGB plugin\nBuilt: %1").arg(QString::fromLatin1(__DATE__))
+        : text("版本 0.1.12 · OpenRGB 插件\n编译日期：%1").arg(QString::fromLatin1(__DATE__)), &about);
         layout->addWidget(version);
         auto* description = new QLabel(english_
             ? QStringLiteral("Small pixels. Endless imagination.\n\nA pixel animation studio for WLED. The web app and OpenRGB plugin share an animation library, with live previews, custom palettes and USB / Adalight or DDP output.\n\nAuthors & collaborators\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra\nOWEN\n\nCreated through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.\n\nSpecial thanks: David Wang\n\nIndependent project. Thanks to the WLED, OpenRGB, Qt and Node.js communities. Not an official WLED or OpenRGB release.")
@@ -2124,7 +2124,10 @@ void PixelStudioPanel::showStatus(const QString& message, bool error, const QStr
 }
 void PixelStudioPanel::savePreferences() {
     auto settings = preferences();
-    if (thermalSampling_) settings.setValue(QStringLiteral("thermal"), QJsonDocument(thermalConfiguration()).toJson(QJsonDocument::Compact));
+    if (thermalSampling_) {
+        if (!thermalMode_.isEmpty()) thermalPreferencesByMode_.insert(thermalMode_, thermalConfiguration());
+        settings.setValue(QStringLiteral("thermalByMode"), QJsonDocument(thermalPreferencesByMode_).toJson(QJsonDocument::Compact));
+    }
     settings.setValue(QStringLiteral("language"), language_->currentData());
     settings.setValue(QStringLiteral("project"), projectPath_->text().trimmed());
     settings.setValue(QStringLiteral("node"), nodePath_->text().trimmed());
@@ -2278,7 +2281,10 @@ QJsonObject PixelStudioPanel::thermalConfiguration() const {
 void PixelStudioPanel::updateThermalControls() {
     if (!liveLayout_) return;
     if (!thermalSampling_) {
-        thermalPreferences_ = QJsonDocument::fromJson(preferences().value(QStringLiteral("thermal")).toByteArray()).object();
+        auto settings = preferences();
+        thermalLegacyPreferences_ = QJsonDocument::fromJson(settings.value(QStringLiteral("thermal")).toByteArray()).object();
+        thermalPreferencesByMode_ = QJsonDocument::fromJson(settings.value(QStringLiteral("thermalByMode")).toByteArray()).object();
+        thermalPreferences_ = thermalLegacyPreferences_;
         auto* parent = liveLayout_->parentWidget();
         thermalSamplingLabel_ = new StudioLabel(text("采样"), parent);
         thermalSamplingControls_ = new QWidget(parent);
@@ -2286,6 +2292,7 @@ void PixelStudioPanel::updateThermalControls() {
         sampleRow->setContentsMargins(0, 0, 0, 0);
         sampleRow->setSpacing(8);
         auto* slider = new QSlider(Qt::Horizontal, thermalSamplingControls_);
+        thermalSamplingSlider_ = slider;
         slider->setRange(1, 6);
         thermalSampling_ = new StudioDoubleSpinBox(thermalSamplingControls_);
         thermalSampling_->setRange(0.5, 3.0);
@@ -2349,6 +2356,21 @@ void PixelStudioPanel::updateThermalControls() {
     const QString mode = item ? item->data(Qt::UserRole).toString() : QString();
     const bool thermal = mode == QStringLiteral("thermal_icons") || mode == QStringLiteral("thermal_digits")
         || mode == QStringLiteral("thermal_labels") || mode == QStringLiteral("thermal_gauges");
+    if (mode != thermalMode_) {
+        if (!thermalMode_.isEmpty()) thermalPreferencesByMode_.insert(thermalMode_, thermalConfiguration());
+        thermalMode_ = thermal ? mode : QString();
+        if (thermal) {
+            thermalPreferences_ = thermalPreferencesByMode_.value(mode).isObject()
+                ? thermalPreferencesByMode_.value(mode).toObject() : thermalLegacyPreferences_;
+            const QSignalBlocker samplingBlock(thermalSampling_), sliderBlock(thermalSamplingSlider_);
+            const QSignalBlocker cpuBlock(thermalCpu_), gpuBlock(thermalGpu_);
+            const double interval = qBound(0.5, qRound(thermalPreferences_.value(QStringLiteral("sampleSeconds")).toDouble(1.0) * 2) / 2.0, 3.0);
+            thermalSampling_->setValue(interval);
+            thermalSamplingSlider_->setValue(qRound(interval * 2));
+            thermalCpu_->setCurrentIndex(qMax(0, thermalCpu_->findData(thermalPreferences_.value(QStringLiteral("cpuBrand")).toString(QStringLiteral("amd")))));
+            thermalGpu_->setCurrentIndex(qMax(0, thermalGpu_->findData(thermalPreferences_.value(QStringLiteral("gpuBrand")).toString(QStringLiteral("nvidia")))));
+        }
+    }
     for (QWidget* widget : {static_cast<QWidget*>(thermalSamplingLabel_), thermalSamplingControls_, static_cast<QWidget*>(thermalFont_), thermalColorControls_})
         widget->setVisible(thermal);
     speedLabel_->setVisible(!thermal);

@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '0.1.11';
+  const VERSION = '0.1.12';
   const $ = id => document.getElementById(id);
   const make = (tag, className = '', text) => {
     const node = document.createElement(tag);

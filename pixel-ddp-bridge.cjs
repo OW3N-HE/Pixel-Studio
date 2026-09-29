@@ -15,7 +15,6 @@ const rootId = crypto.createHash('sha256').update(path.resolve(__dirname).toLowe
 const TOKEN = crypto.randomBytes(32).toString('hex');
 const sessions = new Map();
 const temperatureService = require('./pixel-temperature-service.cjs')();
-const thermalModes = require('./pixel-temperature.cjs').modes;
 let temperaturePumpBusy = false;
 const webAutoExit=process.argv.includes('--web-auto-exit')&&!process.parentPort;
 const webClients=new Map();let webIdleAt=performance.now(),closing=false;
@@ -294,13 +293,13 @@ const reaper = setInterval(() => {
 reaper.unref();
 const temperaturePump = setInterval(async () => {
   if (closing || temperaturePumpBusy) return;
-  const targets = [...sessions.values()].filter(session => session.active && session.worker && Object.hasOwn(thermalModes, session.stats?.mode) && performance.now() >= (session.thermalNextAt || 0));
+  const targets = [...sessions.values()].filter(session => session.active && session.worker && performance.now() >= (session.thermalNextAt || 0));
   if (!targets.length) return;
   temperaturePumpBusy = true;
   try {
     const sample = await temperatureService.sample();
     for (const session of targets) {
-      if (session.active && session.worker && Object.hasOwn(thermalModes, session.stats?.mode)) {
+      if (session.active && session.worker) {
         session.thermalNextAt = performance.now() + (session.thermalInterval || 1000);
         session.worker.postMessage({type:'temperature', sample});
       }
