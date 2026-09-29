@@ -1,35 +1,29 @@
-# Pixel Studio 0.1.10
+# Pixel Studio 0.1.12
 
-Public source for the Windows Desktop, Web and OpenRGB editions. The full animation library is included with the project owner's publication approval. Display names use neutral descriptions. See RELEASE-NOTES.md and GETTING-STARTED.html.
+Pixel Studio controls pixel-matrix animations on Windows. The public release offers three ways to use the animation library: a standalone Desktop app, a browser-based Web edition, and an OpenRGB plugin. The default matrix is 15 x 27, with a 14 x 26 preset.
 
-## Downloads
+## Download / 下载
 
-Use [GitHub Releases](https://github.com/OW3N-HE/Pixel-Studio/releases) for the three-in-one Windows installer, Web ZIP (with Windows Node.js runtime), or corresponding source ZIP. The installer defaults to Desktop and optionally installs Web and OpenRGB. No macOS/Linux binary is supplied.
+Download the [latest Windows x64 installer](https://github.com/OW3N-HE/Pixel-Studio/releases/latest). It selects **Desktop only** by default; Web and OpenRGB are optional. The release also provides separate Web and corresponding-source ZIP archives. Do not download individual repository files as an installer.
 
-Web ZIP: extract all files and run Start-Pixel-Studio.cmd to start the local service and browser together. Direct index.html supports browser USB but does not start DDP. A browser cannot execute a local service by itself.
+从 [GitHub Releases](https://github.com/OW3N-HE/Pixel-Studio/releases/latest) 下载 Windows x64 安装包。安装器默认只选桌面版，网页版和 OpenRGB 插件按需勾选；同一页面另有网页版与对应源码压缩包。仓库中的零散文件是源码，不是安装步骤。
 
-OpenRGB: plugin API 4, Qt 5.15.0 MSVC x64 ABI; compatible OpenRGB must be installed separately. The package uses PixelStudioSerial.exe for native USB; Python is not required. OpenRGB updates are checked/downloaded from the plugin, then installed manually with OpenRGB closed.
+## Editions / 使用方式
 
-Desktop: check for updates in Settings, download and verify, then explicitly confirm installation. No automatic firmware update or silent installation.
+| Edition | What it does / 用途 |
+| --- | --- |
+| Desktop / 桌面版 | Standalone app with tray playback and its own temperature sampler. 独立运行，支持托盘播放。 |
+| Web / 网页版 | Starts a local service and opens the browser for USB or DDP output. 启动本地服务后在浏览器中使用。 |
+| OpenRGB plugin / 插件 | Adds a Pixel Studio tab to a compatible, separately installed OpenRGB. 需另行安装兼容的 OpenRGB。 |
 
-## Building the corresponding source
+Temperature designs are available in the Information category. Desktop uses its own sampler; Web and OpenRGB share a separate sampler. A compatible system PawnIO driver may be reused. Installing or replacing that driver requires separate consent; Pixel Studio does not stop Fan Control or change fan settings.
 
-Install Node.js 22+, npm, Visual Studio C++ Build Tools/CMake, Qt 5.15.0 MSVC 2019 x64 and Inno Setup 6.7+. No developer tools or caches are in this archive.
+温度动画位于“信息”分类。桌面版与网页版/OpenRGB 的采集进程分开；兼容的系统 PawnIO 驱动可复用。安装或替换驱动需另行确认，不会关闭 Fan Control 或修改风扇设置。
 
-1. In desktop, run npm ci, then node icons.cjs.
-2. Build Desktop with npx electron-builder --dir --win --x64 --config electron-builder.unified.cjs --publish never. Use the unified config; the older standalone NSIS extraResources path is not used by this release.
-3. Run openrgb-plugin/Build-Plugin.ps1 -QtDir followed by your Qt directory to build the plugin and USB helper. No DLL is installed automatically.
-4. Assemble a payload with desktop/ from desktop/dist-unified/win-unpacked; app/ containing the public web files and openrgb-plugin sources/helper; plugin/PixelStudioPlugin.dll; runtime/node.exe and runtime/LICENSE from Node.js 22; and LICENSE at the payload root. The web launcher scripts and GETTING-STARTED.html belong in app/.
-5. Compile installer/PixelStudio.iss using Inno Setup ISCC, defining PayloadDir, AppVersion=0.1.10 and OutputPath. Test builds additionally define TestPackage=1. Build-Installer.ps1 performs payload checks; production builds also require a truthful release-review.json.
+## Source and guides / 源码与指南
 
-Build-Unified-Test.ps1 is the maintainer's convenience wrapper and expects locally provisioned Qt/Node/Inno tool directories as named in the script. Prepare-Test-Payload.cjs and the tests require acorn, installable with npm install --prefix firmware/wled-usb-pixel --no-save acorn. Do not publish private development directories or machine profiles.
+The root `index.html`, `pixel-*` files, `desktop/`, `openrgb-plugin/`, `temperature/`, and `installer/` are project sources. `Start-*.cmd` and `Start-*.ps1` are launch scripts. `release-staging/` is historical release material, not the current source authority.
 
-## Scope and validation
+See the bilingual [getting-started guide](installer/GETTING-STARTED.html), [corresponding-source build instructions](installer/SOURCE-BUILD.md), and [V0.1.12 release notes](installer/RELEASE-0.1.12.md). Building requires separate development tools; users of the installer do not need them. A successful build is not a substitute for device or upgrade testing.
 
-Mocked desktop-settings/IPC and updater regression tests passed. This is not certification of visual layout, actual controller playback or the installed upgrade flow. See openrgb-plugin/THIRD-PARTY.md; Electron and Node distributions retain their own license notices. No code-signing certificate is supplied.
-
-## 简体中文
-
-这是桌面版、网页版和 OpenRGB 插件的公开源码。推荐使用 Releases 中的三合一安装包，默认桌面版，其他组件可选。网页版 ZIP 已包含 Windows Node.js，完整解压后运行 Start-Pixel-Studio.cmd；直接打开 HTML 不会启动 DDP 服务。升级不会刷写固件。
-
-源码编译需要 Node.js、Visual Studio C++、Qt 5.15.0 和 Inno Setup；安装包用户不需要这些开发工具。完整动画库已按项目所有者的确认纳入，展示名称使用中性描述。设置与更新逻辑已通过模拟回归测试，真实设备和完整安装升级仍需实机反馈。
+根目录的页面、脚本及各子目录是项目源码。具体使用方法、编译依赖和本版改动请看上述指南；`release-staging/` 仅供历史追溯，不应当作当前源码。下载安装包的用户不需要安装编译工具。
