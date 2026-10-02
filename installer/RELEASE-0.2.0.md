@@ -59,7 +59,6 @@
     |
 亮度 / Gamma + 输出会话
     +--- Adalight / DDP 编码 ---> USB / 串口控制器或 WLED 网络输出
-    +--- HTTP / WebSocket 兼容输出
 ```
 
 ### 验证与验收范围
@@ -133,7 +132,6 @@ Palette processing + RGB conversion + pixel mapping
     |
 Brightness / Gamma + output session
     +--- Adalight / DDP encoding ---> USB / serial controllers or WLED network output
-    +--- Compatible HTTP / WebSocket output
 ```
 
 ### Validation and acceptance scope
