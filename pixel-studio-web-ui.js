@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '0.1.12';
+  const VERSION = '0.2.0';
   const $ = id => document.getElementById(id);
   const make = (tag, className = '', text) => {
     const node = document.createElement(tag);
@@ -12,10 +12,135 @@
     const api = window.pixelStudioWebRuntime;
     if (!api) return;
     document.body.classList.add('ps-web');
+    const brightness=$('brightness'),brightnessRange=$('brightnessRange');
+    brightnessRange.value=brightness.value;
+    brightnessRange.addEventListener('input',()=>{brightness.value=brightnessRange.value;brightness.dispatchEvent(new Event('input',{bubbles:true}));});
+    brightness.addEventListener('input',()=>{brightnessRange.value=brightness.value;});
+    const theme=$('webTheme');let savedTheme='system';
+    try{savedTheme=localStorage.getItem('pixelStudioWebTheme')||'system';}catch{}
+    if(!['system','ice','mint','amber','rose','ocean','dark','black','light'].includes(savedTheme))savedTheme='system';
+    theme.prepend(new Option('跟随系统','system'));
+    theme.value=savedTheme;
+    const systemTheme=window.matchMedia('(prefers-color-scheme: dark)');
+    function applyTheme(){
+      document.documentElement.dataset.theme=theme.value==='system'?(systemTheme.matches?'black':'light'):theme.value;
+      try{localStorage.setItem('pixelStudioWebTheme',theme.value);}catch{}
+    }
+    applyTheme();
+    theme.addEventListener('change',applyTheme);
+    const onSystemThemeChange=()=>{if(theme.value==='system')applyTheme();};
+    systemTheme.addEventListener('change',onSystemThemeChange);
+    window.addEventListener('pagehide',()=>systemTheme.removeEventListener('change',onSystemThemeChange),{once:true});
     const stage = document.querySelector('.preview-stage');
     const frame = make('div', 'ps-preview-frame');
     stage.append(frame);
     frame.append($('preview'));
+    // All visible preview shapes share one SVG scene; no image mask or raster display.
+    const previewSource=$('preview');
+    previewSource.style.visibility='hidden';
+    const boardSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    boardSvg.classList.add('ps-preview-board');
+    boardSvg.setAttribute('aria-hidden','true');
+    boardSvg.setAttribute('focusable','false');
+    boardSvg.setAttribute('preserveAspectRatio','none');
+    boardSvg.setAttribute('shape-rendering','geometricPrecision');
+    frame.append(boardSvg);
+    function boardElement(tag,attributes={}){
+      const element=document.createElementNS('http://www.w3.org/2000/svg',tag);
+      for(const [name,value] of Object.entries(attributes))element.setAttribute(name,String(value));
+      return element;
+    }
+    const boardIdle=boardElement('rect',{fill:'none',stroke:'var(--preview-idle,var(--line))','stroke-width':3});
+    const boardGlow=boardElement('g',{fill:'none',stroke:'var(--preview-glow,var(--brand))'});
+    const boardLayers=[];
+    for(let stroke=10;stroke>=1;stroke--){
+      const rect=boardElement('rect',{'stroke-width':stroke+2,'stroke-opacity':stroke===1?`var(--preview-core-opacity,${200/255})`:`var(--preview-glow-opacity,${15/255})`});
+      if(stroke===1)rect.setAttribute('stroke','var(--preview-core,var(--brand))');
+      boardGlow.append(rect);boardLayers.push(rect);
+    }
+    const boardScreen=boardElement('rect',{fill:'#000'});
+    const boardCells=boardElement('g');
+    boardSvg.append(boardIdle,boardGlow,boardScreen,boardCells);
+    // This tiny canvas only reads the existing matrix colors, never paints the UI.
+    const boardSampler=document.createElement('canvas');
+    const boardSamplePaint=boardSampler.getContext('2d',{willReadFrequently:true});
+    let boardGeometry=null,boardPixels=null,boardGeometryKey='',boardPaintRequest=0;
+    let boardDisposed=false;
+    let boardBreathStart=performance.now(),boardWasPlaying=false;
+    let boardCellNodes=[],boardCellColors=[];
+    function queueBoardPaint(){
+      if(boardDisposed||boardPaintRequest)return;
+      boardPaintRequest=requestAnimationFrame(()=>{boardPaintRequest=0;paintBoard();});
+    }
+    function captureBoardPixels(){
+      if(boardDisposed||!boardGeometry||!previewSource.complete||!previewSource.naturalWidth)return;
+      // A newly selected matrix must not sample a still-decoding previous size.
+      if(previewSource.naturalWidth!==boardGeometry.columns||previewSource.naturalHeight!==boardGeometry.rows)return;
+      boardSampler.width=boardGeometry.columns;
+      boardSampler.height=boardGeometry.rows;
+      boardSamplePaint.imageSmoothingEnabled=false;
+      boardSamplePaint.drawImage(previewSource,0,0,boardSampler.width,boardSampler.height);
+      boardPixels=boardSamplePaint.getImageData(0,0,boardSampler.width,boardSampler.height).data;
+      queueBoardPaint();
+    }
+    previewSource.addEventListener('load',captureBoardPixels);
+    const boardSourceObserver=new MutationObserver(()=>{
+      if(!previewSource.getAttribute('src')){boardPixels=null;queueBoardPaint();}
+    });
+    boardSourceObserver.observe(previewSource,{attributes:true,attributeFilter:['src']});
+    window.addEventListener('pagehide',()=>{
+      boardDisposed=true;
+      boardSourceObserver.disconnect();previewSource.removeEventListener('load',captureBoardPixels);
+      if(boardPaintRequest)cancelAnimationFrame(boardPaintRequest);
+    },{once:true});
+    function boardRect(element,x,y,w,h,r){
+      for(const [name,value] of Object.entries({x,y,width:w,height:h,rx:r,ry:r}))
+        element.setAttribute(name,String(value));
+    }
+    function paintBoard(){
+      if(!boardGeometry)return;
+      const {columns,rows,pitch,inset,radius,screenRadius,width,height,cad}=boardGeometry;
+      const key=[columns,rows,pitch,cad].join('|');
+      if(key!==boardGeometryKey){
+        boardGeometryKey=key;
+        boardSvg.setAttribute('viewBox',`0 0 ${width+20} ${height+20}`);
+        // A 1.5px outset equals half the 3px core: its inner edge touches black.
+        boardRect(boardIdle,8.5,8.5,width+3,height+3,screenRadius+1.5);
+        for(const rect of boardLayers)boardRect(rect,8.5,8.5,width+3,height+3,screenRadius+1.5);
+        boardRect(boardScreen,10,10,width,height,screenRadius);
+        if(boardCellNodes.length!==columns*rows){
+          boardCells.replaceChildren();boardCellNodes=[];boardCellColors=[];
+          const fragment=document.createDocumentFragment();
+          for(let i=0;i<columns*rows;i++){
+            const rect=boardElement('rect',{fill:'#000'});fragment.append(rect);boardCellNodes.push(rect);
+          }
+          boardCells.append(fragment);
+        }
+        for(let y=0;y<rows;y++)for(let x=0;x<columns;x++){
+          boardRect(boardCellNodes[y*columns+x],10+2*inset+x*pitch,10+2*inset+y*pitch,
+            pitch-2*inset,pitch-2*inset,cad?radius:0);
+        }
+      }
+      const playing=frame.classList.contains('is-playing');
+      if(playing&&!boardWasPlaying)boardBreathStart=performance.now();
+      boardWasPlaying=playing;
+      boardIdle.style.display=playing?'none':'';
+      boardGlow.style.display=playing?'':'none';
+      if(playing)boardGlow.setAttribute('opacity',String(
+        .72+.28*Math.cos((performance.now()-boardBreathStart)*2*Math.PI/3800)));
+      const validPixels=boardPixels&&boardPixels.length===columns*rows*4;
+      for(let i=0;i<boardCellNodes.length;i++){
+        const offset=i*4;
+        const color=validPixels?`rgb(${boardPixels[offset]},${boardPixels[offset+1]},${boardPixels[offset+2]})`:'#000';
+        if(color!==boardCellColors[i]){
+          boardCellColors[i]=color;boardCellNodes[i].setAttribute('fill',color);
+        }
+      }
+      if(playing&&!document.hidden)queueBoardPaint();
+    }
+    const boardVisibility=()=>queueBoardPaint();
+    document.addEventListener('visibilitychange',boardVisibility);
+    window.addEventListener('pagehide',()=>document.removeEventListener('visibilitychange',boardVisibility),{once:true});
 
     // A single native dialog owns opening, closing, focus and Escape handling.
     const dialog = make('dialog', 'ps-settings');
@@ -27,8 +152,7 @@
     close.setAttribute('aria-label', '关闭设置');
     const body = make('div', 'ps-settings-body');
     heading.append(title, close); dialog.append(heading, body); document.body.append(dialog);
-    const oldGear = $('webSettingsToggle');
-    const gear = oldGear.cloneNode(true); oldGear.replaceWith(gear);
+    const gear = $('webSettingsToggle');
     gear.setAttribute('aria-controls', dialog.id);
     gear.setAttribute('aria-haspopup', 'dialog');
     gear.setAttribute('aria-expanded', 'false');
@@ -87,7 +211,7 @@
         make('p', '', english ? 'A pixel animation studio for WLED. The web app and OpenRGB plugin share an animation library, with live previews, custom palettes and USB / Adalight or DDP output.' : '为 WLED 打造的像素动画工作室。网页版与 OpenRGB 插件共享动画库，支持实时预览、自定义配色，以及 USB / Adalight 和 DDP 输出。'),
         make('h3', '', english ? 'Authors & collaborators' : '作者与协作成员'),
         (() => {
-          const authors = make('p', '', 'GPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra');
+          const authors = make('p', '', 'GPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra · GPT-6.1 Sol');
           authors.append(make('br'), document.createTextNode('OWEN'));
           return authors;
         })(),
@@ -164,43 +288,55 @@
     $('fps').addEventListener('input', () => { fpsRange.value = $('fps').value; });
     $('deviceInfo').classList.add('ps-help'); output.append($('deviceInfo'));
     if (!('serial' in navigator)) output.append(make('p', 'ps-help ps-warning', '此浏览器未提供 Web Serial。USB 输出请在支持该功能的桌面 Chrome 或 Edge 中打开。'));
-    const media = group('本地媒体');
-    media.classList.add('ps-media-fields');
-    const mediaInput = $('mediaFile');
-    mediaInput.hidden = true;
-    const filePicker = make('div', 'ps-file-picker');
-    filePicker.setAttribute('data-update-ui', '');
-    const chooseFile = make('button', 'ps-about-button'); chooseFile.type = 'button'; chooseFile.id = 'psChooseMedia';
-    const fileName = make('span', 'ps-file-name'); fileName.id = 'psMediaFileName'; fileName.setAttribute('role', 'status');
-    chooseFile.setAttribute('aria-describedby', fileName.id);
-    filePicker.append(chooseFile, fileName, mediaInput);
-    chooseFile.addEventListener('click', () => mediaInput.click());
-    function renderMediaFile() {
-      const en = document.documentElement.lang === 'en';
-      chooseFile.textContent = en ? 'Choose file' : '选择文件';
-      fileName.textContent = mediaInput.files?.[0]?.name || (en ? 'No file selected' : '尚未选择文件');
-    }
-    mediaInput.addEventListener('change', renderMediaFile);
-    queueMicrotask(renderMediaFile);
-    row(media, '图片 / 视频', [filePicker]); row(media, '画面适配', [$('scaleMode')]);
-    const mediaDialog = make('dialog', 'ps-settings ps-media-dialog');
-    mediaDialog.classList.add('ps-import-dialog');
-    mediaDialog.setAttribute('aria-labelledby', 'mediaDialogTitle');
-    const mediaHeading = make('header', 'ps-settings-heading');
-    const mediaTitle = make('h2', '', '导入媒体'); mediaTitle.id = 'mediaDialogTitle';
-    const mediaClose = make('button', 'ps-close', '\u00d7'); mediaClose.type = 'button';
-    mediaClose.setAttribute('aria-label', '关闭媒体导入');
-    mediaHeading.append(mediaTitle, mediaClose);
-    const mediaBody = make('div', 'ps-settings-body');
-    mediaBody.append(make('p', 'ps-media-description', '选择本地图片或视频，在当前像素屏尺寸下预览和播放。'), media);
-    mediaDialog.append(mediaHeading, mediaBody); document.body.append(mediaDialog);
-    const importButton = make('button', 'ps-import-button', '导入媒体'); importButton.type = 'button';
-    importButton.setAttribute('aria-haspopup', 'dialog');
+    const desktopEdition = !!window.pixelStudioDesktop?.edition;
+    const mediaInput = $('mediaFile'); mediaInput.hidden = true;
+    const importButton = make('button', 'ps-import-button', '媒体'); importButton.type = 'button';
+    importButton.id = 'psMediaToggle';
     const headerActions = make('div', 'ps-header-actions');
     gear.before(headerActions); headerActions.append(importButton, gear);
-    importButton.addEventListener('click', () => { renderMediaFile(); if (!mediaDialog.open) mediaDialog.showModal(); });
-    mediaClose.addEventListener('click', () => mediaDialog.close());
-    mediaDialog.addEventListener('close', () => importButton.focus());
+    let mediaDialog = null;
+    let renderWebMedia = () => {};
+    if (desktopEdition) {
+      // The desktop media library owns the toggle and all media controls.
+      // Keep the internal file input for runtime compatibility, not a second UI.
+      document.body.append(mediaInput);
+      $('scaleMode')?.closest('div')?.remove();
+    } else {
+      const media = group('本地媒体'); media.classList.add('ps-media-fields');
+      const filePicker = make('div', 'ps-file-picker'); filePicker.setAttribute('data-update-ui', '');
+      const chooseFile = make('button', 'ps-about-button'); chooseFile.type = 'button'; chooseFile.id = 'psChooseMedia';
+      const fileName = make('span', 'ps-file-name'); fileName.id = 'psMediaFileName'; fileName.setAttribute('role', 'status');
+      chooseFile.setAttribute('aria-describedby', fileName.id);
+      filePicker.append(chooseFile, fileName, mediaInput);
+      chooseFile.addEventListener('click', () => mediaInput.click());
+      function renderMediaFile() {
+        const en = document.documentElement.lang === 'en';
+        chooseFile.textContent = mediaInput.files?.length ? (en ? 'Change file' : '更换文件') : (en ? 'Choose file' : '选择文件');
+        fileName.textContent = mediaInput.files?.[0]?.name || (en ? 'No file selected' : '尚未选择文件');
+      }
+      renderWebMedia = () => {
+        renderMediaFile();
+        importButton.textContent = document.documentElement.lang === 'en' ? 'Media' : '媒体';
+      };
+      mediaInput.addEventListener('change', renderMediaFile); queueMicrotask(renderWebMedia);
+      row(media, '图片 / 视频', [filePicker]); row(media, '画面适配', [$('scaleMode')]);
+      mediaDialog = make('dialog', 'ps-settings ps-media-dialog'); mediaDialog.classList.add('ps-import-dialog');
+      mediaDialog.setAttribute('aria-labelledby', 'mediaDialogTitle');
+      const mediaHeading = make('header', 'ps-settings-heading');
+      const mediaTitle = make('h2', '', '媒体'); mediaTitle.id = 'mediaDialogTitle';
+      const mediaClose = make('button', 'ps-close', '\u00d7'); mediaClose.type = 'button';
+      mediaClose.setAttribute('aria-label', '关闭媒体导入');
+      mediaHeading.append(mediaTitle, mediaClose);
+      const mediaBody = make('div', 'ps-settings-body');
+      mediaBody.append(make('p', 'ps-media-description', '选择本地图片或视频，在当前像素屏尺寸下预览和播放。'), media);
+      mediaDialog.append(mediaHeading, mediaBody); document.body.append(mediaDialog);
+      importButton.setAttribute('data-update-ui', ''); importButton.setAttribute('aria-haspopup', 'dialog');
+      importButton.addEventListener('click', () => {
+        renderMediaFile(); if (!mediaDialog.open) mediaDialog.showModal(); scheduleShuffle();
+      });
+      mediaClose.addEventListener('click', () => mediaDialog.close());
+      mediaDialog.addEventListener('close', () => importButton.focus());
+    }
     const advanced = make('details', 'ps-advanced');
     advanced.hidden = true;
     advanced.append(make('summary', '', '高级设置与连接诊断')); body.append(advanced);
@@ -401,15 +537,25 @@
     const retained = make('div'); retained.hidden = true;
     ['pixelCount','screenResolution','colorGamma'].forEach(id => { if ($(id)) retained.append($(id)); });
     document.body.append(retained);
-    document.querySelector('.right-column').remove(); appearance?.remove();
-    rounded.addEventListener('change', () => { appearanceButtons[rounded.checked ? 0 : 1]?.click(); updateRim(); });
+    $('psControlBank').remove(); appearance?.remove();
+    rounded.addEventListener('change', () => { appearanceButtons[rounded.checked ? 0 : 1]?.click(); updateBoardGeometry(); });
 
     const gallery = $('animationGallery');
     const well = make('div', 'ps-library-well'); gallery.before(well); well.append(gallery);
-    const empty = make('p', 'ps-empty', '没有符合条件的动画'); empty.hidden = true; well.append(empty);
+    const empty = make('p', 'ps-empty'); empty.hidden = true; well.append(empty);
+    empty.setAttribute('data-update-ui','');
+    const emptyText=make('span'),clearFilter=make('button','ps-clear-filter');
+    clearFilter.type='button';empty.append(emptyText,clearFilter);
+    function renderEmptyState(){
+      const english=document.documentElement.lang==='en';
+      emptyText.textContent=english?'No animations match your filters.':'没有符合条件的动画';
+      clearFilter.textContent=english?'Clear filters':'清除筛选';
+    }
+    renderEmptyState();
     const category = $('libraryCategory'); category.add(new Option('收藏', 'favorites'), 1);
     let saved = []; try { saved = JSON.parse(localStorage.getItem('pixel-studio-favorites') || '[]'); } catch {}
-    const favorites = new Set(Array.isArray(saved) ? saved : []);
+    const favoriteIds = Array.isArray(saved) ? saved : [];
+    const favorites = new Set(favoriteIds);
     const cards = [...gallery.querySelectorAll('.animation-card')].map(button => {
       const mode = button.dataset.mode, name = button.querySelector('.animation-title').textContent.trim();
       if (favorites.has(name)) { favorites.delete(name); favorites.add(mode); }
@@ -421,11 +567,52 @@
         if (favorites.has(mode)) favorites.delete(mode); else favorites.add(mode);
         try { localStorage.setItem('pixel-studio-favorites', JSON.stringify([...favorites])); } catch {}
         syncGallery();
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          heart.querySelector('svg')?.animate([
+            { transform:'scale(1)' },
+            { transform:'scale(.86)', offset:.25 },
+            { transform:'scale(1.12)', offset:.65 },
+            { transform:'scale(1)' }
+          ], { duration:260, easing:'cubic-bezier(.2,.7,.3,1)' });
+        }
       });
       return { button, tile, heart, mode, name };
     });
+    let pendingGalleryEdges = false, galleryEdgesDisposed = false;
+    function updateGalleryEdges() {
+      const remaining = gallery.scrollHeight - gallery.clientHeight - gallery.scrollTop;
+      gallery.style.setProperty('--gallery-fade-top', gallery.scrollTop > 1 ? '12px' : '0px');
+      gallery.style.setProperty('--gallery-fade-bottom', remaining > 1 ? '12px' : '0px');
+    }
+    function scheduleGalleryEdges() {
+      if (pendingGalleryEdges) return;
+      pendingGalleryEdges = true;
+      // Reconcile DOM filtering before paint, rather than one animation frame later.
+      queueMicrotask(() => {
+        pendingGalleryEdges = false;
+        if (galleryEdgesDisposed) return;
+        updateGalleryEdges();
+      });
+    }
+    gallery.addEventListener('scroll', updateGalleryEdges, { passive:true });
+    // Mask changes do not resize the scrollport, so delivery can update it directly.
+    const galleryEdgeResize = new ResizeObserver(updateGalleryEdges);
+    galleryEdgeResize.observe(gallery);
+    for (const item of cards) galleryEdgeResize.observe(item.tile);
+    const galleryEdgeMutation = new MutationObserver(scheduleGalleryEdges);
+    galleryEdgeMutation.observe(gallery, {
+      subtree:true, childList:true, characterData:true,
+      attributes:true, attributeFilter:['hidden']
+    });
+    window.addEventListener('pagehide', () => {
+      galleryEdgesDisposed = true;
+      galleryEdgeResize.disconnect();
+      galleryEdgeMutation.disconnect();
+      gallery.removeEventListener('scroll', updateGalleryEdges);
+    }, { once:true });
     function syncGallery() {
       const search = $('librarySearch').value.trim().toLocaleLowerCase();
+      gallery.classList.toggle('is-searching',search.length>0);
       for (const item of cards) {
         const favorite = favorites.has(item.mode);
         item.heart.setAttribute('aria-pressed', String(favorite));
@@ -433,14 +620,34 @@
         item.tile.hidden = category.value === 'favorites' ? !favorite || !item.name.toLocaleLowerCase().includes(search) : item.button.hidden;
       }
       empty.hidden = cards.some(item => !item.tile.hidden);
+      scheduleGalleryEdges();
     }
     category.addEventListener('change', event => {
       if (category.value !== 'favorites') return;
-      event.stopImmediatePropagation(); document.querySelector('[data-filter="all"]').click(); syncGallery(); gallery.scrollTop = 0;
+      event.stopImmediatePropagation(); window.pixelStudioSetAnimationFilter('all'); syncGallery(); gallery.scrollTop = 0;
     }, true);
     category.addEventListener('change', () => { syncGallery(); gallery.scrollTop = 0; });
+    clearFilter.addEventListener('click',()=>{
+      category.value='all';$('librarySearch').value='';
+      category.dispatchEvent(new Event('change',{bubbles:true}));
+      $('librarySearch').dispatchEvent(new Event('input',{bubbles:true}));
+      $('librarySearch').dispatchEvent(new Event('change',{bubbles:true}));
+      gallery.scrollTop=0;$('librarySearch').focus();
+    });
     $('librarySearch').addEventListener('input', syncGallery);
-    $('animationMode').addEventListener('change', syncGallery); syncGallery();
+    function revealSelectedCard(){
+      const selected=cards.find(item=>item.mode===$('animationMode').value&&!item.tile.hidden);
+      if(!selected||gallery.clientHeight<=0)return;
+      const viewport=gallery.getBoundingClientRect(),card=selected.tile.getBoundingClientRect();
+      // Leave room for both the 12px fade and the 5px outer focus ring.
+      const top=viewport.top+gallery.clientTop+17;
+      const bottom=viewport.top+gallery.clientTop+gallery.clientHeight-17;
+      // Only move this scrollport, and leave already-visible selections in place.
+      if(card.height>bottom-top||card.top<top)gallery.scrollTop+=card.top-top;
+      else if(card.bottom>bottom)gallery.scrollTop+=card.bottom-bottom;
+      updateGalleryEdges();
+    }
+    $('animationMode').addEventListener('change',()=>{syncGallery();revealSelectedCard();}); syncGallery();
     $('randomAnimationBtn').hidden = true;
     const shuffle = make('label', 'ps-shuffle'), shuffleCheck = make('input'); shuffleCheck.type = 'checkbox'; shuffleCheck.id = 'psShuffleEnabled';
     shuffle.append(shuffleCheck, document.createTextNode('随机播放'));
@@ -448,21 +655,30 @@
     interval.setAttribute('aria-label', '随机播放间隔，秒');
     const shuffleGroup = make('div', 'ps-shuffle-group'); shuffleGroup.append(shuffle, interval, make('span', 'ps-unit', '秒'));
     document.querySelector('.library-toolbar').append(shuffleGroup);
+    const playbackPolicy = window.PixelStudioBrowserPlayback.policy;
     let shuffleTimer;
     function scheduleShuffle() {
-      clearInterval(shuffleTimer); interval.disabled = !shuffleCheck.checked;
-      if (!shuffleCheck.checked) return;
-      const seconds = Math.max(3, Math.min(3600, Number(interval.value) || 20)); interval.value = String(seconds);
+      clearInterval(shuffleTimer);
+      if(boardDisposed)return;
+      const suspended=mediaDialog?.open||$('animationMode').value==='file';
+      // Temporarily suspend the controls without changing the saved preference.
+      shuffleCheck.disabled=suspended;
+      interval.disabled = !shuffleCheck.checked||suspended;
+      if (!shuffleCheck.checked||suspended) return;
+      const seconds = playbackPolicy.shuffleSeconds(interval.value); interval.value = String(seconds);
       shuffleTimer = setInterval(() => {
-        if (!api.playing) return;
-        const choices = cards.filter(item => !item.tile.hidden && item.mode !== $('animationMode').value);
-        if (choices.length) choices[Math.floor(Math.random() * choices.length)].button.click();
+        if (!api.playing||mediaDialog?.open||$('animationMode').value==='file') return;
+        const next = playbackPolicy.chooseNext(cards.filter(item => !item.tile.hidden).map(item => item.mode), $('animationMode').value);
+        if (next) cards.find(item => item.mode === next).button.click();
       }, seconds * 1000);
     }
     shuffleCheck.addEventListener('change', scheduleShuffle); interval.addEventListener('change', scheduleShuffle);
+    mediaDialog?.addEventListener('close',scheduleShuffle);
+    $('animationMode').addEventListener('change',scheduleShuffle);
+    $('mediaFile').addEventListener('change',scheduleShuffle);
     try {
       const state=JSON.parse(localStorage.getItem('pixelStudioShuffle')||'null');
-      if(state){shuffleCheck.checked=state.enabled===true;interval.value=String(Math.max(3,Math.min(3600,Number(state.seconds)||20)));if([...category.options].some(o=>o.value===state.category)){category.value=state.category;category.dispatchEvent(new Event('change',{bubbles:true}));} $('librarySearch').value=String(state.search||'');$('librarySearch').dispatchEvent(new Event('input',{bubbles:true}));scheduleShuffle();}
+      if(state){shuffleCheck.checked=state.enabled===true;interval.value=String(playbackPolicy.shuffleSeconds(state.seconds));if([...category.options].some(o=>o.value===state.category)){category.value=state.category;category.dispatchEvent(new Event('change',{bubbles:true}));} $('librarySearch').value=String(state.search||'');$('librarySearch').dispatchEvent(new Event('input',{bubbles:true}));scheduleShuffle();}
     }catch{}
     const saveShuffle=()=>{try{localStorage.setItem('pixelStudioShuffle',JSON.stringify({enabled:shuffleCheck.checked,seconds:interval.value,category:category.value,search:$('librarySearch').value}));}catch{}};
     for(const element of [shuffleCheck,interval,category,$('librarySearch')])element.addEventListener('change',saveShuffle);
@@ -534,15 +750,19 @@
     function syncPlayback() {
       const playing = api.playing;
       const english = document.documentElement.lang === 'en';
+      const output=api.outputStatus;
+      const transports={usb:'USB',ddp:'IP / DDP',ws:'IP / WebSocket',http:'IP / HTTP',auto:english?'IP / Auto':'IP / 自动'};
+      const states=english?{disconnected:'Not connected',unverified:'Open, not verified',connected:'Connected',sending:'Sending',idle:'Awaiting playback',unavailable:'Bridge unavailable'}:{disconnected:'未连接',unverified:'已打开，待验证',connected:'已连接',sending:'发送中',idle:'待发送',unavailable:'本地服务未启动'};
+      const connectionText=transports[output.transport]+' · '+states[output.state];
       if (!playing) {
         const stats = $('streamStats');
-        const previewLabel = english ? 'Preview' : '预览';
+        const previewLabel = (english ? 'Preview' : '预览')+' · '+connectionText;
         if (stats.textContent !== previewLabel) stats.textContent = previewLabel;
       }
       if (lastPlaying !== playing) {
         lastPlaying = playing;
         toggle.innerHTML = playing ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 15 9-15 9Z"/></svg>';
-        toggle.classList.toggle('is-playing', playing); frame.classList.toggle('is-playing', playing);
+        toggle.classList.toggle('is-playing', playing); frame.classList.toggle('is-playing', playing); queueBoardPaint();
         lastPlaybackLanguage = undefined;
       }
       if (lastPlaybackLanguage !== english) {
@@ -553,11 +773,22 @@
       const status = api.serialConnected ? (english ? 'USB connected' : 'USB 已连接') : (english ? 'Not connected' : '尚未连接');
       if (portStatus.value !== status) portStatus.value = status;
     }
-    toggle.addEventListener('click', () => { (api.playing ? $('stopBtn') : $('startBtn')).click(); syncPlayback(); });
+    toggle.addEventListener('click', () => {
+      (api.playing ? $('stopBtn') : $('startBtn')).click();
+      syncPlayback();
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        toggle.querySelector('svg')?.animate([
+          { opacity:.35, transform:'scale(.88)' },
+          { opacity:1, transform:'scale(1)' }
+        ], { duration:180, easing:'cubic-bezier(.2,.7,.3,1)' });
+      }
+    });
     toggle.setAttribute('data-update-ui', '');
+    $('controlMode').addEventListener('change',syncPlayback);
     window.addEventListener('pixel-studio-language-change', () => {
+      renderEmptyState();
       renderUpdate();
-      renderMediaFile();
+      renderWebMedia();
       syncPlayback();
       if(downloadDialog.open)renderDownload();
       if (aboutDialog.open) renderAbout();
@@ -565,56 +796,106 @@
     syncPlayback();
     const stateTimer = setInterval(syncPlayback, 200);
     window.addEventListener('pagehide', () => { clearInterval(stateTimer); clearInterval(shuffleTimer); });
-    function updateRim() {
-      const pitch = $('preview').getBoundingClientRect().width / Math.max(1, Number($('matrixW').value));
-  // Scale the decorative rim only; CAD aperture geometry stays unchanged.
-  const rimScale = pitch / 16;
-  frame.style.setProperty('--rim-stroke', (4 * rimScale) + 'px');
-  frame.style.setProperty('--rim-glow-near', (3 * rimScale) + 'px');
-  frame.style.setProperty('--rim-glow-mid', (7 * rimScale) + 'px');
-  frame.style.setProperty('--rim-glow-far', (12 * rimScale) + 'px');
-      const cad = $('preview').classList.contains('cad-pixels');
-      const inset = cad ? pitch * 0.4 / 7.125 : 0;
-      const radius = cad ? pitch * 0.8 / 7.125 + 2 * inset : 0;
-      frame.style.setProperty('--rim-inset', inset + 'px'); frame.style.setProperty('--rim-radius', radius + 'px');
+    function updateBoardGeometry() {
+      const preview=$('preview');
+      const columns=Math.max(1,Number($('matrixW').value));
+      const rows=Math.max(1,Number($('matrixH').value));
+      const pitch=(parseFloat(preview.style.width)||preview.getBoundingClientRect().width)/columns;
+      const cad=preview.classList.contains('cad-pixels');
+      const inset=cad?pitch*(0.8/7.125)/2:0;
+      const radius=cad?pitch*(0.8/7.125):0;
+      const dimensionsChanged=!boardGeometry||boardGeometry.columns!==columns||boardGeometry.rows!==rows;
+      frame.style.setProperty('--board-inset',inset+'px');
+      boardGeometry={columns,rows,pitch,inset,radius,screenRadius:cad?radius+2*inset:0,
+        width:columns*pitch+2*inset,height:rows*pitch+2*inset,cad};
+      boardSvg.style.width=(boardGeometry.width+20)+'px';
+      boardSvg.style.height=(boardGeometry.height+20)+'px';
+      if(dimensionsChanged){boardPixels=null;captureBoardPixels();}
+      // Commit the viewBox and paths with the CSS size, before the browser paints.
+      paintBoard();
     }
     const studio = document.querySelector('.studio-stage');
     function resizePreview() {
-      if (window.innerWidth > 760) {
-        const ratio = Math.max(1, Number($('matrixW').value)) / Math.max(1, Number($('matrixH').value));
-        const column = Math.max(120, Math.min(studio.clientWidth * 0.44, Math.max(1, stage.clientHeight - 12) * ratio + 16));
-        studio.style.setProperty('--preview-column', column + 'px');
-        stage.style.paddingTop = '4px';
-      } else { studio.style.removeProperty('--preview-column'); stage.style.paddingTop = ''; }
-      // The modern layout owns preview sizing, including animation changes.
-      // Do not call the legacy sizing routine here (it delegates back to us).
-      frame.style.transform = '';
-      if (window.innerWidth > 760) {
-        const preview = $('preview');
-        const width = Math.max(1, Number($('matrixW').value));
-        const height = Math.max(1, Number($('matrixH').value));
-        const library = document.querySelector('.library-card').getBoundingClientRect();
-        const insetRatio = preview.classList.contains('cad-pixels') ? 0.4 / 7.125 : 0;
-        const pitch = Math.max(0.1, Math.min((stage.clientWidth - 8) / (width + 2 * insetRatio), (library.height - 8) / (height + 2 * insetRatio)));
-        preview.style.width = (pitch * width) + 'px';
-        preview.style.height = (pitch * height) + 'px';
-        updateRim();
-        const top = $('libraryCategory').getBoundingClientRect().top;
-        frame.style.transform = 'translateY(' + (top + 4 - frame.getBoundingClientRect().top) + 'px)';
-      } else {
-        const width = Math.max(1, Number($('matrixW').value));
-        const height = Math.max(1, Number($('matrixH').value));
-        const pitch = Math.min(Math.max(1, stage.clientWidth - 40) / width,
-          Math.max(1, stage.clientHeight - 40) / height);
-        $('preview').style.width = (pitch * width) + 'px';
-        $('preview').style.height = (pitch * height) + 'px';
-        updateRim();
+      const preview=$('preview');
+      // Measure the unconstrained library before fitting both visible bottoms.
+      well.style.maxHeight='';
+      const width=Math.max(1,Number($('matrixW').value)),height=Math.max(1,Number($('matrixH').value));
+      const insetFactor=preview.classList.contains('cad-pixels')?0.8/7.125:0;
+      const stageStyle=getComputedStyle(stage);
+      const stageHorizontalInset=(parseFloat(stageStyle.paddingLeft)||0)+(parseFloat(stageStyle.paddingRight)||0);
+      if(window.innerWidth>760){
+        const toolbar=studio.querySelector('.library-toolbar').getBoundingClientRect();
+        const targetHeight=Math.max(1,well.getBoundingClientRect().bottom-toolbar.top);
+        const targetPitch=Math.max(0.01,targetHeight-6)/(height+insetFactor);
+        const requiredColumn=targetPitch*(width+insetFactor)+6;
+        const columnGap=parseFloat(getComputedStyle(studio).columnGap)||16;
+        const maxColumn=Math.max(120,studio.clientWidth-columnGap-320);
+        const column=Math.max(120,Math.min(maxColumn,requiredColumn));
+        studio.style.setProperty('--preview-column',column+'px');
+      }else{studio.style.removeProperty('--preview-column');}
+      frame.style.transform='';
+      const toolbar=studio.querySelector('.library-toolbar').getBoundingClientRect();
+      const targetHeight=Math.max(1,well.getBoundingClientRect().bottom-toolbar.top);
+      // Fixed 3px outer edge on each side; only the black inset scales.
+      const availableHeight=window.innerWidth>760?targetHeight:Math.max(1,stage.clientHeight-12);
+      const heightPitch=Math.max(0.01,availableHeight-6)/(height+insetFactor);
+      const pitch=Math.max(0.01,Math.min(Math.max(1,stage.clientWidth-(window.innerWidth>760?0:stageHorizontalInset)-6)/(width+insetFactor),heightPitch));
+      preview.style.width=(pitch*width)+'px';preview.style.height=(pitch*height)+'px';
+      updateBoardGeometry();
+      if(window.innerWidth>760){
+        const toolbarToWellTop=well.getBoundingClientRect().top-toolbar.top;
+        const visiblePreviewHeight=frame.getBoundingClientRect().height+6;
+        well.style.maxHeight=Math.max(1,visiblePreviewHeight-toolbarToWellTop)+'px';
+        const bezel=frame.getBoundingClientRect();
+        // Include the SVG outset and half of the bright core's stroke width.
+        const rimOuterOffset=3;
+        const delta=toolbar.top-(bezel.top-rimOuterOffset);
+        frame.style.transform='translateY('+delta+'px)';
       }
     }
-    window.pixelStudioResizePreview = resizePreview;
-    const resize = new ResizeObserver(resizePreview); resize.observe(studio); resize.observe(well);
-    $('matrixW').addEventListener('change', resizePreview); $('matrixH').addEventListener('change', resizePreview);
+    let pendingPreviewResize=0;
+    function schedulePreviewResize(){
+      if(boardDisposed||pendingPreviewResize)return;
+      pendingPreviewResize=requestAnimationFrame(()=>{
+        pendingPreviewResize=0;
+        resizePreview();
+
+        updateGalleryEdges();
+      });
+    }
+    window.pixelStudioResizePreview = schedulePreviewResize;
+    // Do not mutate observed dimensions inside ResizeObserver delivery.
+    const resize = new ResizeObserver(schedulePreviewResize); resize.observe(studio); resize.observe(well);
+    $('matrixW').addEventListener('change', schedulePreviewResize); $('matrixH').addEventListener('change', schedulePreviewResize);
+    window.addEventListener('resize',schedulePreviewResize);
+    window.addEventListener('pixel-studio-language-change',schedulePreviewResize);
+    document.fonts?.addEventListener('loadingdone',schedulePreviewResize);
+    window.addEventListener('pagehide',()=>{
+      resize.disconnect();
+      if(pendingPreviewResize)cancelAnimationFrame(pendingPreviewResize);
+      window.removeEventListener('resize',schedulePreviewResize);
+      window.removeEventListener('pixel-studio-language-change',schedulePreviewResize);
+      document.fonts?.removeEventListener('loadingdone',schedulePreviewResize);
+    },{once:true});
     resizePreview();
+
+    // Settle the initial layout while the startup guard still hides the shell.
+    let startupReadyRequest=0;
+    (document.fonts?.ready||Promise.resolve()).then(()=>{
+      if(boardDisposed)return;
+      schedulePreviewResize();
+      startupReadyRequest=requestAnimationFrame(()=>{
+        startupReadyRequest=requestAnimationFrame(()=>{
+          startupReadyRequest=0;
+          paintBoard();
+          updateGalleryEdges();
+          document.body.dataset.studioReady = 'true';
+        });
+      });
+    });
+    window.addEventListener('pagehide',()=>{
+      if(startupReadyRequest)cancelAnimationFrame(startupReadyRequest);
+    },{once:true});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once:true });
   else initialize();

@@ -8,7 +8,7 @@ function brandGeometry() {
   if (geometry) return geometry;
   if (require.main !== module) return geometry = require('./assets/brand-geometry.json');
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  const match = html.match(/document\.querySelector\('\.brand-mark'\)\.outerHTML\s*=\s*`([\s\S]*?)`/);
+  const match = html.match(/(<svg class="brand-mark"[\s\S]*?<\/svg>)/);
   if (!match) throw new Error('The approved runtime brand-mark SVG is missing.');
   const roles = [];
   geometry = [];
@@ -26,7 +26,9 @@ function brandGeometry() {
 }
 const themes = {
   ice: ['83d5f2','0c161d','12212c'], mint: ['8ee6ba','0b1510','112018'],
-  amber: ['ffbd75','19130d','261d14'], rose: ['efabc6','1b1118','291a24']
+  amber: ['ffbd75','19130d','261d14'], rose: ['efabc6','1b1118','291a24'],
+  ocean: ['549dc5','0b1328','12243e'], dark: ['c4c4c4','121212','1e1e1e','c4c4c4'],
+  black: ['007bd9','000000','101010','007bd9'], light: ['0088ff','101113','26282c','0088ff']
 };
 function chunk(type, data) {
   const payload = Buffer.concat([Buffer.from(type), data]);
@@ -60,7 +62,7 @@ function png(theme='ice', size=64) {
           const inner=inside(x,y,rect.x+half,rect.y+half,rect.w-rect.stroke,rect.h-rect.stroke,Math.max(0,rect.r-half));
           if(outer&&!inner) a=rect.opacity+a*(1-rect.opacity);
         } else if(inside(x,y,rect.x,rect.y,rect.w,rect.h,rect.r)) {
-          c=rect.role==='logo-back'?colors[1]:rect.role==='logo-center'?colors[2]:rect.role==='logo-white'?[255,255,255]:colors[0];a=1;
+          c=rect.role==='logo-back'?colors[1]:rect.role==='logo-center'?colors[2]:rect.role==='logo-white'?[255,255,255]:(colors[3]||colors[0]);a=1;
         }
       }
       alpha+=a; for(let i=0;i<3;i++) sum[i]+=c[i]*a;
@@ -74,10 +76,10 @@ function png(theme='ice', size=64) {
 }
 module.exports={png,themes};
 if(require.main===module){
-  const fs=require('node:fs'),path=require('node:path');
   const dir=path.join(__dirname,'assets');fs.mkdirSync(dir,{recursive:true});
   fs.writeFileSync(path.join(dir,'brand-geometry.json'),JSON.stringify(brandGeometry())+'\n');
-  for(const theme of Object.keys(themes)) fs.writeFileSync(path.join(dir,theme+'.png'),png(theme,256));
+  // Preserve the static packaging allowlist; extra themes render icons at runtime.
+  for(const theme of ['ice','mint','amber','rose']) fs.writeFileSync(path.join(dir,theme+'.png'),png(theme,256));
   const sizes=[16,24,32,48,64,256],images=sizes.map(s=>png('ice',s));
   const header=Buffer.alloc(6+16*sizes.length);header.writeUInt16LE(1,2);header.writeUInt16LE(sizes.length,4);
   let offset=header.length;

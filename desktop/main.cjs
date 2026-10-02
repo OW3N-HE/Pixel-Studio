@@ -1,18 +1,13 @@
 'use strict';
-const {app,BrowserWindow,Tray,Menu,nativeImage,ipcMain,shell,dialog}=require('electron');
+const {app,BrowserWindow,Tray,Menu,nativeImage,nativeTheme,ipcMain,shell,dialog,protocol}=require('electron');
+protocol.registerSchemesAsPrivileged([{scheme:'pixel-media',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true,stream:true}}]);
 const fs=require('node:fs'),path=require('node:path'),{pathToFileURL}=require('node:url');
 const {png,themes}=require('./icons.cjs');
 app.setAppUserModelId('com.ow3nhe.pixelstudio.desktop');
 app.setPath('userData',path.join(app.getPath('appData'),'Pixel Studio Desktop'));
 let window, tray, quitting=false, preferences, serialRestore=false, pendingSerial=null, keepResumeIntent=false;
-const defaults={launchAtLogin:true,startHidden:true,closeToTray:true,resumePlayback:true,theme:'ice',language:'auto',serialDevice:null,playback:null};
-const controlIds=['controlMode','wledHost','baudRate','protocol','matrixW','matrixH','mapping','fps','brightness','animationMode','animationSpeed','clockFont','clockPalette','colorMode','colorGamma','safeMode','scaleMode','libraryCategory','librarySearch','psShuffleEnabled','psShuffleInterval'];
-function playbackState(value){
-  if(!value || typeof value!=='object')return null;
-  const values={};
-  for(const key of controlIds)if(typeof value.values?.[key]==='string'&&value.values[key].length<=256)values[key]=value.values[key];
-  return {playing:value.playing===true,values};
-}
+let startupPlayback=null,resumeAttempted=false,resumeInProgress=false;
+let connectionRestoreAttempted=false,connectionRestoreCanceled=false;
 function deviceId(port){return {portName:String(port.portName||''),vendorId:String(port.vendorId||''),productId:String(port.productId||''),serialNumber:String(port.serialNumber||'')};}
 function sameDevice(port,saved){
   const candidate=deviceId(port);
@@ -22,6 +17,10 @@ function sameDevice(port,saved){
 }
 const settingsPath=()=>path.join(app.getPath('userData'),'desktop-settings.json');
 const webRoot=app.isPackaged ? path.join(process.resourcesPath,'web') : path.join(__dirname,'..');
+const settingsSchema=require(path.join(webRoot,'pixel-settings-schema.cjs'));
+const defaults=settingsSchema.desktopDefaults;
+const mediaSession=settingsSchema.sanitizeMediaSession;
+const playbackState=settingsSchema.sanitizePlaybackState;
 const entry=pathToFileURL(path.join(webRoot,'index.html')).href;
 const ddpService=require('./ddp-service.cjs')(webRoot);
 const updater=require('./updater.cjs')(()=>window,()=>effectiveLanguage());
@@ -32,7 +31,9 @@ function state(){return {...preferences,launchAtLogin:app.isPackaged ? app.getLo
 function show(){if(!window || window.isDestroyed())return;if(window.isMinimized())window.restore();window.show();window.focus();}
 const iconCache=new Map();
 function icon(theme,size){const key=theme+size;if(!iconCache.has(key))iconCache.set(key,nativeImage.createFromBuffer(png(theme,size)));return iconCache.get(key);}
-function refreshTheme(){window?.setIcon(icon(preferences.theme,64));tray?.setImage(icon(preferences.theme,32));}
+function effectiveTheme(){return preferences.theme==='system'?(nativeTheme.shouldUseDarkColors?'black':'light'):preferences.theme;}
+function refreshTheme(){window?.setIcon(icon('ice',64));tray?.setImage(icon('ice',32));}
+nativeTheme.on('updated',()=>{if(preferences?.theme==='system')refreshTheme();});
 function systemLanguage(){return /^zh(?:-|$)/i.test(app.getPreferredSystemLanguages()[0] || 'en') ? 'zh-CN' : 'en';}
 function effectiveLanguage(){return preferences.language==='auto' ? systemLanguage() : preferences.language;}
 function trayMenu(){
@@ -47,26 +48,54 @@ function trayMenu(){
 function external(url){try{const u=new URL(url);if(u.protocol==='https:' && u.hostname==='github.com' && u.pathname.startsWith('/OW3N-HE/Pixel-Studio/'))void shell.openExternal(u.href);}catch{}}
 if(!app.requestSingleInstanceLock()){app.quit();}else{
   app.on('second-instance',show);
-  let bridgeShutdown=false;
-  app.on('before-quit',event=>{quitting=true;if(ddpService.active&&!bridgeShutdown){event.preventDefault();bridgeShutdown=true;void ddpService.stop().finally(()=>app.quit());}});
+  let shutdownStarted=false;
+  app.on('before-quit',event=>{
+    quitting=true;
+    if(shutdownStarted)return;
+    event.preventDefault();shutdownStarted=true;
+    void (async()=>{
+      try{
+        if(window&&!window.isDestroyed()&&ownPage(window.webContents)){
+          const value=await window.webContents.executeJavaScript('window.pixelStudioWebRuntime.captureDesktopPlayback?.() || null');
+          const snapshot=value?.sessionReady===false?null:playbackState(value);
+          if(snapshot){snapshot.resumeRequested=snapshot.playing||keepResumeIntent;preferences.playback=snapshot;const content=mediaSession(value.mediaSession);if(content)preferences.mediaSession=content;save();}
+        }
+      }catch{}
+      try{await ddpService.stop();}catch{}
+      app.quit();
+    })();
+  });
   app.on('window-all-closed',()=>{if(!tray)app.quit();});
   app.whenReady().then(()=>{
     Menu.setApplicationMenu(null);
     preferences={...defaults};
     let hasSavedLoginPreference=false;
-    try{const p=JSON.parse(fs.readFileSync(settingsPath(),'utf8'));hasSavedLoginPreference=typeof p.launchAtLogin==='boolean';for(const key of ['launchAtLogin','startHidden','closeToTray','resumePlayback'])if(typeof p[key]==='boolean')preferences[key]=p[key];if(Object.hasOwn(themes,p.theme))preferences.theme=p.theme;if(['auto','en','zh-CN'].includes(p.language))preferences.language=p.language;preferences.playback=playbackState(p.playback);if(p.serialDevice&&typeof p.serialDevice.portName==='string')preferences.serialDevice=deviceId(p.serialDevice);}catch{}
+    try{const p=JSON.parse(fs.readFileSync(settingsPath(),'utf8'));hasSavedLoginPreference=typeof p.launchAtLogin==='boolean';for(const key of ['launchAtLogin','startHidden','closeToTray','resumePlayback'])if(typeof p[key]==='boolean')preferences[key]=p[key];if(p.theme==='system'||Object.hasOwn(themes,p.theme))preferences.theme=p.theme;if(['auto','en','zh-CN'].includes(p.language))preferences.language=p.language;preferences.playback=playbackState(p.playback);if(p.serialDevice&&typeof p.serialDevice.portName==='string')preferences.serialDevice=deviceId(p.serialDevice);}catch{}
+    try{const p=JSON.parse(fs.readFileSync(settingsPath(),'utf8'));if(typeof p.mediaFolder==='string'&&path.isAbsolute(p.mediaFolder))preferences.mediaFolder=p.mediaFolder;preferences.mediaSession=mediaSession(p.mediaSession);}catch{}
+    startupPlayback=preferences.playback;
+    keepResumeIntent=preferences.resumePlayback&&startupPlayback?.resumeRequested===true;
+    const mediaLibrary=require('./media-library.cjs')({dialog,window:()=>window,english:()=>effectiveLanguage()==='en',getFolder:()=>preferences.mediaFolder,setFolder:folder=>{preferences.mediaFolder=folder;save();},onChange:()=>{
+      if(window&&!window.isDestroyed()&&ownPage(window.webContents))window.webContents.send('desktop:media-changed');
+    }});
+    app.once('will-quit',()=>mediaLibrary.dispose());
     if(app.isPackaged&&!hasSavedLoginPreference){app.setLoginItemSettings({...loginOptions(),openAtLogin:preferences.launchAtLogin});save();}
-    window=new BrowserWindow({width:1280,height:880,minWidth:640,minHeight:520,show:false,title:'Pixel Studio',icon:icon(preferences.theme,64),backgroundColor:'#0c1921',autoHideMenuBar:true,webPreferences:{additionalArguments:['--pixel-studio-system-language='+systemLanguage(),'--pixel-studio-language='+preferences.language],preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false}});
+    window=new BrowserWindow({width:1280,height:880,minWidth:640,minHeight:520,show:false,title:'Pixel Studio',icon:icon(effectiveTheme(),64),backgroundColor:'#0c1921',autoHideMenuBar:true,webPreferences:{additionalArguments:['--pixel-studio-system-language='+systemLanguage(),'--pixel-studio-language='+preferences.language],preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false}});
     window.on('page-title-updated',event=>{event.preventDefault();window.setTitle('Pixel Studio');});
     // Restart Manager must not turn an installer shutdown into close-to-tray.
     window.on('query-session-end',()=>{quitting=true;});
     window.on('session-end',()=>{quitting=true;void ddpService.stop();});
-    tray=new Tray(icon(preferences.theme,32));tray.setToolTip('Pixel Studio');tray.on('double-click',show);trayMenu();
+    tray=new Tray(icon(effectiveTheme(),32));tray.setToolTip('Pixel Studio');tray.on('double-click',show);trayMenu();
     window.on('close',event=>{if(!quitting&&preferences.closeToTray){event.preventDefault();window.hide();}else{quitting=true;tray?.destroy();tray=null;app.quit();}});
     window.webContents.setWindowOpenHandler(({url})=>{external(url);return {action:'deny'};});
     window.webContents.on('will-navigate',(event,url)=>{if(url.split('#')[0]!==entry){event.preventDefault();external(url);}});
     window.webContents.on('will-attach-webview',event=>event.preventDefault());
+    window.webContents.on('did-finish-load',()=>{
+      if(!ownPage(window.webContents))return;
+      const mediaScripts=['session-controller.js','media-playback.js','media-thumbnails.js','media-library-ui.js'].map(file=>fs.readFileSync(path.join(__dirname,file),'utf8')).join('\n');
+      void window.webContents.executeJavaScript(mediaScripts).catch(error=>console.error('Desktop media UI:',error.message));
+    });
     const session=window.webContents.session;
+    session.protocol.handle('pixel-media',request=>mediaLibrary.respond(request).catch(()=>new Response(null,{status:404})));
     session.setPermissionCheckHandler((contents,permission)=>ownPage(contents)&&permission==='serial');
     session.setPermissionRequestHandler((contents,permission,callback)=>callback(ownPage(contents)&&permission==='serial'));
     session.on('select-serial-port',async(event,ports,contents,callback)=>{
@@ -75,6 +104,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
       if(!ownPage(contents)||!ports.length){callback('');return;}
       const matches=ports.filter(port=>sameDevice(port,preferences.serialDevice));
       if(restoring){
+        if(connectionRestoreCanceled){callback('');return;}
         const selected=matches.length===1?matches[0]:null;
         pendingSerial=selected?deviceId(selected):null;
         callback(selected?.portId||'');return;
@@ -88,6 +118,15 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
         callback(selected?.portId || '');
       }catch{callback('');}
     });
+    ipcMain.handle('desktop:media',async(event,request)=>{
+      if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)throw new Error('Untrusted caller');
+      try{
+        if(request?.action==='scan')return {ok:true,...await mediaLibrary.scan()};
+        if(request?.action==='select')return {ok:true,...await mediaLibrary.select()};
+        if(request?.action==='read'&&typeof request.id==='string')return {ok:true,...await mediaLibrary.read(request.id)};
+        throw new Error('Unsupported media action');
+      }catch(error){return {ok:false,error:error.message};}
+    });
     ipcMain.handle('desktop:serial', (event,request)=>{
       if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)throw new Error('Untrusted caller');
       if(request?.action==='prepare'){
@@ -95,7 +134,10 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
       }else if(request?.action==='connected'&&pendingSerial){
         preferences.serialDevice=pendingSerial;pendingSerial=null;save();
       }else if(request?.action==='cancel-resume'){
-        keepResumeIntent=false;serialRestore=false;
+        keepResumeIntent=false;
+        resumeAttempted=true;
+        if(request.connection===true)connectionRestoreCanceled=true;
+        if(preferences.playback){preferences.playback.playing=false;preferences.playback.resumeRequested=false;if(request.connection===true)preferences.playback.connected=false;save();}
       }
     });
     ipcMain.handle('desktop:settings',async(event,patch)=>{
@@ -108,7 +150,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
           preferences.serialDevice=null;pendingSerial=null;serialRestore=false;keepResumeIntent=false;
         }
         if(typeof patch.launchAtLogin==='boolean'&&app.isPackaged){app.setLoginItemSettings({...loginOptions(),openAtLogin:patch.launchAtLogin});preferences.launchAtLogin=patch.launchAtLogin;}
-        if(Object.hasOwn(themes,patch.theme))preferences.theme=patch.theme;
+        if(patch.theme==='system'||Object.hasOwn(themes,patch.theme))preferences.theme=patch.theme;
         if(['auto','en','zh-CN'].includes(patch.language))preferences.language=patch.language;
         save();refreshTheme();trayMenu();
       }
@@ -133,22 +175,39 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
     });
     ipcMain.on('desktop:playback',(event,value)=>{
       if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)return;
+      if(quitting)return;
+      if(value?.sessionReady===false)return;
       const next=playbackState(value);
-      if(next&&keepResumeIntent&&!next.playing)next.playing=true;
       if(value?.playing===true)keepResumeIntent=false;
+      if(next)next.resumeRequested=next.playing||keepResumeIntent;
       if(next&&JSON.stringify(next)!==JSON.stringify(preferences.playback)){preferences.playback=next;try{save();}catch{}}
+    });
+    ipcMain.handle('desktop:media-session',(event,patch)=>{
+      if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)throw new Error('Untrusted caller');
+      if(quitting)return preferences.mediaSession;
+      if(patch!==undefined){const next=mediaSession(patch);if(!next)throw new Error('Invalid media session');preferences.mediaSession=next;save();}
+      return preferences.mediaSession;
+    });
+    ipcMain.handle('desktop:restore-connection',async event=>{
+      if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)return false;
+      if(connectionRestoreAttempted||connectionRestoreCanceled||!startupPlayback?.connected||startupPlayback.values.controlMode!=='serial'||!preferences.serialDevice)return false;
+      connectionRestoreAttempted=true;
+      return window.webContents.executeJavaScript('window.pixelStudioWebRuntime.restoreDesktopConnection()',true);
     });
     ipcMain.handle('desktop:resume',async event=>{
       if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)return false;
-      if(!preferences.resumePlayback||!preferences.playback?.playing||preferences.playback.values.animationMode==='file')return false;
-      if (!['serial','ddp'].includes(preferences.playback.values.controlMode)) return false;
-    if (preferences.playback.values.controlMode === 'serial' && !preferences.serialDevice) return false;
+      if(!preferences.resumePlayback||!startupPlayback?.resumeRequested||resumeAttempted||resumeInProgress)return false;
+      if (!['serial','ddp'].includes(startupPlayback.values.controlMode)) return false;
+    if (startupPlayback.values.controlMode === 'serial' && !preferences.serialDevice) return false;
       keepResumeIntent=true;
       // A fixed local action, never renderer-supplied JavaScript. The selection
       // handler above permits only the explicitly remembered device on resume.
-      const resumed=await window.webContents.executeJavaScript("window.pixelStudioWebRuntime.resumePlayback()",true);
-      if(resumed)keepResumeIntent=false;
-      return resumed;
+      resumeInProgress=true;
+      try{
+        const resumed=await window.webContents.executeJavaScript('window.pixelStudioWebRuntime.resumePlayback()',true);
+        if(resumed){keepResumeIntent=false;resumeAttempted=true;}
+        return resumed;
+      }finally{resumeInProgress=false;}
     });
     window.once('ready-to-show',()=>{if(!(process.argv.includes('--login-start')&&preferences.startHidden))show();});
     window.webContents.on('did-fail-load',(_event,code,message)=>{show();void dialog.showMessageBox(window,{type:'error',message:'Pixel Studio could not load.',detail:`${code}: ${message}`});});

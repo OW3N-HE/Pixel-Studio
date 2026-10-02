@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(PixelStudioPlugin VERSION 0.1.12 LANGUAGES CXX)
+project(PixelStudioPlugin VERSION 0.2.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
@@ -8,7 +8,27 @@ find_package(Qt5 5.15.0 EXACT REQUIRED COMPONENTS Core Gui Widgets)
 get_filename_component(PIXEL_STUDIO_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
 add_library(PixelStudioPlugin MODULE
     src/PixelStudioPlugin.cpp src/PixelStudioPlugin.h
-    src/PixelStudioPanel.cpp src/PixelStudioPanel.h
+    src/PixelStudioPanel.cpp
+    src/PixelStudioBoard.cpp
+    src/PixelStudioPreviewPane.cpp
+    src/PixelStudioHeader.cpp
+    src/PixelStudioOutputControls.cpp
+    src/PixelStudioLibrarySource.cpp
+    src/PixelStudioActions.cpp
+    src/PixelStudioControlMetrics.cpp
+    src/PixelStudioInterfaceAssembly.cpp
+    src/PixelStudioPreferences.cpp
+    src/PixelStudioMessages.cpp
+    src/PixelStudioSettingsPage.cpp
+    src/PixelStudioGallery.cpp
+    src/PixelStudioLanguage.cpp
+    src/PixelStudioProcess.cpp
+    src/PixelStudioPlayback.cpp
+    src/PixelStudioAppearance.cpp
+    src/PixelStudioThermalControls.cpp
+    src/PixelStudioPaletteDialog.cpp
+    src/PixelStudioWidgets.h
+    src/PixelStudioSupport.h src/PixelStudioPanel.h
     compat/OpenRGBPluginInterface.h plugin.json)
 target_link_libraries(PixelStudioPlugin PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets)
 target_compile_definitions(PixelStudioPlugin PRIVATE

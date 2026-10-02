@@ -7,16 +7,16 @@ Source: "{#PawnIOSetupPath}"; DestName: "PixelStudio-PawnIO-2.2.0-setup.exe"; Fl
 [CustomMessages]
 en.PawnIOInstall=Install official PawnIO
 zh.PawnIOInstall=安装官方 PawnIO
-en.PawnIOInstallConfirm=Run the bundled official PawnIO 2.2.0 installer? Save your work and close Fan Control, LibreHardwareMonitor and other monitoring tools first. This changes a shared system driver and may require administrator permission and a restart. Nothing will be installed silently. You may cancel and continue installing Pixel Studio without temperature monitoring.
-zh.PawnIOInstallConfirm=运行内置的官方 PawnIO 2.2.0 安装程序吗？请先保存工作并退出 Fan Control、LibreHardwareMonitor 等监控软件。此操作会更改系统共享驱动，可能需要管理员权限和重启。不会静默安装；也可取消并继续安装 Pixel Studio，暂不使用温度采集。
-en.PawnIOInstallFailed=PawnIO installation did not complete successfully, or was cancelled (code %1). You may continue installing Pixel Studio; some temperatures may remain unavailable. No shared driver will be removed.
-zh.PawnIOInstallFailed=PawnIO 安装未成功完成或已取消（代码 %1）。可继续安装 Pixel Studio，部分温度可能暂不可用；不会删除共享驱动。
+en.PawnIOInstallConfirm=Run the bundled official PawnIO 2.2.0 installer? Save your work and close Fan Control, LibreHardwareMonitor and other monitoring tools first. This changes a shared system driver and may require administrator permission and a restart. Nothing will be installed silently. If PawnIO is missing, cancelling keeps Pixel Studio Setup on this page.
+zh.PawnIOInstallConfirm=运行内置的官方 PawnIO 2.2.0 安装程序吗？请先保存工作并退出 Fan Control、LibreHardwareMonitor 等监控软件。此操作会更改系统共享驱动，可能需要管理员权限和重启。不会静默安装；如果缺少 PawnIO，取消后将停留在本页，不能继续安装 Pixel Studio。
+en.PawnIOInstallFailed=PawnIO installation did not complete successfully, or was cancelled (code %1). If PawnIO is still missing, you must retry before continuing Pixel Studio Setup. No shared driver will be removed.
+zh.PawnIOInstallFailed=PawnIO 安装未成功完成或已取消（代码 %1）。如果仍缺少 PawnIO，须重试安装成功后才能继续；不会删除共享驱动。
 en.PawnIOIntegrityFailed=The bundled PawnIO installer failed its integrity check and will not be run. Download Pixel Studio again from its official release page.
 zh.PawnIOIntegrityFailed=内置 PawnIO 安装程序完整性校验失败，不会运行。请从 Pixel Studio 官方发布页面重新下载安装包。
 en.PawnIORestart=A restart is required by the PawnIO installer. Save your work and restart Windows before testing temperature monitoring.
 zh.PawnIORestart=PawnIO 安装程序要求重启。请保存工作并重启 Windows，再测试温度采集。
-en.PawnIOBundleHint=Official PawnIO 2.2.0 is bundled. Install it only if missing or if this build identifies an older supported upgrade. Existing compatible drivers are reused; unknown or newer versions are not replaced. Close other monitoring tools before installation. You can skip this step. Uninstalling Pixel Studio never removes the shared PawnIO driver.
-zh.PawnIOBundleHint=已内置官方 PawnIO 2.2.0，仅在缺少驱动或确认旧版本需要升级时安装。兼容版本直接复用，版本不明或更新的版本不会覆盖。安装前请退出其他监控软件；也可跳过此步骤。卸载 Pixel Studio 不会删除共享 PawnIO 驱动。
+en.PawnIOBundleHint=Official PawnIO 2.2.0 is bundled. Install it only if missing or if this build identifies an older supported upgrade. Existing compatible drivers are reused; unknown or newer versions are not replaced. Close other monitoring tools before installation. If the driver is missing, installation must complete before proceeding. Uninstalling Pixel Studio never removes the shared PawnIO driver.
+zh.PawnIOBundleHint=已内置官方 PawnIO 2.2.0，仅在缺少驱动或确认旧版本需要升级时安装。兼容版本直接复用，版本不明或更新的版本不会覆盖。安装前请退出其他监控软件；缺少驱动时必须安装成功后才能继续。卸载 Pixel Studio 不会删除共享 PawnIO 驱动。
 
 [Code]
 #endif
@@ -32,7 +32,7 @@ var
   PawnIOStatusLabel, PawnIOHintLabel: TNewStaticText;
   PawnIORefreshButton, PawnIOWebsiteButton: TNewButton;
   PawnIODetection: String;
-  PawnIOCanInstall, PawnIORestartRequired: Boolean;
+  PawnIOCanInstall, PawnIOMissingDetected, PawnIORestartRequired: Boolean;
 
 function ParsePawnIOVersion(Value: String; var Parts: TArrayOfInteger): Boolean;
 var
@@ -96,10 +96,15 @@ begin
   Maximum := '{#PawnIOMaxVersion}';
   PawnIODetection := CustomMessage('PawnIOUnknown');
   PawnIOCanInstall := False;
+  PawnIOMissingDetected := False;
   PawnIOWebsiteButton.Enabled := True;
   if not Present64 and not Present32 then begin
-    PawnIODetection := CustomMessage('PawnIOMissing');
-    PawnIOCanInstall := True;
+    if not RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\PawnIO') and
+        not FileExists(ExpandConstant('{sys}\drivers\PawnIO.sys')) then begin
+      PawnIODetection := CustomMessage('PawnIOMissing');
+      PawnIOCanInstall := True;
+      PawnIOMissingDetected := True;
+    end;
   end else if ((Present64 and not Valid64) or (Present32 and not Valid32)) then begin
     { Incomplete registrations are not proof that a driver is missing. }
   end else if Valid64 and Valid32 and (ComparePawnIOVersions(Version64, Version32) <> 0) then begin
@@ -184,6 +189,24 @@ begin
   if not ShellExecAsOriginalUser('open', 'https://pawnio.eu/', '', '',
       SW_SHOWNORMAL, ewNoWait, ErrorCode) then
     MsgBox(CustomMessage('PawnIOOpenFailed'), mbInformation, MB_OK);
+end;
+
+function ConfirmPawnIOPageNext: Boolean;
+begin
+  Result := True;
+  DetectPawnIO;
+  if not PawnIOMissingDetected then Exit;
+  { Silent setup cannot give informed consent for a shared driver install. }
+  if WizardSilent then begin
+    Log('PawnIO is missing; interactive driver consent is required.');
+    Result := False;
+    Exit;
+  end;
+  PawnIOWebsiteClick(nil);
+  DetectPawnIO;
+  Result := not PawnIOMissingDetected;
+  if not Result then
+    MsgBox(CustomMessage('PawnIORequired'), mbInformation, MB_OK);
 end;
 
 procedure CreatePawnIOPage(AfterPage: Integer);

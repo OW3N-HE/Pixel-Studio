@@ -1,4 +1,4 @@
-﻿; Compile through Build-Installer.ps1 with a reviewed, matching release payload.
+; Compile through Build-Installer.ps1 with a reviewed, matching release payload.
 #ifndef PayloadDir
   #error PayloadDir is required
 #endif
@@ -128,8 +128,10 @@ en.PawnIOSubtitle=Reuse an existing PawnIO installation whenever compatible.
 zh.PawnIOSubtitle=已有兼容的 PawnIO 时直接复用，不重复安装。
 en.PawnIOReuse=PawnIO %1 is registered within this build's tested version range. Setup will reuse it without reinstalling or downgrading. Sensor access is checked when temperature monitoring starts.
 zh.PawnIOReuse=已登记的 PawnIO %1 在本安装包已测试的版本范围内，将直接复用，不重复安装或降级。实际传感器访问能力在启动温度采集时检查。
-en.PawnIOMissing=No PawnIO installation was detected. Some temperature readings may be unavailable. You can install the official driver separately or continue without it.
-zh.PawnIOMissing=未检测到 PawnIO 安装记录，部分温度可能无法读取。可另外安装官方驱动，也可直接继续安装 Pixel Studio。
+en.PawnIOMissing=PawnIO is missing. Click Next to authorize installation of the bundled official driver. CPU temperature monitoring may be unavailable without it.
+zh.PawnIOMissing=未检测到 PawnIO。点击“下一步”将请求授权并安装内置官方驱动；缺少此驱动可能无法采集 CPU 温度。
+en.PawnIORequired=PawnIO is required. Complete the official driver installation, then click Check again or Next. Setup cannot continue while the driver is missing.
+zh.PawnIORequired=必须安装 PawnIO。请完成官方驱动安装，再点击“重新检测”或“下一步”。缺少驱动时不能继续安装。
 en.PawnIOOld=PawnIO %1 is registered, but this build requires at least %2. No automatic upgrade will run. Close other monitoring tools before a driver update and follow the official installer instructions.
 zh.PawnIOOld=已登记 PawnIO %1，本安装包要求至少 %2。不会自动升级；更新驱动前请退出其他监控软件，并按官方安装程序的提示操作。
 en.PawnIONewer=PawnIO %1 is registered, but is outside this build's tested version range. Setup will not downgrade or replace it. Compatibility must be checked before using temperature monitoring.
@@ -140,8 +142,8 @@ en.PawnIOUnknown=PawnIO registration exists, but its version could not be determ
 zh.PawnIOUnknown=存在 PawnIO 安装记录，但无法确定版本。不会重复安装或覆盖，请先确认已有驱动的状态。
 en.PawnIOConflict=Conflicting PawnIO version records were found. Setup will not modify the driver. Resolve the registration conflict before updating it.
 zh.PawnIOConflict=发现不一致的 PawnIO 版本记录。安装程序不会修改驱动，请先确认已有安装状态再更新。
-en.PawnIOHint=PawnIO is a shared system driver and may already be used by Fan Control or another application. Pixel Studio never silently installs, updates or removes it. Driver installation may require administrator permission and a restart. Declining does not prevent installation; unavailable temperatures show --. Removing Pixel Studio leaves PawnIO installed.
-zh.PawnIOHint=PawnIO 是系统共享驱动，Fan Control 等软件可能正在使用。Pixel Studio 不会静默安装、升级或卸载它。安装驱动可能需要管理员权限和重启。暂不安装不影响继续安装本软件，不可用的温度显示 --。卸载 Pixel Studio 时保留 PawnIO。
+en.PawnIOHint=PawnIO is a shared system driver and may already be used by Fan Control or another application. Pixel Studio never silently installs, updates or removes it. Driver installation may require administrator permission and a restart. When the driver is missing, declining keeps Setup on the driver page. Removing Pixel Studio leaves PawnIO installed.
+zh.PawnIOHint=PawnIO 是系统共享驱动，Fan Control 等软件可能正在使用。Pixel Studio 不会静默安装、升级或卸载它。安装驱动可能需要管理员权限和重启。缺少驱动时必须安装，拒绝安装将停留在驱动页面。卸载 Pixel Studio 时保留 PawnIO。
 en.PawnIORefresh=Check again
 zh.PawnIORefresh=重新检测
 en.PawnIOWebsite=Official driver page
@@ -374,6 +376,10 @@ end;
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
+  if CurPageID = PawnIOPage.ID then begin
+    Result := ConfirmPawnIOPageNext;
+    Exit;
+  end;
   if CurPageID = wpSelectComponents then begin
     SyncSharedComponent;
     Result := WizardIsComponentSelected('desktop') or

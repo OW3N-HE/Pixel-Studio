@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const match = source.match(/outerHTML = `(<svg class="brand-mark"[\s\S]*?<\/svg>)`/);
+const match = source.match(/(<svg class="brand-mark"[\s\S]*?<\/svg>)/);
 if (!match) throw new Error('Runtime application logo not found; guide unchanged.');
 const svg = match[1]
   .replace('class="brand-mark"', 'xmlns="http://www.w3.org/2000/svg"')

@@ -27,6 +27,11 @@ class QSlider;
 class QSpinBox;
 class QTimer;
 class QGridLayout;
+class QVBoxLayout;
+class QHBoxLayout;
+class QGroupBox;
+class QDialog;
+class QSettings;
 
 class PixelBoard final : public QWidget {
 public:
@@ -63,13 +68,65 @@ public:
     ~PixelStudioPanel() override;
     void shutdown();
 protected:
+    QSize minimumSizeHint() const override { return QSize(0, 0); }
     void changeEvent(QEvent* event) override;
     bool eventFilter(QObject* watched, QEvent* event) override;
 private:
+    // Construction-only references; QObject parents retain widget ownership.
+    struct SettingsPageParts {
+        QDialog* dialog;
+        QGridLayout* interfaceLayout;
+        QGroupBox* screenSettings;
+        QVBoxLayout* screenLayout;
+    };
+    SettingsPageParts createSettingsPage(QSettings& settings, QHBoxLayout* languageRow,
+        QLabel* languageLabel, QPushButton* web, QPushButton* settingsButton,
+        QGroupBox* setup, QHBoxLayout* screenToolbar);
+    QGroupBox* createLibrarySource(QSettings& settings);
+    void createActionRow(QVBoxLayout* shell, QSettings& settings);
+    void createShuffleControls(QSettings& settings, QHBoxLayout* filterRow);
+    void applyInitialControlMetrics(QPushButton* settingsButton, QDialog* libraryDialog);
+    struct OutputParts {
+        QGroupBox* group;
+        QGridLayout* controls;
+        QWidget* serialControl;
+        QHBoxLayout* screenToolbar;
+        QWidget* fpsControl;
+    };
+    OutputParts createOutputControls(QVBoxLayout* shell, QSettings& settings,
+        QHBoxLayout* sizeRow, QHBoxLayout* presetRow);
+    struct HeaderParts {
+        QPushButton* web;
+        QHBoxLayout* languageRow;
+        QPushButton* settingsButton;
+        QLabel* languageLabel;
+    };
+    HeaderParts createHeader(QVBoxLayout* shell, QSettings& settings);
+    void restoreFavoritePreferences(QSettings& settings);
+    struct PreviewParts {
+        QWidget* pane;
+        QHBoxLayout* dimensions;
+        QHBoxLayout* presets;
+        QPushButton* preset15;
+        QPushButton* preset14;
+        QWidget* boardSlot;
+    };
+    PreviewParts createPreviewPane(QWidget* workspace, QSettings& settings);
+    struct LibraryParts {
+        QWidget* pane;
+        QHBoxLayout* toolbar;
+    };
+    LibraryParts createLibrary(QWidget* workspace);
+    void initializeHelper();
+    void initializePlayback();
+    void arrangeSettingsAndLiveControls(QSettings& settings, const OutputParts& output,
+        const PreviewParts& preview, const HeaderParts& header,
+        const SettingsPageParts& page, QGroupBox* setup);
+    void finalizeControlMetrics(const OutputParts& output, const PreviewParts& preview, const HeaderParts& header);
     void boot();
     void consumeOutput();
     void handleMessage(const QJsonObject& message);
-    void send(const QString& operation, const QJsonObject& data = {});
+    void send(const QString& operation, const QJsonObject& payload = {});
     void updatePreview();
     void updateControls();
     void showStatus(const QString& message, bool error = false, const QStringList& arguments = {});
@@ -161,6 +218,8 @@ private:
     bool ready_ = false;
     bool busy_ = false;
     bool streaming_ = false;
+    bool playbackIntent_ = false;
+    bool resumeOnReady_ = false;
     bool closing_ = false;
     bool english_ = false;
     bool languageUiReady_ = false;

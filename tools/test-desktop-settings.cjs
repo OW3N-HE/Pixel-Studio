@@ -24,7 +24,7 @@ async function run(language,legacy=false){
   const settings={launchAtLogin:true,startHidden:true,closeToTray:true,resumePlayback:true,canLaunchAtLogin:true,playback:{values:{brightness:'137'}}};
   const ipcRenderer={on(){},send:(...args)=>calls.push(args),invoke:async(channel,patch)=>{calls.push([channel,patch]);return channel==='desktop:settings'?{...settings,...patch}:true;}};
   const window={addEventListener:(name,callback)=>{listeners[name]=callback;},dispatchEvent:event=>{events.push(event.type);listeners[event.type]?.(event);}};
-  const document={documentElement:{lang:language},getElementById:id=>ids[id],querySelector:()=>body,createElement:tag=>new Element(tag)};
+  const document={documentElement:{lang:language,dataset:{}},getElementById:id=>ids[id],querySelector:()=>body,createElement:tag=>new Element(tag)};
   class Event {constructor(type){this.type=type;}}
   const context=vm.createContext({require:()=>({ipcRenderer,contextBridge:{exposeInMainWorld:(key,value)=>{window[key]=value;}}}),process:{argv:[]},window,document,MutationObserver:class{observe(){}disconnect(){}},Event,CustomEvent:Event,console});
   const code=legacy?source.replace("body.insertBefore(group,updates);","body.insertBefore(group,body.querySelector('[data-update-ui]')); "):source;
@@ -36,7 +36,7 @@ async function run(language,legacy=false){
   const switches=group.children.find(node=>node.className==='ps-desktop-switches');
   assert.equal(switches.children.length,4);
   for(const option of switches.children){assert.equal(option.children[0].checked,true);assert.equal(option.children[0].disabled,false);if(language==='en')assert.ok(!/\p{Script=Han}/u.test(option.children[1].textContent));}
-  assert.equal(ids.brightness.value,'137');assert.ok(calls.some(([channel])=>channel==='desktop:resume'));assert.ok(events.includes('pixel-studio-desktop-ready'));
+  assert.equal(ids.brightness.value,'137');assert.ok(!calls.some(([channel])=>channel==='desktop:resume'||channel==='desktop:restore-connection'));assert.equal(document.documentElement.dataset.desktopReady,'true');assert.ok(events.includes('pixel-studio-desktop-ready'));
   const close=switches.children[2].children[0];close.checked=false;await close.listeners.change();assert.ok(calls.some(([channel,patch])=>channel==='desktop:settings'&&patch?.closeToTray===false));
   assert.equal(typeof window.pixelStudioDesktop.downloadUpdate,'function');
   await window.pixelStudioDesktop.downloadUpdate('0.1.8');assert.ok(calls.some(([channel,request])=>channel==='desktop:update'&&request.version==='0.1.8'));

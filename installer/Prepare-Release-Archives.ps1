@@ -20,7 +20,7 @@ function Copy-SourceFile([string]$From, [string]$Relative) {
     New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
     Copy-Item -LiteralPath $From -Destination $target
 }
-$appFiles = @('index.html','pixel-circuit-palette.cjs','pixel-temperature.cjs','pixel-temperature-service.cjs','pixel-temperature-ui.js','pixel-ddp-bridge.cjs','pixel-headless-renderer.cjs','pixel-stream-worker.cjs','pixel-studio-web-language.js','pixel-studio-web-palettes.js','pixel-studio-web-ui.css','pixel-studio-web-ui.js','Start-Pixel-DDP.cmd','Start-Pixel-DDP.ps1','Start-Pixel-Studio.cmd','GETTING-STARTED.html','LICENSE')
+$appFiles = @('index.html','pixel-settings-schema.cjs','pixel-rgb-canvas.cjs','pixel-animation-designs.cjs','pixel-animation-engine.cjs','pixel-clock-renderer.cjs','pixel-animation-catalog.cjs','pixel-animation-runtime.js','pixel-output-protocols.cjs','pixel-output-transports.cjs','pixel-render-settings.cjs','pixel-frame-mapping.cjs','pixel-frame-pipeline.cjs','pixel-browser-media.cjs','pixel-browser-playback.cjs','pixel-browser-output.cjs','pixel-circuit-palette.cjs','pixel-temperature.cjs','pixel-temperature-service.cjs','pixel-temperature-ui.js','pixel-ddp-bridge.cjs','pixel-headless-renderer.cjs','pixel-stream-worker.cjs','pixel-studio-web-language.js','pixel-studio-web-palettes.js','pixel-studio-web-ui.css','pixel-studio-web-ui.js','Start-Pixel-DDP.cmd','Start-Pixel-DDP.ps1','Start-Pixel-Studio.cmd','GETTING-STARTED.html','LICENSE')
 foreach ($file in $appFiles) {
     $from = Join-Path $snapshot "app\$file"
     if ((Get-FileHash -LiteralPath $from).Hash -ne (Get-FileHash -LiteralPath (Join-Path $payload "app\$file")).Hash) { throw "Snapshot/payload mismatch: $file" }
@@ -34,11 +34,12 @@ foreach ($dir in @('src','compat')) {
         Copy-SourceFile $_.FullName "openrgb-plugin\$dir\$($_.Name)"
     }
 }
-foreach ($file in @('main.cjs','preload.cjs','ddp-service.cjs','updater.cjs','icons.cjs','package.json','package-lock.json','electron-builder.unified.cjs')) {
+foreach ($file in @('main.cjs','preload.cjs','session-controller.js','media-playback.js','media-library.cjs','media-library-ui.js','media-thumbnails.js','ddp-service.cjs','updater.cjs','icons.cjs','package.json','package-lock.json','electron-builder.unified.cjs')) {
     Copy-SourceFile (Join-Path $root "desktop\$file") "desktop\$file"
 }
-Get-ChildItem -LiteralPath (Join-Path $root 'desktop\assets') -File | Where-Object { $_.Extension -in @('.png','.ico','.json') } | ForEach-Object {
-    Copy-SourceFile $_.FullName "desktop\assets\$($_.Name)"
+# Explicit generated branding inputs; never sweep design drafts into an archive.
+foreach ($file in @('ice.png','mint.png','amber.png','rose.png','pixel-studio.ico','brand-geometry.json')) {
+    Copy-SourceFile (Join-Path $root "desktop\assets\$file") "desktop\assets\$file"
 }
 Get-ChildItem -LiteralPath (Join-Path $root 'temperature') -File | Where-Object { $_.Extension -in @('.cs','.csproj') } | ForEach-Object {
     Copy-SourceFile $_.FullName "temperature\$($_.Name)"
@@ -49,7 +50,7 @@ Get-ChildItem -LiteralPath (Join-Path $root 'temperature\third-party') -File -Fi
 foreach ($file in @('Build-Installer.ps1','Build-Unified-Test.ps1','Prepare-Test-Payload.cjs','Prepare-SensorNotices.ps1','Prepare-Release-Archives.ps1','Prepare-PawnIO.ps1','Manage-SensorServices.ps1','Migrate-Legacy.ps1','PixelStudio.iss','PawnIO.iss','GETTING-STARTED.html',"RELEASE-$Version.md")) {
     Copy-SourceFile (Join-Path $PSScriptRoot $file) "installer\$file"
 }
-foreach ($file in @('check-language-state.cjs','test-desktop-settings.cjs','test-updater.cjs','sync-guide-logo.cjs')) {
+foreach ($file in @('check-language-state.cjs','test-desktop-session.cjs','test-desktop-settings.cjs','test-updater.cjs','sync-guide-logo.cjs','test-engine-modules.cjs','test-output-transports.cjs','test-stream-worker.cjs','test-module-resources.cjs','test-temperature-service.cjs','test-frame-pipeline.cjs','test-browser-modules.cjs','frame-pipeline-baseline.json','animation-module-baseline.json')) {
     Copy-SourceFile (Join-Path $root "tools\$file") "tools\$file"
 }
 Copy-SourceFile (Join-Path $PSScriptRoot 'SOURCE-BUILD.md') 'SOURCE-BUILD.md'

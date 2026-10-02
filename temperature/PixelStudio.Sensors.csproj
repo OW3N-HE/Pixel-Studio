@@ -7,7 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>PixelStudio.Sensors</AssemblyName>
-    <Version>0.1.12</Version>
+    <ApplicationIcon>../desktop/assets/pixel-studio.ico</ApplicationIcon>
+    <Version>0.2.0</Version>
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <ItemGroup>

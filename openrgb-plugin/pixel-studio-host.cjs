@@ -11,6 +11,8 @@ const { performance } = require('node:perf_hooks');
 const projectArg = process.argv.indexOf('--project');
 const root = path.resolve(projectArg >= 0 ? process.argv[projectArg + 1] : path.join(__dirname, '..'));
 const origin = 'http://127.0.0.1:8766';
+let playbackPolicy;
+let animationClock;
 let renderer;
 let modes;
 let mappings;
@@ -32,7 +34,6 @@ let outputBlocked = false;
 const pendingOutput = new Map();
 let queue = Promise.resolve();
 let revision = 0;
-const epoch = performance.now();
 let temperatureTimer;
 let temperatureBusy = false;
 let temperatureNextAt = 0;
@@ -104,7 +105,7 @@ function configuration(data) {
     for (const key of ['cpu','gpu','divider'])
         if (/^#[0-9a-f]{6}$/i.test(thermal[key])) c.thermal[key] = thermal[key];
     c.transport = c.transport === 'usb' ? 'usb' : 'ddp';
-    c.serialPort = String(c.serialPort || 'COM5').trim().toUpperCase();
+    c.serialPort = String(c.serialPort || '').trim().toUpperCase();
     if (c.transport === 'usb' && !/^COM\d+$/.test(c.serialPort)) {
         throw new Error('Enter a Windows serial port such as COM5.');
     }
@@ -220,6 +221,7 @@ async function stopOwnSession() {
     state();
 }
 async function startUsb(next) {
+    Object.assign(next,animationClock.snapshot());
     const worker = new Worker(path.join(root, 'pixel-stream-worker.cjs'), {
         workerData: { ...next, transport: 'usb' }
     });
@@ -260,8 +262,9 @@ async function startUsb(next) {
     });
     state();
 }
-async function start(data) {
+async function start(data, id) {
     const next = configuration(data);
+    animationClock.setSpeed(next.speed);
     if (next.transport === 'usb') next.fps = Math.min(next.fps, 60);
     const abort = new AbortController();
     startAbort = abort;
@@ -299,17 +302,17 @@ async function start(data) {
         const sameGeometry = config && next.w === config.w && next.h === config.h;
         if (usbWorker && next.transport === 'usb' && config.transport === 'usb' && sameGeometry
             && next.serialPort === config.serialPort) {
-            usbWorker.postMessage({ type: 'update', config: next });
+            usbWorker.postMessage({ type: 'update', config: {...next,...animationClock.snapshot()} });
             config = next;
-            revision++;
+            revision = Number.isInteger(id) ? id : revision + 1;
             state();
             return;
         }
         if (sessionId && next.transport === 'ddp' && config.transport === 'ddp' && sameGeometry
             && next.host === config.host && next.match === config.match && next.gamma === config.gamma) {
-            await request('/api/update', { method: 'POST', data: { id: sessionId, ...next }, timeout: 6500, signal: abort.signal });
+            await request('/api/update', { method: 'POST', data: { id: sessionId, ...next, ...animationClock.snapshot() }, timeout: 6500, signal: abort.signal });
             config = next;
-            revision++;
+            revision = Number.isInteger(id) ? id : revision + 1;
             state();
             return;
         }
@@ -342,13 +345,13 @@ async function start(data) {
             }
             await startUsb(next);
             config = next;
-            revision++;
+            revision = Number.isInteger(id) ? id : revision + 1;
             return;
         }
         await ensureBridge(abort.signal);
         if (exiting || abort.signal.aborted) return;
         const result = await request('/api/start', {
-            method: 'POST', data: next, timeout: 25000, signal: abort.signal
+            method: 'POST', data: {...next,...animationClock.snapshot()}, timeout: 25000, signal: abort.signal
         });
         if (!result.id) throw new Error('The bridge did not return a playback session.');
         sessionId = result.id;
@@ -357,7 +360,7 @@ async function start(data) {
             return;
         }
         config = next;
-        revision++;
+        revision = Number.isInteger(id) ? id : revision + 1;
         // A successful stats read confirms ownership for the existing bridge.
         const stats = await request('/api/stats?id=' + encodeURIComponent(sessionId));
         state();
@@ -394,12 +397,13 @@ async function pollStats() {
 function preview() {
     if (exiting || outputBlocked || !renderer) return;
     try {
+        const animationTime=animationClock.getTime();
         const rgb = renderer.render(config.mode, config.w, config.h,
-            (performance.now() - epoch) / 1000 * config.speed, linearMapping, config.clockFont, config.clockPalette, config.thermal, temperatureSample);
+            animationTime, linearMapping, config.clockFont, config.clockPalette, config.thermal, temperatureSample);
         output({ type: 'frame', w: config.w, h: config.h, rgb: Buffer.from(rgb).toString('base64'), revision }, true);
         if (sessionId) {
             const sent = renderer.render(config.mode, config.w, config.h,
-                (performance.now() - epoch) / 1000 * config.speed, config.mapping, config.clockFont, config.clockPalette, config.thermal, temperatureSample);
+                animationTime, config.mapping, config.clockFont, config.clockPalette, config.thermal, temperatureSample);
             output({ type: 'outputFrame', w: config.w, h: config.h, rgb: Buffer.from(sent).toString('base64'), transport: 'ddp' }, true);
         }
     } catch (error) {
@@ -447,13 +451,21 @@ async function handle(message) {
     const { id, op, data = {} } = message;
     try {
         switch (op) {
+        case 'shuffle': {
+            const available = new Set(modes.map(mode => mode.id));
+            const candidates = Array.isArray(data.candidates) ? data.candidates.filter(mode => available.has(mode)) : [];
+            const next = playbackPolicy.chooseNext(candidates, data.current);
+            if (next) output({ type: 'selection', mode: next, current: data.current, revision: data.revision });
+            break;
+        }
         case 'configure':
             config = configuration(data);
+            animationClock.setSpeed(config.speed);
             revision = Number.isInteger(id) ? id : revision + 1;
             preview();
             break;
         case 'start':
-            await start(data);
+            await start(data, id);
             break;
         case 'stop':
             await stopOwnSession();
@@ -519,11 +531,19 @@ async function shutdown(reason = 'Shutdown requested') {
     }
 }
 try {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const playbackModule=require(path.join(root, 'pixel-browser-playback.cjs'));
+    playbackPolicy = playbackModule.policy;
+    animationClock = playbackModule.createTimeline(()=>performance.now());
+    const catalog = require(path.join(root, 'pixel-animation-catalog.cjs'));
     renderer = require(path.join(root, 'pixel-headless-renderer.cjs'))();
-    const titles = new Map(options(html, 'animationMode').map(option => [option.value, option.title]));
-    modes = renderer.modes.filter(id => id !== 'file').map(id => ({ id, title: titles.get(id) || id }));
-    mappings = options(html, 'mapping');
+    const titles = new Map(Object.entries(catalog.titles));
+    const available = new Set(renderer.modes);
+    const ordered = [...catalog.galleryModes, ...renderer.modes.filter(id => !catalog.galleryModes.includes(id))];
+    modes = ordered.filter(id => id !== 'file' && available.has(id)).map(id => ({
+        id, title: titles.get(id) || id,
+        category: catalog.entries[id]?.[0] === 'utility' ? 'info' : (catalog.entries[id]?.[0] || 'playful')
+    }));
+    mappings = catalog.mappings.map(item=>({...item}));
     if (!modes.length || !mappings.length) throw new Error('The shared library is empty.');
     linearMapping = (mappings.find(m => /row|行/i.test(m.value + m.title) && !/serp|snake|蛇/i.test(m.value + m.title))
         || mappings.find(m => !/serp|snake|蛇/i.test(m.value + m.title)) || mappings[0]).value;

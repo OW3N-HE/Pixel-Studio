@@ -8,11 +8,14 @@
     row.innerHTML = '<label for="animationPalette">配色</label><select id="animationPalette"></select><button type="button">自定义配色</button>';
     controls.append(row);
     const select = row.querySelector('select'), button = row.querySelector('button');
+    button.setAttribute('aria-haspopup','dialog');
     for (const [value,name] of [['original','原始'],['ice','冰蓝'],['mint','薄荷'],['amber','琥珀'],['rose','樱粉'],['violet','紫晶'],['custom','自定义']]) select.add(new Option(name,value));
     let saved = {};
     try { const data=JSON.parse(localStorage.getItem('pixelStudioAnimationColors')||'{}'); if(data && typeof data==='object' && !Array.isArray(data))saved=data; } catch {}
     const dialog=document.createElement('dialog'); dialog.className='ps-settings ps-media-dialog';
     dialog.innerHTML='<header class="ps-settings-heading"><h2>自定义配色</h2><button class="ps-close" type="button" aria-label="关闭配色">×</button></header><div class="ps-settings-body"></div>';
+    dialog.querySelector('h2').id='animationColorsTitle';
+    dialog.setAttribute('aria-labelledby','animationColorsTitle');
     document.body.append(dialog);
     const inputs=['高光颜色','主色','阴影颜色'].map((name,i)=>{
       const line=document.createElement('div'); line.className='ps-setting-row';

@@ -2,11 +2,23 @@
 const {ipcRenderer,contextBridge}=require('electron');
 const startupArgument=(name,fallback)=>process.argv.find(value=>value.startsWith(name+'='))?.slice(name.length+1)||fallback;
 contextBridge.exposeInMainWorld('pixelStudioDesktop',Object.freeze({edition:true,
+  mediaLibrary:action=>ipcRenderer.invoke('desktop:media',{action}),
+  mediaFile:id=>ipcRenderer.invoke('desktop:media',{action:'read',id}),
+  getMediaSession:()=>ipcRenderer.invoke('desktop:media-session'),
+  saveMediaSession:value=>ipcRenderer.invoke('desktop:media-session',value),
+  resumePlayback:()=>ipcRenderer.invoke('desktop:resume'),
+  restoreConnection:()=>ipcRenderer.invoke('desktop:restore-connection'),
+  onMediaLibraryChanged:callback=>{
+    if(typeof callback!=='function')return ()=>{};
+    const listener=()=>callback();
+    ipcRenderer.on('desktop:media-changed',listener);
+    return ()=>ipcRenderer.removeListener('desktop:media-changed',listener);
+  },
   systemLanguage:startupArgument('--pixel-studio-system-language','en'),
   languagePreference:startupArgument('--pixel-studio-language','auto'),
   prepareSerialSelection:restore=>ipcRenderer.invoke('desktop:serial',{action:'prepare',restore:restore===true}),
   confirmSerialConnection:()=>ipcRenderer.invoke('desktop:serial',{action:'connected'}),
-  cancelResume:()=>ipcRenderer.invoke('desktop:serial',{action:'cancel-resume'}),
+  cancelResume:connection=>ipcRenderer.invoke('desktop:serial',{action:'cancel-resume',connection:connection===true}),
   ensureDdp:()=>ipcRenderer.invoke('desktop:ddp',{action:'ensure'}),
   downloadUpdate:version=>ipcRenderer.invoke('desktop:update',{action:'download',version}),
   installUpdate:()=>ipcRenderer.invoke('desktop:update',{action:'install',language:document.documentElement.lang}),
@@ -66,13 +78,14 @@ window.addEventListener('DOMContentLoaded',()=>{
     window.addEventListener('pixel-studio-language-change',()=>{render();void sync();});
     ipcRenderer.invoke('desktop:settings').then(async value=>{
       settings=value;
-      for(const [id,saved] of Object.entries(value.playback?.values||{})){
+      for(const [id,stored] of Object.entries(value.playback?.values||{})){
+        const saved=stored;
         const element=document.getElementById(id);if(!element)continue;
         if(element.tagName==='SELECT'&&![...element.options].some(option=>option.value===saved))continue;
         if(element.type === 'checkbox') element.checked = saved === 'true'; else element.value = saved;element.dispatchEvent(new Event('input',{bubbles:true}));element.dispatchEvent(new Event('change',{bubbles:true}));
       }
       render();void sync();
-      await ipcRenderer.invoke('desktop:resume');
+      document.documentElement.dataset.desktopReady='true';
       window.dispatchEvent(new Event('pixel-studio-desktop-ready'));
     }).catch(()=>{error=true;render();});render();
   }

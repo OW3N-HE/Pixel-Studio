@@ -22,7 +22,7 @@
     if (document.title !== 'Pixel Studio') document.title = 'Pixel Studio';
   }
   updateDocumentLanguage();
-  const catalog = {
+  const catalog = {"秋日小路":"Autumn Lane","雪夜石灯":"Snow Lantern","极简 · 三点一线":"Minimal · three marks","低细节 · 大块面":"Bold · big shapes","高细节 · 写实":"Detailed · painterly","几何 · 对称":"Geometric · symmetric","剪影 · 逆光":"Silhouette · backlit","抽象 · 光带":"Abstract · light bands",
     '关于 Pixel Studio':'About Pixel Studio','关于':'About','关闭':'Close',
     '打开设置':'Open settings','选择文件':'Choose file','尚未选择文件':'No file selected',
     '高级设置与连接诊断':'Advanced settings and diagnostics','自动限制帧率':'Automatically limit frame rate',
@@ -35,13 +35,14 @@
     '宽':'W','高':'H','圆角预览':'Rounded preview','排列':'Pixel order','帧率':'FPS','颜色还原':'Color matching',
     '亮度':'Brightness','速度':'Speed','样式':'Style','配色':'Colors','原始':'Original','原始配色':'Original',
     '自定义':'Custom','自定义配色':'Custom colors','高光颜色':'Highlight color','主色':'Main color','阴影颜色':'Shadow color',
-    '冰蓝':'Ice blue','薄荷':'Mint','琥珀':'Amber','樱粉':'Rose','紫晶':'Amethyst',
+    '冰蓝':'Ice blue','薄荷':'Mint','琥珀':'Amber','樱粉':'Rose','紫晶':'Amethyst','深蓝':'Deep blue','灰色':'Gray','深色':'Dark','浅色':'Light',
     '圆角像素':'Rounded pixels','经典点阵':'Classic dots','七段数码':'Seven-segment',
     '小时':'Hours','分钟':'Minutes','分隔线':'Separator','动态时钟 · 自定义配色':'Clock · Custom colors',
     '全部':'All','收藏':'Favorites','自然':'Nature','氛围':'Ambient','趣味':'Fun','时钟':'Clock','信息':'Information',
     '随机播放':'Shuffle','秒':'s','没有符合条件的动画':'No matching animations',
-    '搜索动画、时钟或手绘角色':'Search animations, clocks or characters',
-    '导入媒体':'Import media','本地媒体':'Local media','图片 / 视频':'Image / video','画面适配':'Scaling',
+    '搜索':'Search',
+    '导入媒体':'Import media','媒体':'Media','本地媒体':'Local media','图片 / 视频':'Image / video','画面适配':'Scaling',
+    '正在播放视频':'Playing video','正在播放图片':'Playing image',
     '拉伸到屏幕':'Stretch to fill','拉伸':'Stretch to fill','保持比例，居中补边':'Fit with borders',
     '保持比例':'Keep aspect ratio','保留 WLED 调色':'Keep WLED colors',
     '选择本地图片或视频，在当前像素屏尺寸下预览和播放。':'Choose a local image or video to preview and play on your pixel matrix.',
@@ -89,6 +90,9 @@
     '视频已就绪，可点击开始发送':'Video ready. Press Play to send',
     '图片已就绪，可点击开始发送':'Image ready. Press Play to send','图片读取失败':'Unable to read the image',
     '已切换到文件模式，请选择图片或视频':'Media mode selected. Choose an image or video',
+    '媒体模式：请选择图片或视频':'Media mode: choose an image or video',
+    '切换到媒体模式':'Switching to media mode','动画预览中':'Previewing animations',
+    '图片已就绪':'Image ready','视频已就绪':'Video ready',
     '正在本地预览，点击开始发送可控制 WLED':'Previewing locally. Press Play to send to WLED',
     '预览已清空':'Preview cleared','已使用设备尺寸 ':'Using device matrix size ',
     '发送失败：':'Output failed: ','连接失败：':'Connection failed: ',
@@ -164,6 +168,13 @@
     'IP / HTTP 无需串口连接。USB / Adalight 请使用支持 Web Serial 的桌面版 Chrome 或 Edge，并由用户亲自选择设备。':'IP / HTTP does not need a serial connection. For USB / Adalight, use desktop Chrome or Edge with Web Serial and select the device yourself.'
   });
   Object.assign(catalog,{"雨窗咖啡":"Rainy Window Cafe","水母花园":"Jellyfish Garden","星际列车":"Star Train","月夜露营":"Moonlit Camp","四季小树":"Four Seasons Tree","机械花园":"Mechanical Garden"});
+  Object.assign(catalog,{
+    '正在加载视频…':'Loading video…',
+    '正在加载图片…':'Loading image…',
+    '视频读取失败，请重新选择文件。':'Unable to read the video. Please choose a file again.',
+    '图片读取失败，请重新选择文件。':'Unable to read the image. Please choose a file again.',
+    '请选择图片或视频文件。':'Please choose an image or video file.'
+  });
   const keys=Object.keys(catalog).sort((a,b)=>b.length-a.length);
   const pattern=new RegExp(keys.map(key=>key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
   function translate(text){return text.replace(pattern,match=>catalog[match]);}

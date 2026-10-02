@@ -2,6 +2,8 @@
 // Loopback-only pixel relay. No dependencies, no persistent WLED config writes.
 const http = require('node:http');
 const dgram = require('node:dgram');
+const protocols = require('./pixel-output-protocols.cjs');
+const framePipeline = require('./pixel-frame-pipeline.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -25,9 +27,7 @@ udp.on('error', error => console.error('UDP:', error.message));
 
 function fail(message, status = 400) { const e = new Error(message); e.status = status; throw e; }
 function perceptualLut(brightness, inverseGamma) {
-  const gain = Math.max(0, Math.min(255, brightness)) / 255;
-  return Uint8Array.from({length:256}, (_, value) =>
-    Math.round(255 * Math.pow(value / 255 * gain, inverseGamma)));
+  return framePipeline.outputLut(brightness,inverseGamma);
 }
 function deviceHost(value) {
   const url = new URL(/^http:\/\//i.test(value) ? value : 'http://' + value);
@@ -80,22 +80,13 @@ async function release(session) {
   finally { if (sessions.get(session.id) === session) sessions.delete(session.id); }
 }
 async function sendPixels(session, frame) {
-  const started = performance.now();
-  for (let offset = 0; offset < frame.length; offset += 1440) {
-    if (!session.active) fail('Playback stopped', 409);
-    const count = Math.min(1440, frame.length - offset);
-    const packet = Buffer.allocUnsafe(10 + count);
-    packet[0] = 0x40 | (offset + count === frame.length ? 1 : 0);
-    session.sequence = session.sequence % 15 + 1;
-    packet[1] = session.sequence;
-    packet[2] = 0x0b; // RGB24, 8 bits/channel
-    packet[3] = 1; // Display destination
-    packet.writeUInt32BE(offset, 4);
-    packet.writeUInt16BE(count, 8);
-    for (let i = 0; i < count; i++) packet[10 + i] = session.lut[frame[offset + i]];
-    await new Promise((resolve, reject) => udp.send(packet, 4048, session.host, error => error ? reject(error) : resolve()));
-  }
-  return performance.now() - started; // Local UDP completion, NOT a device acknowledgement.
+ const started=performance.now();
+ const encoded=protocols.encodeDdp(frame,{lut:session.lut,sequence:session.sequence});
+ for(const packet of encoded.packets){
+  if(!session.active)fail('Playback stopped',409);session.sequence=packet[1];
+  await new Promise((resolve,reject)=>udp.send(packet,4048,session.host,error=>error?reject(error):resolve()));
+ }
+ return performance.now()-started; // Local UDP completion, NOT a device acknowledgement.
 }
 
 async function startAnimationWorker(session, input, w, h, fps, speed) {
@@ -105,7 +96,7 @@ async function startAnimationWorker(session, input, w, h, fps, speed) {
   session.confirmed = false;
   session.stats = {targetFps:fps,fps:0,kbps:0,frameMs:0,frames:0,missed:0,uptime:0,mode:input.mode};
   const worker = new Worker(path.join(__dirname,'pixel-stream-worker.cjs'), {workerData:{
-    host:session.host,w,h,fps,speed,mode:input.mode,thermal:input.thermal,mapping:String(input.mapping || ''),clockFont:['rounded','classic','segment'].includes(input.clockFont)?input.clockFont:'rounded',clockPalette:(['original','mint','amber','ice','rose','violet'].includes(input.clockPalette) || /^custom:(#[0-9a-f]{6}):(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i.test(input.clockPalette))?input.clockPalette:'mint',lut:Array.from(session.lut)
+    host:session.host,w,h,fps,speed,animationTime:input.animationTime,animationWallTime:input.animationWallTime,mode:input.mode,thermal:input.thermal,mapping:String(input.mapping || ''),clockFont:['rounded','classic','segment'].includes(input.clockFont)?input.clockFont:'rounded',clockPalette:(['original','mint','amber','ice','rose','violet'].includes(input.clockPalette) || /^custom:(#[0-9a-f]{6}):(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i.test(input.clockPalette))?input.clockPalette:'mint',lut:Array.from(session.lut)
   }});
   session.worker = worker;
   await new Promise((resolve,reject) => {
@@ -143,6 +134,19 @@ const server = http.createServer(async (req, res) => {
       res.end(html); return;
     }
     const webAssets = {
+      '/pixel-clock-renderer.cjs':'text/javascript',
+      '/pixel-animation-catalog.cjs':'text/javascript',
+      '/pixel-animation-runtime.js':'text/javascript',
+      '/pixel-rgb-canvas.cjs':'text/javascript',
+      '/pixel-animation-designs.cjs':'text/javascript',
+      '/pixel-animation-engine.cjs':'text/javascript',
+      '/pixel-output-protocols.cjs':'text/javascript',
+      '/pixel-render-settings.cjs':'text/javascript',
+      '/pixel-frame-mapping.cjs':'text/javascript',
+      '/pixel-frame-pipeline.cjs':'text/javascript',
+      '/pixel-browser-media.cjs':'text/javascript',
+      '/pixel-browser-playback.cjs':'text/javascript',
+      '/pixel-browser-output.cjs':'text/javascript',
       '/pixel-studio-web-ui.css':'text/css',
       '/pixel-studio-web-ui.js':'text/javascript',
       '/pixel-studio-web-palettes.js':'text/javascript',
