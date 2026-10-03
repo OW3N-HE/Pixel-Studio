@@ -5,10 +5,12 @@
  else root.PixelStudioBrowserOutput={create:factory};
 })(typeof globalThis!=='undefined'?globalThis:this,function(options){
  const window=options.window||globalThis;
- const {document,navigator,performance,setTimeout,clearTimeout,setInterval,clearInterval,fetch,WebSocket,URL,AbortController,Response,TextEncoder,TextDecoder,crypto}=window;
+ const {document,navigator,performance,setTimeout,clearTimeout,setInterval,clearInterval,fetch,URL,AbortController,Response,TextEncoder,TextDecoder,crypto}=window;
  const {ui,playback,animationCatalog,getFrameConfig,getAnimationMode,withNum,setStatus,logLine,stopLoop,stopBtn}=options;
  const encoder=new TextEncoder();
- let port=null,writer=null,reader=null,ws=null,selectingSerial=false;
+ let port=null,writer=null,reader=null,selectingSerial=false,serialOutputGeneration=0;
+  let serialConnectionGeneration=0,serialClosing=Promise.resolve();
+  ui.controlMode.addEventListener('change',()=>{serialConnectionGeneration++;});
  let serialColorProfile=null,serialColorLut=null,serialColorUiKey='';
   const serialLab = { confirmedWriter:null, pending:null, readTask:null, bytes:0, nativeUsb:false, activeBaud:115200, frames:0, sampleAt:0, busy:false, heldFrame:null, holdTimer:null, lastWrite:0 };
 
@@ -18,15 +20,8 @@
     else serialNote('尚未诊断。先确认固件命令通道，再判断像素输出。');
   });
 
-  let ipTransport = 'http';
-  let frameSocketPromise = null;
-  let wsPending = null;
   let deviceProfile = null;
   let profilePromise = null;
-  let preparedOutput = '';
-  let lastSentColors = null;
-  let lastFrameKey = '';
-  let lastKeyframeAt = 0;
   let statsWindow = { at:performance.now(), frames:0, bytes:0, ms:0 };
 
 
@@ -42,42 +37,10 @@
     runtimeNotice.textContent = '高速控制已连接 · DDP 后台 60 FPS · 动画与亮度支持无缝更新';
     runtimeNotice.classList.add('ok');
   } else {
-    runtimeNotice.innerHTML = '当前为文件兼容模式，仅适合预览或低速控制。要使用最新控制，请打开 <a href="http://127.0.0.1:8766/" target="_blank" rel="noopener">本地高速 DDP 服务</a>。';
+    runtimeNotice.innerHTML = '当前为文件兼容模式，可使用本地预览或 USB 输出；DDP 需要本地服务。要使用最新控制，请打开 <a href="http://127.0.0.1:8766/" target="_blank" rel="noopener">本地高速 DDP 服务</a>。';
     runtimeNotice.classList.add('err');
   }
   const ddp = {session:null,pending:null,epoch:0,releasing:Promise.resolve(),controller:null};
-
-  function isHttpMode() {
-    return ui.controlMode.value === 'ddp' || ui.controlMode.value === 'http' || (ui.controlMode.value === 'auto' && ipTransport !== 'ws');
-  }
-
-  function isWsMode() {
-    return ui.controlMode.value === 'ws' || (ui.controlMode.value === 'auto' && ipTransport === 'ws');
-  }
-
-  function getHttpTarget() {
-    const host = (ui.wledHost.value || '').trim().replace(/\/$/, '');
-    const path = (ui.httpPath.value || '/json/state').trim();
-    return `${host}${path.startsWith('/') ? '' : '/'}${path}`;
-  }
-
-  function getWsUrl() {
-    const rawHost = (ui.wledHost.value || '').trim();
-    if (!rawHost) throw new Error('未填写 WLED 地址');
-    try {
-      const u = new URL(rawHost);
-      return `ws://${u.host}/ws`;
-    } catch {
-      return `ws://${rawHost.replace(/\/+$/, '')}/ws`;
-    }
-  }
-
-  function wsSendPayload(payload) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      throw new Error('WebSocket 未连接');
-    }
-    ws.send(JSON.stringify(payload));
-  }
 
   function serialNote(message, kind) {
     serialNotice = { message, kind };
@@ -91,7 +54,7 @@
     serialColorUiKey = '';
     serialLab.confirmedWriter=null;
     serialLab.bytes=0;serialLab.frames=0;serialLab.sampleAt=0;
-    serialLab.heldFrame=null;clearTimeout(serialLab.holdTimer);
+    serialStopHold();
     if(serialLab.pending)serialLab.pending.finish(null);
   }
 
@@ -127,6 +90,7 @@
     const count=frame.length/3;
     if(!Number.isInteger(count)||count<1||count>65535)throw new Error('Adalight 帧必须为 1–65535 个 RGB 像素。');
     const sourceWriter=writer;
+    const generation=serialOutputGeneration;
     serialLab.busy=true;
     try {
       const host = deviceBase();
@@ -140,7 +104,7 @@
             : '未读取到 WLED 颜色设置：USB 保留原始颜色，不猜测或应用 Gamma 补偿。');
         }
       }
-      if (writer !== sourceWriter || serialLab.confirmedWriter !== sourceWriter) return;
+      if (generation !== serialOutputGeneration || writer !== sourceWriter || serialLab.confirmedWriter !== sourceWriter) return;
       const profile = serialColorProfile?.profile;
       const known = profile?.realtimeGammaKnown === true;
       const match = document.getElementById('colorMode').value === 'match';
@@ -168,6 +132,9 @@
       const packet=window.PixelStudioOutputProtocols.encodeAdalight(frame,serialColorLut.values);
       const writeStarted=performance.now();
       await sourceWriter.write(packet);
+      // A completed OS write cannot be recalled, but it must not resurrect
+      // output statistics or the image keepalive after stop/disconnect.
+      if (generation !== serialOutputGeneration || writer !== sourceWriter || serialLab.confirmedWriter !== sourceWriter) return;
       showStreamStats(true, packet.length, performance.now()-writeStarted);
       serialLab.lastWrite=performance.now();
       serialLab.frames++;
@@ -198,54 +165,9 @@
   }
 
   function serialStopHold() {
+    serialOutputGeneration++;
     serialLab.heldFrame=null;
     clearTimeout(serialLab.holdTimer);
-  }
-
-  function bytesToHex(u8) {
-    let s = '';
-    for (const b of u8) {
-      s += b.toString(16).padStart(2, '0');
-    }
-    return s;
-  }
-
-  function pixelToHex(v) {
-    return Math.max(0, Math.min(255, v ?? 0)).toString(16).padStart(2, '0').toUpperCase();
-  }
-
-function frameToHexList(frame) {
-    const colors = [];
-    for (let i = 0; i < frame.length; i += 3) {
-      colors.push(`${pixelToHex(frame[i])}${pixelToHex(frame[i + 1])}${pixelToHex(frame[i + 2])}`);
-    }
-    return colors;
-  }
-
-  function buildFramePairs(frame) {
-    const colors = frameToHexList(frame);
-    const pairs = [];
-    for (let i = 0; i < colors.length; i++) {
-      pairs.push(i, colors[i]);
-    }
-    return pairs;
-  }
-
-  function frameToRgbTriples(frame) {
-    const rgb = [];
-    for (let i = 0; i < frame.length; i += 3) {
-      rgb.push([
-        Math.max(0, Math.min(255, frame[i] ?? 0)),
-        Math.max(0, Math.min(255, frame[i + 1] ?? 0)),
-        Math.max(0, Math.min(255, frame[i + 2] ?? 0))
-      ]);
-    }
-    return rgb;
-  }
-
-  async function writeLine(line) {
-    if (!writer) throw new Error('串口未连接');
-    await writer.write(encoder.encode(line));
   }
 
   function deviceBase() {
@@ -255,15 +177,14 @@ function frameToHexList(frame) {
     return url.origin;
   }
 
-  async function fetchDeviceJSON(path, payload) {
-    if (bridgeToken && payload === undefined) return (await bridgeRequest('/api/device?host='+encodeURIComponent(deviceBase())+'&path='+encodeURIComponent(path))).json();
+  async function fetchDeviceJSON(path) {
+    if (bridgeToken) return (await bridgeRequest('/api/device?host='+encodeURIComponent(deviceBase())+'&path='+encodeURIComponent(path))).json();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 4500);
     try {
       const res = await fetch(deviceBase() + path, {
-        method:payload === undefined ? 'GET' : 'POST',
+        method:'GET',
         cache:'no-store',
-        ...(payload === undefined ? {} : {headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}),
         signal:controller.signal
       });
       const text = await res.text();
@@ -291,7 +212,7 @@ function frameToHexList(frame) {
       gamma = Math.max(1, Math.min(4, gamma));
       const realtimeGammaKnown = gc?.col !== undefined && live?.['no-gc'] !== undefined;
       const realtimeGammaEnabled = realtimeGammaKnown && !live['no-gc'] && gc.col !== false && gc.col !== 0 && gamma !== 1;
-      const profile = { host, gamma, realtimeGammaKnown, realtimeGammaEnabled, matrix:info.leds?.matrix, count:info.leds?.count, arch:info.arch, version:info.ver, maxMessage:info.arch === 'esp8266' ? 480 : 1200 };
+      const profile = { host, gamma, realtimeGammaKnown, realtimeGammaEnabled, matrix:info.leds?.matrix, count:info.leds?.count, arch:info.arch, version:info.ver };
       if (deviceBase() !== host) throw new Error('设备地址已改变，请重新开始');
       deviceProfile = profile;
       document.getElementById('colorGamma').value = gamma.toFixed(2);
@@ -303,118 +224,13 @@ function frameToHexList(frame) {
   }
 
   function resetFrameCache() {
-    lastSentColors = null; lastFrameKey = ''; lastKeyframeAt = 0; preparedOutput = '';
+    serialColorLut = null;
   }
 
-  function closeFrameSocket() {
-    const socket = ws;
-    ws = null; frameSocketPromise = null;
-    if (wsPending) { const pending = wsPending; wsPending = null; clearTimeout(pending.timer); pending.reject(new Error('WebSocket 已断开')); }
-    if (socket) { try { socket.close(); } catch (_) {} }
-    resetFrameCache();
-  }
-
-  async function openFrameSocket() {
-    const url = getWsUrl();
-    if (ws?.readyState === WebSocket.OPEN && ws.url === url) return;
-    if (frameSocketPromise) return frameSocketPromise;
-    if (ws) closeFrameSocket();
-    frameSocketPromise = new Promise((resolve, reject) => {
-      const socket = new WebSocket(url);
-      ws = socket;
-      let welcomed = false;
-      const timer = setTimeout(() => { reject(new Error('WebSocket 连接超时')); socket.close(); }, 2500);
-      socket.onmessage = (event) => {
-        if (ws !== socket || typeof event.data !== 'string') return;
-        if (event.data === 'pong') {
-          if (wsPending) { const p = wsPending; wsPending = null; clearTimeout(p.timer); p.resolve(); }
-          return;
-        }
-        let data;
-        try { data = JSON.parse(event.data); } catch (_) { return; }
-        if (!welcomed && (data.state || data.info)) {
-          welcomed = true; clearTimeout(timer); resolve();
-        }
-        if (data.error && wsPending) {
-          const p = wsPending; wsPending = null; clearTimeout(p.timer);
-          p.reject(new Error('WLED WebSocket 错误 ' + data.error));
-          socket.close();
-        }
-      };
-      socket.onerror = () => { clearTimeout(timer); reject(new Error('WebSocket 无法连接')); };
-      socket.onclose = () => {
-        clearTimeout(timer);
-        if (!welcomed) reject(new Error('WebSocket 连接已关闭'));
-        if (ws === socket) {
-          ws = null; frameSocketPromise = null; resetFrameCache();
-          if (wsPending) { const p = wsPending; wsPending = null; clearTimeout(p.timer); p.reject(new Error('WebSocket 连接中断')); }
-        }
-      };
-    });
-    try { await frameSocketPromise; } finally { frameSocketPromise = null; }
-  }
-
-  async function sendSocketCommand(payload) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) throw new Error('WebSocket 未连接');
-    if (wsPending) throw new Error('上一条设备命令尚未完成');
-    if (ws.bufferedAmount > 4096) throw new Error('设备接收缓慢，已停止积压');
-    const socket = ws;
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        if (wsPending?.timer !== timer) return;
-        wsPending = null; reject(new Error('WLED 响应超时')); socket.close();
-      }, 2500);
-      wsPending = {resolve, reject, timer};
-      try {
-        socket.send(JSON.stringify(payload));
-        // A pong is a barrier for the preceding JSON message, not an unrelated state broadcast.
-        socket.send('p');
-      } catch (error) { clearTimeout(timer); wsPending = null; reject(error); }
-    });
-  }
-
-  async function ensureIpTransport() {
-    if (isDdpMode()) {
-      if (!bridgeToken) throw new Error('请双击 Start-Pixel-DDP.cmd 打开本地 DDP 高速入口');
-      await readDeviceProfile(); ipTransport='ddp'; return;
-    }
+  async function prepareDdp() {
+    if (!isDdpMode()) throw new Error('请选择 USB / Adalight 或 DDP 输出');
+    if (!bridgeToken) throw new Error('请双击 Start-Pixel-DDP.cmd 打开本地 DDP 高速入口');
     await readDeviceProfile();
-    const mode = ui.controlMode.value;
-    if (mode === 'http') { ipTransport = 'http'; return; }
-    if (mode === 'auto' && ipTransport === 'http-fallback') return;
-    try { await openFrameSocket(); ipTransport = 'ws'; }
-    catch (error) {
-      if (mode !== 'auto') throw error;
-      closeFrameSocket(); ipTransport = 'http-fallback';
-      logLine('长连接不可用，已回退 HTTP：' + error.message);
-    }
-  }
-
-  function compensateColors(frame) {
-    const match = document.getElementById('colorMode').value === 'match';
-    const gamma = match ? Math.max(1, Math.min(4, Number(document.getElementById('colorGamma').value) || 2.8)) : 1;
-    const lut = Array.from(window.PixelStudioFramePipeline.outputLut(255,1/gamma),value=>value.toString(16).padStart(2,'0').toUpperCase());
-    const colors = [];
-    for (let i = 0; i < frame.length; i += 3) colors.push(lut[frame[i]] + lut[frame[i + 1]] + lut[frame[i + 2]]);
-    return colors;
-  }
-
-  function encodePixelPackets(colors, previous, limit) {
-    const packets = [];
-    let values = [], cursor = 0;
-    const wrap = list => ({seg:{id:0,i:list}});
-    const flush = () => { if (values.length) packets.push(wrap(values)); values = []; cursor = 0; };
-    for (let start = 0; start < colors.length;) {
-      if (previous && previous[start] === colors[start]) { start++; continue; }
-      let end = start + 1;
-      while (end < colors.length && colors[end] === colors[start]) end++;
-      const unit = () => end - start > 1 ? [start, end, colors[start]] : start === cursor ? [colors[start]] : [start, colors[start]];
-      let next = unit();
-      if (values.length && JSON.stringify(wrap(values.concat(next))).length > limit) { flush(); next = unit(); }
-      values.push(...next); cursor = end; start = end;
-    }
-    flush();
-    return packets;
   }
 
   function showStreamStats(sent, bytes, ms) {
@@ -428,76 +244,66 @@ function frameToHexList(frame) {
     statsWindow = {at:now, frames:0, bytes:0, ms:statsWindow.ms};
   }
 
-  async function sendFrameWledJson(frame, options = {}) {
-    if(ui.controlMode.value==='serial' && ui.protocol.value==='adalight')return sendFrameAdalight(frame);
+  async function sendOutputFrame(frame) {
+    if (ui.controlMode.value === 'serial') return sendFrameAdalight(frame);
     if (isDdpMode()) return sendFrameDdp(frame);
-    const generation = playback.playbackGeneration;
-    const started = performance.now();
-    if (ui.controlMode.value === 'serial') {
-      await writeLine(JSON.stringify({on:true,bri:getFrameConfig().d,seg:{id:0,i:compensateColors(frame)}}) + '\n');
-      return;
-    }
-    await ensureIpTransport();
-    if (generation !== playback.playbackGeneration) return;
-    const {w,h,d} = getFrameConfig();
-    const matrix = deviceProfile?.matrix;
-    if (matrix && (w !== matrix.w || h !== matrix.h)) throw new Error('设备为 ' + matrix.w + '×' + matrix.h + '，请点击“读取设备尺寸”后再发送');
-    const outputKey = deviceBase() + '|' + ipTransport + '|' + d;
-    const dispatch = payload => isWsMode() ? sendSocketCommand(payload) : sendFrameHttp(payload, {skipResponseRead:true});
-    if (preparedOutput !== outputKey) {
-      await dispatch({on:d > 0,bri:d,tt:0,seg:{id:0,on:true,bri:255}});
-      if (generation !== playback.playbackGeneration) return;
-      preparedOutput = outputKey; lastSentColors = null;
-    }
-    const colors = compensateColors(frame);
-    const frameKey = outputKey + '|' + w + ',' + h + '|' + ui.mapping.value + '|' + document.getElementById('colorMode').value + '|' + document.getElementById('colorGamma').value;
-    const forceFull = frameKey !== lastFrameKey || performance.now() - lastKeyframeAt > 2000;
-    const packets = encodePixelPackets(colors, forceFull ? null : lastSentColors, isWsMode() ? (deviceProfile?.maxMessage || 1200) : 6000);
-    let bytes = 0;
-    for (const payload of packets) {
-      if (generation !== playback.playbackGeneration) return;
-      await dispatch(payload); bytes += JSON.stringify(payload).length;
-    }
-    if (generation !== playback.playbackGeneration) return;
-    lastSentColors = colors; lastFrameKey = frameKey;
-    if (forceFull) lastKeyframeAt = performance.now();
-    showStreamStats(packets.length > 0, bytes, performance.now() - started);
+    throw new Error('请选择 USB / Adalight 或 DDP 输出');
   }
 
-  async function sendFrameHttp(payload, options = {}) {
-    let path = (ui.httpPath.value || '/json/state').trim();
-    if (!path.startsWith('/')) path = '/' + path;
-    const result = await fetchDeviceJSON(path, payload);
-    if (!options.skipResponseRead) logLine('HTTP 回包: ' + JSON.stringify(result));
-  }
-
-  async function sendFrameWledColorCompat(color) {
-    await sendFrameWledJson(buildSolidFrame(color));
-  }
-
-  async function sendFrameRaw(frame) {
-    // 自定义协议：按行传输十六进制分包，方便你按 ESP32 侧需求快速对接
-    const { w, h } = getFrameConfig();
-    const chunkBytes = 64;
-    await writeLine(`@WLEDRAW ${w} ${h} ${frame.length} ${chunkBytes}\n`);
-    let index = 0;
-    let chunkId = 0;
-    while (index < frame.length) {
-      const next = Math.min(index + chunkBytes, frame.length);
-      const chunk = frame.slice(index, next);
-      const hex = bytesToHex(chunk);
-      await writeLine(`@CHUNK ${chunkId} ${chunk.length} ${hex}\n`);
-      index = next;
-      chunkId++;
+  // Output readiness belongs to the adapter, not the content or scheduler.
+  async function prepareOutput(options = {}, isCurrent = () => true) {
+    if(!isCurrent())return {ready:false};
+    if(isDdpMode()){
+      if(!bridgeToken)return {ready:false,error:'DDP 需要本地服务：请启动 Start-Pixel-DDP.cmd 并从服务页面播放；USB 请在设置中选择 USB 输出。'};
+      try{deviceBase();}catch(_){return {ready:false,error:'请输入有效的 WLED 地址'};}
+      return {ready:true};
     }
-    await writeLine(`@END ${playback.currentFrame}\n`);
+    if(ui.controlMode.value!=='serial')return {ready:false,error:'请选择 USB / Adalight 或 DDP 输出'};
+    if(!writer)await connect({restore:options.restore===true});
+    if(!isCurrent()||!writer)return {ready:false};
+    if(serialLab.confirmedWriter!==writer)await testSerial();
+    if(!isCurrent())return {ready:false};
+    if(!writer||serialLab.confirmedWriter!==writer)return {
+      ready:false,error:'USB 已打开，但尚未收到 WLED 握手响应。请查看设置中的连接诊断，并确认串口、波特率和固件。'
+    };
+    return {ready:true};
+  }
+
+  function resetStats(now){statsWindow={at:now,frames:0,bytes:0,ms:0};}
+  function stopOutput(reason){
+    serialStopHold();stopDdpPlayback();
+    if(reason)logLine(reason);
+  }
+
+  function stopSerialOutput() {
+    // Closing an idle serial connection must not stop a different output route.
+    if(ui.controlMode.value==='serial'){
+      if(playback.running)stopLoop('串口断开');
+      else stopBtn(false);
+    }
+  }
+
+  function releaseSerialConnection() {
+    serialResetSession();
+    // Detach synchronously, then release only this connection's resources.
+    // A later connect waits for the queue instead of sharing mutable globals.
+    const oldReader=reader,oldWriter=writer,oldPort=port,readTask=serialLab.readTask;
+    reader=null;writer=null;port=null;serialLab.readTask=null;
+    serialClosing=serialClosing.catch(()=>{}).then(async()=>{
+      if(oldReader){
+        try{await oldReader.cancel();if(readTask)await readTask;}catch(_){}
+        try{oldReader.releaseLock();}catch(_){}
+      }
+      if(oldWriter){try{oldWriter.releaseLock();}catch(_){}}
+      if(oldPort){try{await oldPort.close();}catch(_){}}
+    });
+    return serialClosing;
   }
 
   async function connect(options = {}) {
     if (selectingSerial) return;
-    serialResetSession();
     if (ui.controlMode.value !== 'serial') {
-      try { await ensureIpTransport(); setStatus(isDdpMode() ? 'DDP 服务就绪，点击开始发送进入实时模式' : isWsMode() ? 'WLED 长连接就绪' : 'WLED HTTP 就绪', 'ok'); }
+      try { await prepareDdp(); setStatus('DDP 服务就绪，点击开始发送进入实时模式', 'ok'); }
       catch (error) { setStatus('连接失败：' + error.message, 'err'); }
       return;
     }
@@ -508,68 +314,65 @@ function frameToHexList(frame) {
     }
 
     selectingSerial = true;
-    let selected = null, opened = false;
+    const generation=++serialConnectionGeneration;
+    const current=()=>generation===serialConnectionGeneration&&ui.controlMode.value==='serial';
+    let selected=null,opened=false,committed=false,selectedWriter=null,selectedReader=null;
     try {
       await window.pixelStudioDesktop?.prepareSerialSelection(options.restore===true);
+      if(!current())return;
       selected = await navigator.serial.requestPort();
-      // Cancellation leaves the existing connection intact. Release it only
-      // once a replacement has actually been selected.
-      if (port || writer || reader) await disconnect();
-      port = selected;
+      if(!current())return;
+      // Cancelling the chooser leaves the current connection untouched.
+      // Replacing it releases resources without cancelling this same attempt.
+      if(port||writer||reader){stopSerialOutput();await releaseSerialConnection();}
+      else await serialClosing;
+      if(!current())return;
+      serialResetSession();
       const baudRate = withNum(ui.baudRate.value, 115200);
-      await port.open({ baudRate });
-      opened = true;
-      writer = port.writable.getWriter();
-      serialLab.activeBaud=Number(ui.baudRate.value)||115200;
-      const serialUsbInfo=port.getInfo();
+      await selected.open({ baudRate });
+      opened=true;
+      if(!current())return;
+      selectedWriter=selected.writable.getWriter();
+      const serialUsbInfo=selected.getInfo();
+      if(selected.readable)selectedReader=selected.readable.getReader();
+      // Publish only a fully opened, still-current connection.
+      port=selected;writer=selectedWriter;reader=selectedReader;committed=true;
+      serialLab.activeBaud=baudRate;
       serialLab.nativeUsb=serialUsbInfo.usbVendorId===0x303a && serialUsbInfo.usbProductId===0x1001;
       serialNote((serialLab.nativeUsb?"已连接 Espressif 原生 USB。":"串口已打开。")+" 请点击串口诊断；打开端口不等于 WLED 已响应。");
-      if (port.readable) {
-        reader = port.readable.getReader();
-        serialLab.readTask=readLoop();
-      }
+      if(reader)serialLab.readTask=readLoop();
       setStatus(`已连接（baud ${baudRate}）`, 'ok');
       logLine('串口已连接');
       await window.pixelStudioDesktop?.confirmSerialConnection();
     } catch (err) {
-      if (port === selected) {
-        if (opened) await disconnect();
-        else port = null;
-      }
+      if(committed&&port===selected){stopSerialOutput();await releaseSerialConnection();}
+      if(!current())return;
       if (err.name === 'NotFoundError') {
         setStatus('已取消选择串口');
         return;
       }
       setStatus(`连接失败：${err.message}`, 'err');
       logLine(`连接失败: ${err.message}`);
-    } finally { selectingSerial = false; }
+    } finally {
+      // A cancelled open may complete after disconnect has already returned.
+      // Its local candidate was never published, but must still be closed.
+      if(!committed){
+        if(selectedReader){
+          try{await selectedReader.cancel();}catch(_){}
+          try{selectedReader.releaseLock();}catch(_){}
+        }
+        if(selectedWriter){try{selectedWriter.releaseLock();}catch(_){}}
+        if(opened){try{await selected.close();}catch(_){}}
+      }
+      selectingSerial=false;
+    }
   }
 
   async function disconnect() {
-    if(ui.controlMode.value==='serial' && playback.running)stopLoop('串口断开');
-    serialResetSession();
-    stopBtn(false);
-    closeFrameSocket();
-    ipTransport = 'http';
-    if (ws) {
-      try { ws.close(); } catch (_) {}
-      ws = null;
-      logLine('WebSocket 已断开');
-    }
-    if (reader) {
-      try { await reader.cancel();
-        if(serialLab.readTask)await serialLab.readTask; } catch (_) {}
-      try { reader.releaseLock(); } catch (_) {}
-      reader = null;
-    }
-    if (writer) {
-      try { writer.releaseLock(); } catch (_) {}
-      writer = null;
-    }
-    if (port) {
-      try { await port.close(); } catch (_) {}
-      port = null;
-    }
+    const generation=++serialConnectionGeneration;
+    stopSerialOutput();
+    await releaseSerialConnection();
+    if(generation!==serialConnectionGeneration)return;
     setStatus('已断开');
     logLine('串口已断开');
   }
@@ -598,14 +401,6 @@ function frameToHexList(frame) {
     }
   }
 
-  async function testHttp() {
-    try {
-      await readDeviceProfile(true);
-      if (ui.controlMode.value !== 'serial') await ensureIpTransport();
-      setStatus('设备可达，颜色配置已读取' + (isWsMode() ? '，长连接就绪' : ''), 'ok');
-    } catch (error) { setStatus('连接测试失败：' + error.message, 'err'); }
-  }
-
   async function testSerial() {
     if(ui.controlMode.value!=='serial') {serialNote('先把控制方式切换到串口。IP / DDP 无需此诊断。');return;}
     if(!writer || !reader){serialNote('请先连接 ESP32 的串口。');return;}
@@ -630,17 +425,6 @@ function frameToHexList(frame) {
       }
     }catch(error){serialNote('诊断失败：'+error.message,'error');}
     finally{if(button)button.disabled=false;}
-  }
-
-  function buildSolidFrame(color) {
-    const { w, h } = getFrameConfig();
-    const frame = new Uint8Array(w * h * 3);
-    for (let i = 0; i < frame.length; i += 3) {
-      frame[i] = color[0];
-      frame[i + 1] = color[1];
-      frame[i + 2] = color[2];
-    }
-    return frame;
   }
 
   function isDdpMode() { return ui.controlMode.value === 'ddp'; }
@@ -715,7 +499,6 @@ function frameToHexList(frame) {
         return null;
       }
       ddp.session={...result,key,compatibilityKey,statsAt:-Infinity};
-      ipTransport='ddp';
       logLine((result.autonomous?'DDP 后台动画已启动，目标 '+result.targetFps+' FPS，切换标签页不影响发送':'DDP 图片/视频由网页供帧，请保持页面在前台')+'；每帧 '+result.packetCount+' 个 UDP 包；'+(result.gammaCompensated?'按设备实时 Gamma 补偿':'直接发送原始 RGB'));
       return ddp.session;
     })();
@@ -748,5 +531,5 @@ function frameToHexList(frame) {
       ' 帧/s · '+(Number(stats.frameMs)||0).toFixed(1)+' ms/帧 · '+(Number(stats.kbps)||0).toFixed(1)+
       ' KB/s · 调度跳帧 '+(Number(stats.missed)||0)+(stats.frames?'':' · 正在采样');
   }
- return {isHttpMode,isWsMode,getHttpTarget,getWsUrl,wsSendPayload,serialNote,serialResetSession,serialAcceptLine,serialQuery,sendFrameAdalight,serialHoldImage,serialUartFps,serialStopHold,bytesToHex,pixelToHex,frameToHexList,buildFramePairs,frameToRgbTriples,writeLine,deviceBase,fetchDeviceJSON,readDeviceProfile,resetFrameCache,closeFrameSocket,openFrameSocket,sendSocketCommand,ensureIpTransport,compensateColors,encodePixelPackets,showStreamStats,sendFrameWledJson,sendFrameHttp,sendFrameWledColorCompat,sendFrameRaw,connect,disconnect,readLoop,testHttp,testSerial,buildSolidFrame,isDdpMode,ddpTargetFps,bridgeRequest,stopDdpPlayback,ensureDdpSession,sendFrameDdp,updateBackgroundStats,state:{get port(){return port;},set port(value){port=value;},get writer(){return writer;},set writer(value){writer=value;},get reader(){return reader;},set reader(value){reader=value;},get ws(){return ws;},set ws(value){ws=value;},get ipTransport(){return ipTransport;},set ipTransport(value){ipTransport=value;},get deviceProfile(){return deviceProfile;},set deviceProfile(value){deviceProfile=value;},get statsWindow(){return statsWindow;},set statsWindow(value){statsWindow=value;},get serialLab(){return serialLab;},get bridgeToken(){return bridgeToken;}}};
+ return {prepareOutput,resetStats,stopOutput,serialNote,serialUartFps,serialStopHold,sendFrameAdalight,deviceBase,readDeviceProfile,resetFrameCache,showStreamStats,sendOutputFrame,connect,disconnect,testSerial,isDdpMode,ddpTargetFps,bridgeRequest,stopDdpPlayback,ensureDdpSession,sendFrameDdp,updateBackgroundStats,state:{get port(){return port;},set port(value){port=value;},get writer(){return writer;},set writer(value){writer=value;},get reader(){return reader;},set reader(value){reader=value;},get deviceProfile(){return deviceProfile;},set deviceProfile(value){deviceProfile=value;},get statsWindow(){return statsWindow;},set statsWindow(value){statsWindow=value;},get serialLab(){return serialLab;},get bridgeToken(){return bridgeToken;}}};
 });

@@ -14,9 +14,6 @@ PixelStudioPanel::PreviewParts PixelStudioPanel::createPreviewPane(
     auto* previewLayout = new QVBoxLayout(previewPane);
     previewLayout->setContentsMargins(0, 0, 8, 0);
     previewLayout->setSpacing(6);
-    dimensions_ = new StudioLabel(previewPane);
-    dimensions_->setWordWrap(true);
-    dimensions_->hide();
     auto* sizeRow = new QHBoxLayout;
     width_ = new StudioSpinBox(previewPane);
     height_ = new StudioSpinBox(previewPane);
@@ -32,8 +29,6 @@ PixelStudioPanel::PreviewParts PixelStudioPanel::createPreviewPane(
     auto* presetRow = new QHBoxLayout;
     presetRow->addWidget(size15);
     presetRow->addWidget(size14);
-    outputTitle_ = new StudioLabel(previewPane);
-    outputTitle_->hide();
     auto* boardSlot = new QWidget(previewPane);
     boardSlot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     outputBoard_ = new PixelBoard(workspace);
@@ -41,11 +36,7 @@ PixelStudioPanel::PreviewParts PixelStudioPanel::createPreviewPane(
     cad_ = new StudioCheckBox(text("圆角预览"), previewPane);
     cad_->setChecked(settings.value(QStringLiteral("cad"), true).toBool());
     outputBoard_->setCadAppearance(cad_->isChecked());
-    auto* previewNote = new StudioLabel(text("未播放时显示待发送画面；播放中显示真实输出帧。"), previewPane);
-    previewNote->setWordWrap(true);
-    previewNote->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-    previewNote->hide();
-    outputBoard_->setToolTip(previewNote->text());
+    outputBoard_->setToolTip(text("预览持续播放；播放按钮只控制设备输出。"));
     // Keep the controls packed at the top; spare height belongs below the
     // screen rather than becoming gaps between the heading and size inputs.
     previewLayout->addStretch(1);

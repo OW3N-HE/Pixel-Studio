@@ -34,8 +34,14 @@ async function run(){
   }
   assert.equal(starts,1,'Animation updates restarted transport');assert.equal(stops,0);
   assert.equal(renders.length,101);assert.equal(sent.length,101);
+  assert(messages.some(message=>message.type==='ready'),'Worker readiness must still be reported');
+  const stats=messages.filter(message=>message.type==='stats');
+  assert(stats.length>0,'Removing unused frame telemetry must preserve output statistics');
+  assert(stats.every(message=>message.stats.frames>0&&Number.isFinite(message.stats.fps)&&message.stats.targetFps===60));
+  assert(!messages.some(message=>message.type==='error'),'Worker must not fail while outputting frames');
+  assert(!messages.some(message=>message.type==='outputFrame'),'Unused frame telemetry must not be emitted');
   parent.emit('message',{type:'stop'});parent.emit('message',{type:'stop'});
   assert.equal(stops,1);assert.equal(closed,1);assert.equal(timers.size,0);
-  console.log('PASS: 100 fast animation updates retained sample and connection; 101 output frames; single start and idempotent stop.');
+  console.log('PASS: 100 fast animation updates retained sample and connection; 101 output frames; readiness/statistics preserved without unused frame telemetry; single start and idempotent stop.');
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});

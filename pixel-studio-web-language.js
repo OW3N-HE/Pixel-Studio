@@ -25,9 +25,9 @@
   const catalog = {"秋日小路":"Autumn Lane","雪夜石灯":"Snow Lantern","极简 · 三点一线":"Minimal · three marks","低细节 · 大块面":"Bold · big shapes","高细节 · 写实":"Detailed · painterly","几何 · 对称":"Geometric · symmetric","剪影 · 逆光":"Silhouette · backlit","抽象 · 光带":"Abstract · light bands",
     '关于 Pixel Studio':'About Pixel Studio','关于':'About','关闭':'Close',
     '打开设置':'Open settings','选择文件':'Choose file','尚未选择文件':'No file selected',
-    '高级设置与连接诊断':'Advanced settings and diagnostics','自动限制帧率':'Automatically limit frame rate',
-    '稳定优先':'Prioritize stability','USB 协议':'USB protocol','波特率':'Baud rate',
-    'HTTP 路径':'HTTP path','连接操作':'Connection actions','测试色':'Test color','预览操作':'Preview actions',
+    
+    
+    
     '新增':'New','手绘作品':'Hand-drawn','手绘':'Hand-drawn',
     '设置':'Settings','语言':'Language','主题':'Theme','界面设置':'Interface settings',
     'WLED 输出设置':'WLED output settings','输出方式':'Output','USB 端口':'USB port','IP 地址':'IP address',
@@ -79,24 +79,24 @@
     'USB 已打开，但尚未收到 WLED 握手响应。请查看设置中的连接诊断，并确认串口、波特率和固件。':'USB is open, but WLED has not responded. Check the serial port, baud rate, firmware and connection diagnostics in Settings.',
     '当前浏览器不支持 Web Serial，请使用桌面版 Chrome 或 Edge':'Web Serial is unavailable. Use desktop Chrome or Edge.',
     '当前浏览器不支持 Web Serial':'Web Serial is unavailable in this browser',
-    'HTTP 地址不合法':'Invalid HTTP address','请先连接串口再发送':'Connect a serial port before sending',
-    '请先选择图片/视频文件':'Select an image or video first','请先选择文件':'Select a file first',
-    'HTTP + JSON 单帧数据过大，先降分辨率再测试':'The HTTP / JSON frame is too large. Reduce the resolution and try again.',
+    '请先连接串口再发送':'Connect a serial port before sending',
+    '请先选择图片/视频文件':'Select an image or video first',
+    
     'DDP 服务就绪，点击开始发送进入实时模式':'DDP is ready. Press Play to start realtime output',
-    'WLED 长连接就绪':'WLED WebSocket ready','WLED HTTP 就绪':'WLED HTTP ready',
+    
     '已断开':'Disconnected','已连接（baud ':'Connected (baud ',
-    '设备可达，颜色配置已读取':'Device reachable; color settings loaded','，长连接就绪':'; WebSocket ready',
-    '测试颜色已发送到整屏':'Test color sent to the entire matrix',
+    '设备可达，颜色配置已读取':'Device reachable; color settings loaded',
+    
     '视频已就绪，可点击开始发送':'Video ready. Press Play to send',
     '图片已就绪，可点击开始发送':'Image ready. Press Play to send','图片读取失败':'Unable to read the image',
     '已切换到文件模式，请选择图片或视频':'Media mode selected. Choose an image or video',
     '媒体模式：请选择图片或视频':'Media mode: choose an image or video',
     '切换到媒体模式':'Switching to media mode','动画预览中':'Previewing animations',
     '图片已就绪':'Image ready','视频已就绪':'Video ready',
-    '正在本地预览，点击开始发送可控制 WLED':'Previewing locally. Press Play to send to WLED',
-    '预览已清空':'Preview cleared','已使用设备尺寸 ':'Using device matrix size ',
+    
+    '已使用设备尺寸 ':'Using device matrix size ',
     '发送失败：':'Output failed: ','连接失败：':'Connection failed: ',
-    '连接测试失败：':'Connection test failed: ','发送测试色失败：':'Test color failed: ',
+    '连接测试失败：':'Connection test failed: ',
     '后台停止失败：':'Unable to stop background playback: ',
     'DDP 后台播放已停止':'DDP background playback stopped',
     'DDP 后台 · 已无缝切换至 ':'DDP background · Selected: ',
@@ -108,35 +108,36 @@
   Object.assign(catalog, {
     '跟随系统':'Follow system',
     '播放控制':'Playback controls','动画分类':'Animation category','搜索动画':'Search animations',
-    '收起设置':'Collapse settings','网页主题':'Page theme','发送测试颜色':'Send test colors',
+    '收起设置':'Collapse settings','网页主题':'Page theme',
     '连接所选通道':'Connect','断开':'Disconnect','串口诊断':'Serial diagnostics',
-    '清空预览':'Clear preview','运行日志':'Diagnostic log','红色':'Red','绿色':'Green','蓝色':'Blue','白色':'White','黑屏':'Black',
+    '运行日志':'Diagnostic log','红色':'Red','绿色':'Green','蓝色':'Blue','白色':'White','黑屏':'Black',
     '尚未连接':'Not connected','我的图片 / 视频':'My image / video',
     '像素预览外观':'Pixel preview appearance','像素外观':'Pixel appearance','CAD 圆角':'CAD rounded pixels',
     '原始像素':'Square pixels','仅影响预览，不改变发送数据':'Preview only; output data is unchanged',
     '参考手绘 CAD：开孔 6.325 mm，中心距 7.125 mm，圆角 R0.8 mm':'CAD reference: 6.325 mm aperture, 7.125 mm pitch, R0.8 mm corners',
     '选择图片或视频文件后，可以预览并发送到 WLED。':'Choose an image or video to preview and send to WLED.',
     '已取消选择串口':'Port selection cancelled',
+    '请选择 USB / Adalight 或 DDP 输出':'Select USB / Adalight or DDP output',
     '未填写 WLED 地址':'Enter a WLED address', '请输入有效的 WLED 地址':'Enter a valid WLED address',
-    'WebSocket 未连接':'WebSocket is not connected','串口未连接':'Serial port is not connected',
+    '串口未连接':'Serial port is not connected',
     '请先连接串口并点击「串口诊断」，收到 WLED 回包后才能发送。':'Connect a serial port and run Serial diagnostics. Output requires a WLED response.',
     '串口诊断正在进行，请稍候。':'Serial diagnostics are running. Please wait.',
     'Adalight 帧必须为 1–65535 个 RGB 像素。':'An Adalight frame must contain 1 to 65535 RGB pixels.',
-    'WLED 错误 ':'WLED error ', 'WLED WebSocket 错误 ':'WLED WebSocket error ',
-    'WebSocket 连接超时':'WebSocket connection timed out','WebSocket 无法连接':'Unable to connect to WebSocket',
-    'WebSocket 连接已关闭':'WebSocket connection closed','WebSocket 连接中断':'WebSocket connection interrupted',
-    '上一条设备命令尚未完成':'The previous device command is still pending',
-    '设备接收缓慢，已停止积压':'The device is receiving slowly. Output stopped to prevent a backlog.',
-    'WLED 响应超时':'WLED response timed out',
+    'WLED 错误 ':'WLED error ', 
+    
+    
+    
+    
+    
     '请双击 Start-Pixel-DDP.cmd 打开本地 DDP 高速入口':'Run Start-Pixel-DDP.cmd and open the local DDP page',
     '请双击 Start-Pixel-DDP.cmd，从本地高速入口打开 DDP 模式':'Run Start-Pixel-DDP.cmd and open DDP mode from the local page',
     'DDP 需要本地服务：请双击 Start-Pixel-DDP.cmd，从 127.0.0.1:8766 打开':'DDP requires the local bridge. Run Start-Pixel-DDP.cmd and open 127.0.0.1:8766',
     '本地 DDP 服务错误 ':'Local DDP bridge error ',
     '设备为 ':'Device matrix: ', '，请点击“读取设备尺寸”后再发送':'. Click Read matrix size before sending',
-    'HTTP 模式不支持 raw-bin，请切回串口 + raw-bin':'HTTP does not support raw-bin. Use serial output with raw-bin.',
+    
     '无法生成动态帧':'Unable to generate an animation frame',
     '上一帧尚未结束，请稍后再试':'The previous frame is still pending. Try again shortly.',
-    '二进制串口协议不能用于 IP 控制':'Binary serial protocols cannot be used for IP control',
+    
     '设备未报告二维矩阵尺寸，请手动输入':'The device did not report matrix dimensions. Enter them manually.',
     ' · 实际发送 ':' · Actual ', ' 帧/s · ':' FPS · ', ' ms/帧 · ':' ms/frame · ',
     ' · 调度跳帧 ':' · Skipped ', ' · 正在采样':' · Sampling', ' · 设备 ':' · Device ',
@@ -159,13 +160,13 @@
     ' 尚不能确认串口控制可用。请核对端口、固件的 USB CDC / UART 编译选项及串口引脚占用；提高波特率不能解决接口未启用。':' Serial control is unconfirmed. Check the port, firmware USB CDC / UART build options and pin conflicts. A higher baud rate cannot enable an inactive interface.',
     '诊断失败：':'Diagnostics failed: ',
     'Adalight RGB（WLED 原生，先诊断）':'Adalight RGB (WLED native; run diagnostics first)',
-    'WLED JSON（兼容模式）':'WLED JSON (compatibility mode)',
+    
     '串口实验室 · Adalight / USB CDC':'Serial lab · Adalight / USB CDC',
     '先停止播放，再连接 ESP32 串口并运行诊断。只有收到 WLED 回包，才会开放 Adalight 发送。':'Stop playback, connect the ESP32 serial port and run diagnostics. Adalight output requires a WLED response.',
     '点击“选择 USB / Adalight”后，由 Chrome 或 Edge 显示系统串口选择窗口；网页不会保存或替别人决定 COM 端口。':'Use Select port to choose your controller in the browser serial-port dialog.',
     'UART 两端波特率必须一致，115200 对 15 × 27 RGB 理论约 9 FPS。PixelStudio-C3-USB-60 定制固件的原生 USB CDC 支持 60 FPS；网络 DDP 同样支持 60 FPS。':'UART baud rates must match. At 115200 baud, a 15 × 27 RGB matrix is limited to about 9 FPS. Native USB CDC with PixelStudio-C3-USB-60 firmware and network DDP support 60 FPS.',
     'Adalight 没有设备端逐帧确认。颜色与走线受 WLED 实时接收设置影响，请保留现有电流限制；不要同时运行 IP/DDP 播放。':'Adalight has no per-frame device acknowledgement. WLED realtime settings affect colors and pixel order. Keep current limits and do not run IP/DDP output simultaneously.',
-    'IP / HTTP 无需串口连接。USB / Adalight 请使用支持 Web Serial 的桌面版 Chrome 或 Edge，并由用户亲自选择设备。':'IP / HTTP does not need a serial connection. For USB / Adalight, use desktop Chrome or Edge with Web Serial and select the device yourself.'
+    'IP / DDP 无需串口连接。USB / Adalight 请使用支持 Web Serial 的桌面版 Chrome 或 Edge，并由用户亲自选择设备。':'IP / DDP does not need a serial connection. For USB / Adalight, use desktop Chrome or Edge with Web Serial and select the device yourself.'
   });
   Object.assign(catalog,{"雨窗咖啡":"Rainy Window Cafe","水母花园":"Jellyfish Garden","星际列车":"Star Train","月夜露营":"Moonlit Camp","四季小树":"Four Seasons Tree","机械花园":"Mechanical Garden"});
   Object.assign(catalog,{

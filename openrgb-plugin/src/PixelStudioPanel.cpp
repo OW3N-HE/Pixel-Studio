@@ -73,8 +73,6 @@ PixelStudioPanel::PixelStudioPanel(bool darkTheme, QWidget* parent) : QWidget(pa
     initializePlayback();
     initializeHelper();
     updateControls();
-    setLabelText(dimensions_, text("实时画面 · %1 x %2  |  %3 PX"),
-        {QString::number(width_->value()), QString::number(height_->value()), QString::number(width_->value() * height_->value())});
     languageUiReady_ = true;
     retranslateUi();
     // Host insertion may affect automatic language detection; never resize the host.

@@ -278,6 +278,25 @@
     const roundedLabel = make('label', 'ps-check');
     roundedLabel.append(rounded, document.createTextNode('圆角预览')); size.append(roundedLabel);
     row(output, '屏幕尺寸', [size]);
+    const resolutionNotice=make('span','ps-size-notice');
+    resolutionNotice.id='psResolutionNotice';resolutionNotice.setAttribute('role','status');
+    resolutionNotice.setAttribute('data-update-ui','');size.insertBefore(resolutionNotice,roundedLabel);
+    for(const id of ['matrixW','matrixH'])$(id).setAttribute('aria-describedby','psResolutionNotice');
+    const syncResolutionNotice=()=>{
+      const {maxAxis,maxPixels}=window.PixelStudioRenderSettings.dimensionLimits;
+      const en=document.documentElement.lang==='en';
+      const guidance=en
+        ? `1-${maxAxis}; max ${maxPixels} px`
+        : `1~${maxAxis}，≤${maxPixels} 像素`;
+      const {w,h}=api.getFrameConfig();
+      const invalid=api.resolutionError
+        ? (en?`; invalid size, keeping ${w} x ${h}`:`；输入无效，仍用 ${w}×${h}`)
+        : '';
+      resolutionNotice.textContent=guidance+invalid;
+      resolutionNotice.hidden=false;
+    };
+    window.addEventListener('pixel-studio-resolution-change',syncResolutionNotice);
+    syncResolutionNotice();
     row(output, '快捷尺寸', [...document.querySelectorAll('.presets button')], 'ps-presets');
     row(output, '排列', [$('mapping')]);
     const fpsRange = make('input'); fpsRange.type = 'range';
@@ -337,22 +356,11 @@
       mediaClose.addEventListener('click', () => mediaDialog.close());
       mediaDialog.addEventListener('close', () => importButton.focus());
     }
-    const advanced = make('details', 'ps-advanced');
-    advanced.hidden = true;
-    advanced.append(make('summary', '', '高级设置与连接诊断')); body.append(advanced);
     row(output, '颜色还原', [$('colorMode')]);
     // Retain the internal value for the shared renderer and transport code,
     // without exposing a manual Gamma control in the settings dialog.
     $('colorGamma').hidden = true;
     output.append($('deviceInfo'));
-    const safe = make('label', 'ps-check'); safe.append($('safeMode'), document.createTextNode('自动限制帧率'));
-    row(advanced, '稳定优先', [safe]); row(advanced, 'USB 协议', [$('protocol')]);
-    row(advanced, '波特率', [$('baudRate')]); row(advanced, 'HTTP 路径', [$('httpPath')]);
-    row(advanced, '连接操作', ['connectBtn','disconnectBtn','testHttpBtn','testSerialBtn'].map($), 'ps-buttons');
-    if ($('serialDiagnostic')) advanced.append($('serialDiagnostic'));
-    row(advanced, '测试色', ['testRedBtn','testGreenBtn','testBlueBtn','testWhiteBtn','testBlackBtn'].map($), 'ps-buttons');
-    row(advanced, '预览操作', [$('previewOnlyBtn'), $('clearPreviewBtn')], 'ps-buttons');
-    advanced.append($('log'));
     const updateArea = make('fieldset', 'ps-settings-group');
     updateArea.id = 'psSoftwareUpdates';
     updateArea.setAttribute('data-update-ui', '');
@@ -535,7 +543,7 @@
     queueMicrotask(renderUpdate);
     // Retain IDs used by the renderer even when their old presentation is gone.
     const retained = make('div'); retained.hidden = true;
-    ['pixelCount','screenResolution','colorGamma'].forEach(id => { if ($(id)) retained.append($(id)); });
+    ['pixelCount','screenResolution','colorGamma','protocol','baudRate','connectBtn','disconnectBtn','testSerialBtn','serialDiagnostic','log'].forEach(id => { if ($(id)) retained.append($(id)); });
     document.body.append(retained);
     $('psControlBank').remove(); appearance?.remove();
     rounded.addEventListener('change', () => { appearanceButtons[rounded.checked ? 0 : 1]?.click(); updateBoardGeometry(); });
@@ -648,7 +656,6 @@
       updateGalleryEdges();
     }
     $('animationMode').addEventListener('change',()=>{syncGallery();revealSelectedCard();}); syncGallery();
-    $('randomAnimationBtn').hidden = true;
     const shuffle = make('label', 'ps-shuffle'), shuffleCheck = make('input'); shuffleCheck.type = 'checkbox'; shuffleCheck.id = 'psShuffleEnabled';
     shuffle.append(shuffleCheck, document.createTextNode('随机播放'));
     const interval = make('input'); interval.type = 'number'; interval.id = 'psShuffleInterval'; interval.min = '3'; interval.max = '3600'; interval.step = '1'; interval.value = '20'; interval.disabled = true;
@@ -745,13 +752,12 @@
     footer.append(toggle, messages, $('streamStats')); controls.after(footer);
     $('startBtn').hidden = true; $('stopBtn').hidden = true;
     document.querySelector('.playback-actions').hidden = true;
-    document.querySelector('.now-playing').hidden = true; $('progress').hidden = true;
     let lastPlaying, lastPlaybackLanguage;
     function syncPlayback() {
       const playing = api.playing;
       const english = document.documentElement.lang === 'en';
       const output=api.outputStatus;
-      const transports={usb:'USB',ddp:'IP / DDP',ws:'IP / WebSocket',http:'IP / HTTP',auto:english?'IP / Auto':'IP / 自动'};
+      const transports={usb:'USB',ddp:'IP / DDP'};
       const states=english?{disconnected:'Not connected',unverified:'Open, not verified',connected:'Connected',sending:'Sending',idle:'Awaiting playback',unavailable:'Bridge unavailable'}:{disconnected:'未连接',unverified:'已打开，待验证',connected:'已连接',sending:'发送中',idle:'待发送',unavailable:'本地服务未启动'};
       const connectionText=transports[output.transport]+' · '+states[output.state];
       if (!playing) {
@@ -798,8 +804,7 @@
     window.addEventListener('pagehide', () => { clearInterval(stateTimer); clearInterval(shuffleTimer); });
     function updateBoardGeometry() {
       const preview=$('preview');
-      const columns=Math.max(1,Number($('matrixW').value));
-      const rows=Math.max(1,Number($('matrixH').value));
+      const {w:columns,h:rows}=api.getFrameConfig();
       const pitch=(parseFloat(preview.style.width)||preview.getBoundingClientRect().width)/columns;
       const cad=preview.classList.contains('cad-pixels');
       const inset=cad?pitch*(0.8/7.125)/2:0;
@@ -815,27 +820,31 @@
       paintBoard();
     }
     const studio = document.querySelector('.studio-stage');
+    const libraryToolbar = studio.querySelector('.library-toolbar');
     function resizePreview() {
       const preview=$('preview');
-      // Measure the unconstrained library before fitting both visible bottoms.
-      well.style.maxHeight='';
-      const width=Math.max(1,Number($('matrixW').value)),height=Math.max(1,Number($('matrixH').value));
+      const {w:width,h:height}=api.getFrameConfig();
       const insetFactor=preview.classList.contains('cad-pixels')?0.8/7.125:0;
       const stageStyle=getComputedStyle(stage);
       const stageHorizontalInset=(parseFloat(stageStyle.paddingLeft)||0)+(parseFloat(stageStyle.paddingRight)||0);
+      const toolbar=libraryToolbar.getBoundingClientRect();
+      // Fit from the parent, never by temporarily expanding the fitted scrollport.
+      const targetHeight=Math.max(1,studio.getBoundingClientRect().bottom-toolbar.top);
       if(window.innerWidth>760){
-        const toolbar=studio.querySelector('.library-toolbar').getBoundingClientRect();
-        const targetHeight=Math.max(1,well.getBoundingClientRect().bottom-toolbar.top);
         const targetPitch=Math.max(0.01,targetHeight-6)/(height+insetFactor);
         const requiredColumn=targetPitch*(width+insetFactor)+6;
         const columnGap=parseFloat(getComputedStyle(studio).columnGap)||16;
-        const maxColumn=Math.max(120,studio.clientWidth-columnGap-320);
+        // Media actions and translated labels can need more than the old 320px
+        // allowance. Overflow otherwise toggles the page scrollbars every frame.
+        const items=[...libraryToolbar.children].filter(item=>!item.hidden&&getComputedStyle(item).display!=='none');
+        const toolbarGap=parseFloat(getComputedStyle(libraryToolbar).columnGap)||0;
+        const minimumLibraryWidth=Math.max(320,items.reduce((total,item)=>total+
+          (item.id==='librarySearch'?90:item.getBoundingClientRect().width),0)+Math.max(0,items.length-1)*toolbarGap);
+        const maxColumn=Math.max(120,studio.clientWidth-columnGap-minimumLibraryWidth);
         const column=Math.max(120,Math.min(maxColumn,requiredColumn));
         studio.style.setProperty('--preview-column',column+'px');
-      }else{studio.style.removeProperty('--preview-column');}
+      }else{studio.style.removeProperty('--preview-column');well.style.maxHeight='';}
       frame.style.transform='';
-      const toolbar=studio.querySelector('.library-toolbar').getBoundingClientRect();
-      const targetHeight=Math.max(1,well.getBoundingClientRect().bottom-toolbar.top);
       // Fixed 3px outer edge on each side; only the black inset scales.
       const availableHeight=window.innerWidth>760?targetHeight:Math.max(1,stage.clientHeight-12);
       const heightPitch=Math.max(0.01,availableHeight-6)/(height+insetFactor);
@@ -843,7 +852,7 @@
       preview.style.width=(pitch*width)+'px';preview.style.height=(pitch*height)+'px';
       updateBoardGeometry();
       if(window.innerWidth>760){
-        const toolbarToWellTop=well.getBoundingClientRect().top-toolbar.top;
+        const toolbarToWellTop=toolbar.height+(parseFloat(getComputedStyle(libraryToolbar.parentElement).rowGap)||0);
         const visiblePreviewHeight=frame.getBoundingClientRect().height+6;
         well.style.maxHeight=Math.max(1,visiblePreviewHeight-toolbarToWellTop)+'px';
         const bezel=frame.getBoundingClientRect();
@@ -864,8 +873,8 @@
       });
     }
     window.pixelStudioResizePreview = schedulePreviewResize;
-    // Do not mutate observed dimensions inside ResizeObserver delivery.
-    const resize = new ResizeObserver(schedulePreviewResize); resize.observe(studio); resize.observe(well);
+    // Observe layout inputs, not the scrollport whose max-height we just fitted.
+    const resize = new ResizeObserver(schedulePreviewResize); resize.observe(studio); resize.observe(libraryToolbar);
     $('matrixW').addEventListener('change', schedulePreviewResize); $('matrixH').addEventListener('change', schedulePreviewResize);
     window.addEventListener('resize',schedulePreviewResize);
     window.addEventListener('pixel-studio-language-change',schedulePreviewResize);

@@ -167,11 +167,6 @@ void PixelStudioPanel::handleMessage(const QJsonObject& message) {
             && message.value(QStringLiteral("revision")).toInt() >= previewSequence_) {
             outputBoard_->setFrame(w, h, QByteArray::fromBase64(message.value(QStringLiteral("rgb")).toString().toLatin1()));
         }
-    } else if (type == QStringLiteral("outputFrame")) {
-        // Output telemetry must not replace the continuously running preview.
-        const QString transport = message.value(QStringLiteral("transport")).toString() == QStringLiteral("usb")
-            ? text("USB 有线") : text("DDP 网络");
-        setLabelText(outputTitle_, text("实时输出 · %1"), {transport});
     } else if (type == QStringLiteral("thumbnail")) {
         auto* item = cards_.value(message.value(QStringLiteral("mode")).toString(), nullptr);
         if (!item) return;
@@ -187,9 +182,6 @@ void PixelStudioPanel::handleMessage(const QJsonObject& message) {
         }
         if (!streaming_) {
             setLabelText(stats_, text("当前未发送"));
-            setLabelText(outputTitle_, text("实时输出 · 已停止"));
-        } else {
-            setLabelText(outputTitle_, text("实时输出 · 正在连接"));
         }
         updateControls();
     } else if (type == QStringLiteral("stats")) {

@@ -134,8 +134,6 @@ QJsonObject PixelStudioPanel::configuration() const {
     };
 }
 void PixelStudioPanel::updatePreview() {
-    setLabelText(dimensions_, text("实时画面 · %1 x %2  |  %3 PX"),
-        {QString::number(width_->value()), QString::number(height_->value()), QString::number(width_->value() * height_->value())});
     if (!ready_ || !gallery_->currentItem()) return;
     if (width_->value() * height_->value() > 4096) {
         showStatus(text("像素总数不能超过 4096。"), true);

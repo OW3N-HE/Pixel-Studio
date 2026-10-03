@@ -243,7 +243,6 @@ async function startUsb(next) {
                 finish();
             }
             else if (message.type === 'stats') output({ type: 'stats', stats: message.stats }, true);
-            else if (message.type === 'outputFrame') output(message, true);
             else if (message.type === 'error') {
                 const error = new Error(message.message || 'USB playback failed.');
                 if (settled) output({ type: 'warning', message: error.message });
@@ -401,11 +400,6 @@ function preview() {
         const rgb = renderer.render(config.mode, config.w, config.h,
             animationTime, linearMapping, config.clockFont, config.clockPalette, config.thermal, temperatureSample);
         output({ type: 'frame', w: config.w, h: config.h, rgb: Buffer.from(rgb).toString('base64'), revision }, true);
-        if (sessionId) {
-            const sent = renderer.render(config.mode, config.w, config.h,
-                animationTime, config.mapping, config.clockFont, config.clockPalette, config.thermal, temperatureSample);
-            output({ type: 'outputFrame', w: config.w, h: config.h, rgb: Buffer.from(sent).toString('base64'), transport: 'ddp' }, true);
-        }
     } catch (error) {
         clearInterval(previewTimer);
         output({ type: 'error', op: 'preview', message: describeError(error) });

@@ -123,16 +123,13 @@ html .ps-web .ps-settings.ps-media-dialog label,html .ps-web .ps-settings.ps-med
 .ps-settings button:not(.ps-close):hover{border-color:var(--brand)}
 .ps-settings .ps-input-action{display:grid;grid-template-columns:minmax(0,1fr) 134px}
 .ps-web .ps-settings .ps-size-fields{display:flex;flex-direction:row;width:100%;min-width:0;flex-wrap:nowrap;align-items:center;gap:9px}
+.ps-web .ps-settings .ps-size-notice{flex:1 1 0;min-width:0;margin:0;color:var(--muted);font-size:12px;line-height:1.6;white-space:nowrap;overflow-x:auto}
 .ps-web .ps-settings .ps-size-fields>input[type=number]{width:68px;min-width:48px;max-width:76px;flex:0 1 68px;text-align:center;padding:9px 5px}
 .ps-settings .ps-size-fields>label:not(.ps-check){margin:0;flex:none;color:var(--text)}
 .ps-settings .ps-check{display:flex;align-items:center;gap:7px;margin:0;color:var(--text);white-space:nowrap}
 .ps-settings .ps-size-fields .ps-check{margin-left:auto}.ps-settings input[type=checkbox]{width:17px;height:17px;margin:0}
 .ps-settings .ps-fps input[type=range]{width:100%;min-width:0;padding:0}.ps-settings .ps-fps input[type=number]{width:76px;flex:0 0 76px;text-align:center}
 .ps-settings .ps-help{display:block;margin:14px 0 0;font-size:12px;line-height:1.6;color:var(--muted)}.ps-settings .ps-warning{color:var(--amber)}
-.ps-settings .ps-buttons{flex-wrap:wrap}.ps-settings .ps-advanced{padding:0;border:0;background:transparent}
-.ps-settings .ps-advanced summary{padding:0 0 16px;font-size:14px;color:var(--muted);cursor:pointer}
-.ps-settings #log{max-height:160px;padding:12px;border-radius:9px;background:var(--surface-deep);font-size:11px;overflow:auto}
-.ps-settings #serialDiagnostic{display:block;margin:12px 0;font-size:12px;overflow-wrap:anywhere}
 .ps-settings input:disabled,.ps-settings select:disabled,.ps-web input:disabled{opacity:.5;cursor:not-allowed}
 .ps-web .ps-header-actions{display:flex;align-items:center;gap:16px;margin-left:auto;flex:none}
 .ps-web .ps-import-button{display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:0 15px;height:var(--brand-size);min-height:var(--brand-size);border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);font-size:13px;white-space:nowrap}
@@ -252,8 +249,13 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
 @media (max-width: 760px) {
   .ps-web #studioSettings > .ps-settings-body > .ps-about-button { margin-top: 16px; }
 }
-/* Centered brand alignment and equally inset select chevrons. */
-.ps-web .brand > div { display: flex; align-items: center; min-width: 0; }
+/* Center uppercase ink rather than the font's ascent/descent line box. */
+.ps-web .brand > .brand-name {
+  display: block;
+  min-width: 0;
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
+}
 .ps-web .brand-name {
   position: static;
   margin: 0;

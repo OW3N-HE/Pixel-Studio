@@ -20,7 +20,7 @@ const animationClock=createTimeline(()=>performance.now());
 animationClock.setSpeed(config.speed);
 animationClock.synchronize(config.animationTime,config.animationWallTime);
 let next=started,timer=null,stopped=false;
-let frames=0,missed=0,bytes=0,sampleAt=started,sampleFrames=0,sampleBytes=0,totalMs=0,sampleCount=0,outputFrameAt=0;
+let frames=0,missed=0,bytes=0,sampleAt=started,sampleFrames=0,sampleBytes=0,totalMs=0,sampleCount=0;
 
 
 function stop(){
@@ -60,11 +60,6 @@ async function tick(){
     bytes+=await output.send(rgb,lut);
     frames++;totalMs+=performance.now()-now;sampleCount++;
     const finished=performance.now();
-    if(finished-outputFrameAt>=80){
-      parentPort.postMessage({type:'outputFrame',w:config.w,h:config.h,
-        rgb:Buffer.from(rgb).toString('base64'),transport});
-      outputFrameAt=finished;
-    }
     if(finished-sampleAt>=1000){
       const seconds=(finished-sampleAt)/1000;
       parentPort.postMessage({type:'stats',stats:{targetFps:config.fps,fps:(frames-sampleFrames)/seconds,

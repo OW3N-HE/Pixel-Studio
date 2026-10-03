@@ -50,9 +50,11 @@ Get-ChildItem -LiteralPath (Join-Path $root 'temperature\third-party') -File -Fi
 foreach ($file in @('Build-Installer.ps1','Build-Unified-Test.ps1','Prepare-Test-Payload.cjs','Prepare-SensorNotices.ps1','Prepare-Release-Archives.ps1','Prepare-PawnIO.ps1','Manage-SensorServices.ps1','Migrate-Legacy.ps1','PixelStudio.iss','PawnIO.iss','GETTING-STARTED.html',"RELEASE-$Version.md")) {
     Copy-SourceFile (Join-Path $PSScriptRoot $file) "installer\$file"
 }
-foreach ($file in @('check-language-state.cjs','test-desktop-session.cjs','test-desktop-settings.cjs','test-updater.cjs','sync-guide-logo.cjs','test-engine-modules.cjs','test-output-transports.cjs','test-stream-worker.cjs','test-module-resources.cjs','test-temperature-service.cjs','test-frame-pipeline.cjs','test-browser-modules.cjs','frame-pipeline-baseline.json','animation-module-baseline.json')) {
+foreach ($file in @('check-language-state.cjs','test-desktop-session.cjs','test-desktop-settings.cjs','test-updater.cjs','sync-guide-logo.cjs','test-engine-modules.cjs','test-output-transports.cjs','test-stream-worker.cjs','test-module-resources.cjs','test-temperature-service.cjs','test-frame-pipeline.cjs','test-browser-modules.cjs','test-media-thumbnails.cjs','test-openrgb-preview.cjs','test-web-shell.cjs','frame-pipeline-baseline.json','animation-module-baseline.json')) {
     Copy-SourceFile (Join-Path $root "tools\$file") "tools\$file"
 }
+Copy-SourceFile (Join-Path $root 'README.md') 'README.md'
+Copy-SourceFile (Join-Path $root 'tools\test-dimension-settings.cjs') 'tools\test-dimension-settings.cjs'
 Copy-SourceFile (Join-Path $PSScriptRoot 'SOURCE-BUILD.md') 'SOURCE-BUILD.md'
 Copy-SourceFile (Join-Path $PSScriptRoot 'SOURCE-BUILD.md') 'installer\SOURCE-BUILD.md'
 Copy-SourceFile (Join-Path $PSScriptRoot "RELEASE-$Version.md") 'RELEASE-NOTES.md'

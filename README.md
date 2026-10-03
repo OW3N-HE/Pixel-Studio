@@ -4,6 +4,18 @@
 
 Pixel Studio 是 Windows 像素矩阵动画工作室，提供桌面版、网页版和 OpenRGB 插件，共享 96 个内置动画模式。默认矩阵为 15 x 27，另有 14 x 26 预设。
 
+### 2026/10/03 修订
+
+- 优化 PawnIO 安装准备页面，精简主要状态、增加可展开详情；确认缺少驱动时，仍需明确同意并完成安装后才能继续，已有未知或更新版本不自动覆盖。
+- 修正桌面媒体卡片边角选中框裁切，改善缩略图失败重试、刷新及隐藏窗口随机播放调度。
+- 清理无界面入口的旧 HTTP/WebSocket 输出与废弃控件，保留仍在使用的本地服务及更新下载功能。
+- 修正停止输出时动画与媒体切换后的预览恢复；预览持续播放，播放按钮只控制像素屏输出，连接串口不自动开始推流。
+- 改善调整窗口及矩阵尺寸时的布局抖动；宽高仅接受 1~512 的整数，总像素不超过 4096，无效输入保留上次有效尺寸。
+- 尺寸提示常驻宽高同行；网页与桌面的标题按大写字形对齐 Logo，保留原有造型及水平间距。
+- 源码包补齐根目录 README、媒体缩略图、OpenRGB 预览、网页外壳与尺寸边界回归脚本。
+
+本次替换 V0.2.0 发布附件，保留原版本号及 2026/10/02 首次发布日期。已安装 V0.2.0 请手动下载修订包，同版本不会触发升级提示。完整内容与验证边界见 [V0.2.0 更新说明](installer/RELEASE-0.2.0.md)。
+
 ### 更新内容
 
 V0.2.0 已于 2026/10/02 正式发布，不再是架构预览版本。
@@ -60,6 +72,18 @@ V0.2.0 已于 2026/10/02 正式发布，不再是架构预览版本。
 ## English
 
 Pixel Studio is a Windows pixel-matrix animation studio with Desktop, Web and OpenRGB editions sharing 96 built-in animation modes. The default matrix is 15 x 27, with a 14 x 26 preset.
+
+### Revision dated 2026/10/03
+
+- Simplified PawnIO preparation with clear status and expandable details. A confirmed missing driver still requires explicit consent and successful installation before continuing; unknown/newer installations are not automatically overwritten.
+- Corrected Desktop media-card selection-ring clipping and improved thumbnail retries, refresh and hidden-window shuffle scheduling.
+- Removed obsolete HTTP/WebSocket output paths with no UI entry point and retired controls, retaining active local services and update downloads.
+- Corrected preview restoration when switching Animation/Media with output stopped. Preview remains active; Play controls only pixel-display output, and connecting a serial port does not start streaming.
+- Improved layout stability during window and matrix resizing. Dimensions must be integers from 1 to 512, with at most 4096 pixels; invalid input retains the last valid size.
+- Dimension guidance stays beside width/height. Web/Desktop headings align uppercase letter bounds with the Logo without changing its geometry or horizontal spacing.
+- Completed the source archive with the root README and media-thumbnail, OpenRGB-preview, Web-shell and dimension-boundary regression scripts.
+
+This revision replaces the V0.2.0 assets while retaining the version number and original release date, 2026/10/02. Existing V0.2.0 users should download the revision manually; the same version does not trigger an upgrade notification. See the [V0.2.0 release notes](installer/RELEASE-0.2.0.md) for full details and validation boundaries.
 
 ### What's new
 

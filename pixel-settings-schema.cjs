@@ -4,7 +4,7 @@
   const playbackControlIds=Object.freeze([
     'controlMode','wledHost','baudRate','protocol','matrixW','matrixH',
     'mapping','fps','brightness','animationMode','animationSpeed',
-    'clockFont','clockPalette','colorMode','colorGamma','safeMode',
+    'clockFont','clockPalette','colorMode','colorGamma',
     'libraryCategory','librarySearch','psShuffleEnabled','psShuffleInterval'
   ]);
   function sanitizePlaybackValues(input){
@@ -12,6 +12,15 @@
     for(const key of playbackControlIds){
       if(typeof input?.[key]==='string'&&input[key].length<=256)values[key]=input[key];
     }
+    if('matrixW' in values||'matrixH' in values){
+      // Resolve lazily: the browser loads the schema before render settings.
+      const settings=typeof module==='object'&&module.exports?require('./pixel-render-settings.cjs'):root.PixelStudioRenderSettings;
+      const dimensions=settings?.validateDimensions({width:values.matrixW,height:values.matrixH});
+      if(dimensions){values.matrixW=String(dimensions.w);values.matrixH=String(dimensions.h);}
+      else{delete values.matrixW;delete values.matrixH;}
+    }
+    if(values.controlMode && !['serial','ddp'].includes(values.controlMode))values.controlMode='serial';
+    if(values.protocol)values.protocol='adalight';
     return values;
   }
   // Desktop defaults are explicitly platform-scoped, not browser defaults.

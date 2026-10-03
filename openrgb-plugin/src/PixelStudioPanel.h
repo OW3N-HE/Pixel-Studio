@@ -144,7 +144,6 @@ private:
     QJsonObject configuration() const;
 
     PixelBoard* outputBoard_ = nullptr;
-    QLabel* outputTitle_ = nullptr;
     QLineEdit* projectPath_ = nullptr;
     QLineEdit* nodePath_ = nullptr;
     QLineEdit* host_ = nullptr;
@@ -203,7 +202,6 @@ private:
     QTimer* randomTimer_ = nullptr;
     QLabel* status_ = nullptr;
     QLabel* stats_ = nullptr;
-    QLabel* dimensions_ = nullptr;
     QPushButton* load_ = nullptr;
     QPushButton* start_ = nullptr;
     QPushButton* stop_ = nullptr;

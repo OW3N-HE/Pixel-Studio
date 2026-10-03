@@ -78,7 +78,15 @@ window.addEventListener('DOMContentLoaded',()=>{
     window.addEventListener('pixel-studio-language-change',()=>{render();void sync();});
     ipcRenderer.invoke('desktop:settings').then(async value=>{
       settings=value;
+      // Restore the pair atomically; the intermediate old/new pair may exceed the budget.
+      const restored=value.playback?.values||{};
+      if(typeof restored.matrixW==='string'&&typeof restored.matrixH==='string'){
+        const width=document.getElementById('matrixW'),height=document.getElementById('matrixH');
+        width.value=restored.matrixW;height.value=restored.matrixH;
+        width.dispatchEvent(new Event('change',{bubbles:true}));
+      }
       for(const [id,stored] of Object.entries(value.playback?.values||{})){
+        if(id==='matrixW'||id==='matrixH')continue;
         const saved=stored;
         const element=document.getElementById(id);if(!element)continue;
         if(element.tagName==='SELECT'&&![...element.options].some(option=>option.value===saved))continue;

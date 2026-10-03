@@ -49,8 +49,4 @@ void PixelStudioPanel::createActionRow(QVBoxLayout* shell, QSettings& settings) 
     status_->setTextFormat(Qt::PlainText);
     actions->insertWidget(3, status_, 1);
     status_->hide();
-    auto* limits = new StudioLabel(text("DDP 使用局域网；USB 使用 ESP32-C3 原生 USB CDC + 定制 WLED。两个通道共用同一动画库。"), this);
-    limits->setWordWrap(true);
-    limits->hide();
-    // Output transport guidance belongs in Settings, not on the live controls.
 }

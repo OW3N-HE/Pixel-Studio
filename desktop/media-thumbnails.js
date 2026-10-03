@@ -2,14 +2,15 @@
   'use strict';
   window.pixelStudioMediaThumbnails = {create(root, bridge) {
     const cache=new Map(),queue=[],active=new Set();
-    let running=0,disposed=false;
+    let running=0,disposed=false,generation=0;
     const key=file=>file.id+':'+file.lastModified+':'+file.size;
+    const current=task=>!disposed&&task.generation===generation&&task.image.isConnected;
     const observer=new IntersectionObserver(entries=>{
       for(const entry of entries){
         if(!entry.isIntersecting)continue;
         observer.unobserve(entry.target);
         const task=entry.target._mediaThumbnail;
-        if(task){queue.push(task);pump();}
+        if(task&&current(task)){queue.push(task);pump();}
       }
     },{root,rootMargin:'240px'});
     function remember(id,value){
@@ -17,7 +18,7 @@
       while(cache.size>128)cache.delete(cache.keys().next().value);
     }
     function paint(task,value){
-      if(disposed||!task.image.isConnected)return;
+      if(!current(task))return;
       if(value){task.image.style.imageRendering=value.pixelated?'pixelated':'auto';task.image.src=value.url;task.image.hidden=false;task.placeholder.hidden=true;}
     }
     function decode(file,url){
@@ -70,24 +71,30 @@
       try{
         if(cache.has(id)){paint(task,cache.get(id));return;}
         const result=await bridge.mediaFile(task.file.id);
-        if(disposed||!task.image.isConnected)return;
+        if(!current(task))return;
         if(!result.ok)throw new Error(result.error);
-        const value=await decode(task.file,result.url);remember(id,value);paint(task,value);
-      }catch{if(!disposed)remember(id,null);}
+        const value=await decode(task.file,result.url);
+        if(!current(task))return;
+        remember(id,value);paint(task,value);
+      }catch{if(current(task))remember(id,null);}
     }
     function pump(){
       while(!disposed&&running<2&&queue.length){
-        const task=queue.shift();if(!task.image.isConnected)continue;
+        const task=queue.shift();if(!current(task))continue;
         running++;void process(task).finally(()=>{running--;pump();});
       }
     }
     return {
       observe(file,image,placeholder){
-        const task={file,image,placeholder},id=key(file);
+        const task={file,image,placeholder,generation},id=key(file);
         if(cache.has(id)){paint(task,cache.get(id));return;}
         image._mediaThumbnail=task;observer.observe(image);
       },
-      reset(){observer.disconnect();queue.length=0;},
+      reset({retryFailed=false}={}){
+        generation++;observer.disconnect();queue.length=0;
+        for(const cancel of [...active])cancel();
+        if(retryFailed)for(const [id,value] of cache)if(value===null)cache.delete(id);
+      },
       dispose(){disposed=true;observer.disconnect();queue.length=0;for(const cancel of [...active])cancel();cache.clear();}
     };
   }};

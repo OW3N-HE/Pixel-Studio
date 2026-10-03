@@ -15,9 +15,9 @@
         if(!current())return false;
         if(!result.ok)throw new Error(result.error);
         const source={url:result.url,type:result.type,name:file.name};
-        if(continueOutput){
-          if(!uninterrupted()||!runtime.playing)return false;
-          if(!await runtime.replaceDesktopMedia(source,uninterrupted)||!uninterrupted())return false;
+        if(continueOutput||runtime.playing){
+          // Output can stop while decoding without cancelling the selected preview.
+          if(!await runtime.replaceDesktopMedia(source,current)||!current())return false;
         }else{
           runtime.loadDesktopMedia(source);
           if(startOutput){

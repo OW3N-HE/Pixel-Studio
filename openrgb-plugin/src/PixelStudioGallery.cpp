@@ -62,11 +62,7 @@ PixelStudioPanel::LibraryParts PixelStudioPanel::createLibrary(QWidget* workspac
     connect(internalScroll, &QScrollBar::valueChanged, galleryScroll, &QScrollBar::setValue);
     connect(galleryScroll, &QScrollBar::valueChanged, internalScroll, &QScrollBar::setValue);
     libraryLayout->addWidget(galleryRegion, 1);
-    auto* libraryNote = new StudioLabel(text("播放中切换卡片会无缝更新灯板；未播放时只更改预览。"), libraryPane);
-    libraryNote->setWordWrap(true);
-    libraryNote->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-    libraryNote->hide();
-    gallery_->setToolTip(libraryNote->text());
+    gallery_->setToolTip(text("播放中切换卡片会无缝更新灯板；未播放时只更改预览。"));
     connect(search_, &QLineEdit::textChanged, this, [this] { filterGallery(); });
     connect(category_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this] { filterGallery(); });
 

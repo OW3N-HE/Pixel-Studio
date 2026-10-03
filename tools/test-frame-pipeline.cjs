@@ -17,7 +17,8 @@ try{
     assert.deepEqual(Array.from(browser.PixelStudioFramePipeline.render(browser.PixelStudioAnimations,options,browser.pixelStudioRecolor)),Array.from(rgb),'Browser pipeline: '+mode);
   }
   assert.deepEqual(settings.frameConfig({}),{w:15,h:27,d:255,pixelCount:405});
-  assert.deepEqual(settings.frameConfig({width:'900',height:'0',brightness:'-1'}),{w:512,h:1,d:0,pixelCount:512});
+  assert.throws(()=>settings.frameConfig({width:'900',height:'0',brightness:'-1'}),RangeError);
+  assert.deepEqual(settings.frameConfig({width:'512',height:'1',brightness:'-1'}),{w:512,h:1,d:0,pixelCount:512});
   for(const [w,h]of [[1,1],[3,2],[14,26],[15,27]])for(const map of mapping.modes){
     const rgba=Uint8Array.from({length:w*h*4},(_,i)=>i%256);
     for(const brightness of [0,1,127,255]){

@@ -4,6 +4,24 @@
 
 发布日期：2026/10/02
 
+### 2026/10/03 修订
+
+本次更新现有 V0.2.0 发布附件，版本号和首次发布日期不变。已安装 V0.2.0 的用户请手动下载并安装本次修订包；同版本修订不会触发版本号升级提示。原有更新内容保留如下。
+
+- 优化 PawnIO 驱动准备页面：主要状态与下一步操作更清晰，技术信息收进可展开的详细信息区，保留重新检测和官方网站入口。
+- 确认缺少 PawnIO 时，必须在明确同意后完成驱动安装才能继续，不提供跳过。已有兼容驱动直接复用，未知或更新版本不自动覆盖，不操作 Fan Control 或风扇设置。
+- 修正桌面媒体卡片在滚动区域边角处的选中框裁切，与动画卡片的边框处理保持一致。
+- 改善媒体缩略图失败后的重试、刷新与过期任务取消，避免失败结果长期留在缓存中。
+- 修正桌面隐藏窗口时的随机播放调度，保留停止设备输出时预览时间线继续运行的行为。
+- 清理没有界面入口的旧 HTTP/WebSocket 输出和废弃控件；这不包括仍在使用的本地服务及更新下载功能。
+- 修正停止输出时动画与媒体切换后的预览恢复，恢复上次选择的媒体；预览持续播放，播放按钮只控制像素屏输出，不重置预览时间线。
+- 继续分离连接与输出会话：连接串口不自动开始推流，取消串口选择不破坏原连接。
+- 改善调整窗口及矩阵尺寸时的布局抖动；尺寸在提交前校验，宽高须为 1~512 的整数，总像素不超过 4096。空值、0、负数或超限输入保留上次有效尺寸，不再默默变成 1 x 1，也不会按无效草稿创建巨量预览节点。
+- 尺寸简短提示常驻宽高同行；网页与桌面标题按大写字形边界与 Logo 居中，保留原 Logo 造型、字号及 16px 水平间距。不支持字形裁边的旧浏览器保留原行框居中行为。
+- 源码 ZIP 补齐根目录 README 与媒体缩略图、OpenRGB 预览、网页外壳和尺寸边界回归脚本。
+
+此前修订的 14 项自动化回归通过，测试载荷完成 520 项资源一致性比对，用户已确认新的 PawnIO 页面显示正常。后续尺寸保护完成 31 项隔离边界检查及 22 项动画/媒体窗口尺寸场景检查；标题调整后通过网页外壳模拟检查。此次三合一编译成功，新载荷核对 596 个文件、完成 537 项一致性比对。最后的同行提示与标题对齐尚未重新进行安装后的视觉验收；以上不代替实际驱动安装、所有硬件、DPI 或升级路径测试。
+
 ### 更新内容
 
 - 动画绘制与目录从 HTML 中分离，共享引擎管理 96 个内置模式。
@@ -76,6 +94,24 @@
 ## English
 
 Release date: 2026/10/02
+
+### Revision dated 2026/10/03
+
+This revision replaces the existing V0.2.0 release assets without changing the version number or original release date. Existing V0.2.0 users should download and install the revised package manually; a same-version revision does not trigger a version-upgrade notification. The original release details are retained below.
+
+- Simplified the PawnIO preparation page with a clear status and next action, expandable technical details, and separate recheck and official-website links.
+- When PawnIO is confirmed missing, installation must complete after explicit consent before setup can continue; there is no skip option. Compatible installations are reused, unknown/newer versions are not automatically overwritten, and Fan Control and fan settings are left untouched.
+- Corrected Desktop media-card selection-ring clipping at scrolling-container corners, following the animation-card border treatment.
+- Improved thumbnail failure retries, refresh and cancellation of stale tasks so failed results are not permanently cached.
+- Corrected hidden-window shuffle scheduling while preserving the continuously running preview timeline when device output is stopped.
+- Removed obsolete HTTP/WebSocket output paths with no UI entry point and retired controls, not active local services or update downloads.
+- Corrected preview restoration when switching Animation/Media with output stopped, restoring the previously selected media. Preview stays active; Play controls only pixel-display output without resetting the preview timeline.
+- Further separated connection and output sessions: connecting a serial port does not start streaming, and cancelling port selection preserves the existing connection.
+- Improved layout stability during window and matrix resizing. Dimensions are validated before applying: integers from 1 to 512, with at most 4096 pixels. Empty, zero, negative or oversized input retains the last valid size instead of silently becoming 1 x 1 or allocating excessive preview nodes from invalid drafts.
+- Compact dimension guidance stays beside width/height. Web/Desktop headings align uppercase letter bounds with the Logo while preserving Logo geometry, font size and the 16px horizontal gap. Older browsers without text-box trimming retain the previous line-box centering fallback.
+- Added the root README and media-thumbnail, OpenRGB-preview, Web-shell and dimension-boundary regression scripts to the source ZIP.
+
+The earlier revision passed 14 automated regression entry points and 520 TEST-payload consistency comparisons, and the user accepted the PawnIO page appearance. Subsequent dimension safeguards passed 31 isolated boundary checks and 22 animation/media window-size scenarios; the Web-shell mock checks passed after the heading adjustment. The latest three-in-one build succeeded, with 596 payload files reviewed and 537 consistency comparisons. The final inline hint and title alignment have not received a new installed visual acceptance check. These results do not replace actual driver installation, hardware, DPI or upgrade-path testing.
 
 ### What's new
 

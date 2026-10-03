@@ -15,9 +15,10 @@
     const make=(tag,className='')=>{const node=document.createElement(tag);node.className=className;return node;};
     const style=make('style');
     style.textContent=`
-      .ps-desktop-media-grid{position:absolute;inset:1px;z-index:2;display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));grid-auto-rows:min-content;align-items:start;align-content:start;gap:7px;padding:5px 7px 5px 5px;overflow:auto;border-radius:8px;background:var(--surface-deep,var(--bg));}
+      /* The library well owns corner clipping, just as it does for the animation gallery. */
+      .ps-desktop-media-grid{position:absolute;inset:1px;z-index:2;display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));grid-auto-rows:min-content;align-items:start;align-content:start;gap:7px;padding:5px 7px 5px 5px;overflow:auto;border-radius:0;background:var(--surface-deep,var(--bg));}
       .ps-desktop-media-grid[hidden]{display:none!important}
-      .ps-desktop-media-grid{overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;scroll-padding-block:17px;overscroll-behavior:contain;clip-path:inset(0 round 8px);}
+      .ps-desktop-media-grid{overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;scroll-padding-block:17px;overscroll-behavior:contain;}
       .ps-desktop-media-grid::-webkit-scrollbar-button{display:none;}
       .ps-desktop-media-grid{mask-image:linear-gradient(to bottom,transparent,#000 var(--gallery-fade-top,0px),#000 calc(100% - var(--gallery-fade-bottom,0px)),transparent);}
       .ps-desktop-media-card{position:relative;width:100%;min-width:0;min-height:0!important;max-height:none!important;height:100%!important;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0!important;border:0;border-radius:2px;overflow:hidden;background:var(--surface);color:var(--text);}
@@ -70,18 +71,19 @@
     shuffleLabel.append(shuffleCheck,shuffleCaption);mediaShuffle.append(shuffleLabel,interval,unit);
     let outputStopRevision=0;
     let library={folder:'',files:[]},busy=false,selected=null,request=0,disposed=false,error='';
-    let resumeMediaRequested=false;
+    let mediaPreviewRequested=false;
     let sessionInitialized=false;
     function rememberMediaSession(){
       if(!sessionInitialized||disposed)return;
       void window.pixelStudioDesktopSession.rememberContent({mediaActive,selected,lastAnimation,shuffle:shuffleCheck.checked,interval:interval.value}).catch(()=>{});
     }
-    function resumeMediaPlayback(){
-      if(disposed||busy||!mediaActive||!resumeMediaRequested)return;
-      const files=matchingFiles(),file=files.find(item=>item.name===selected)||files[0];
+    function restoreMediaPreview(){
+      if(disposed||busy||!mediaActive||!mediaPreviewRequested)return;
+      const file=library.files.find(item=>item.name===selected)||matchingFiles()[0]||library.files[0];
       if(!file)return;
       const playing=window.pixelStudioWebRuntime.playing;
-      resumeMediaRequested=false;void load(file,playing,!playing);
+      // Restore content independently of output; switching libraries never starts sending.
+      mediaPreviewRequested=false;void load(file,playing,false);
     }
     let libraryDirty=false,libraryRefreshTimer=null;
     function scheduleLibraryRefresh(){
@@ -109,14 +111,15 @@
       setError:value=>{error=value;note.textContent=error;note.hidden=!error;},
       beginRequest:()=>++request,requestRevision:()=>request,stopRevision:()=>outputStopRevision,
       select:name=>{selected=name;rememberMediaSession();},
-      afterLoad:()=>{revealSelectedCard();scheduleLibraryRefresh();},
+      afterLoad:()=>{revealSelectedCard();scheduleLibraryRefresh();restoreMediaPreview();},
       timeoutMessage:()=>en()?'Media did not become ready.':'媒体加载超时。',
       loadError:e=>(en()?'Unable to load media: ':'无法加载媒体：')+e.message,
       shuffleEnabled:()=>shuffleCheck.checked,shuffleInterval:()=>interval.value,
       files:matchingFiles,selected:()=>selected,
-      isSuspended:()=>document.hidden||[...document.querySelectorAll('dialog[open],.ps-modal:not([hidden])')].some(node=>node.getClientRects().length)
+      // Window visibility must not change output scheduling; dialogs still pause shuffle.
+      isSuspended:()=>[...document.querySelectorAll('dialog[open],.ps-modal:not([hidden])')].some(node=>node.getClientRects().length)
     });
-    function render(){
+    function render({retryFailed=false}={}){
       sourceButton.textContent=mediaActive?(en()?'Animations':'动画'):(en()?'Media':'媒体');
       sourceButton.setAttribute('aria-label',mediaActive?(en()?'Switch to animations':'切换到动画'):(en()?'Switch to media':'切换到媒体'));
       grid.setAttribute('aria-label',en()?'Media library':'媒体片库');
@@ -128,7 +131,7 @@
       const files=matchingFiles();
       note.textContent=error;note.hidden=!note.textContent;
       grid.classList.toggle('is-searching',search.value.trim().length>0);
-      thumbnails.reset();grid.replaceChildren(note);
+      thumbnails.reset({retryFailed});grid.replaceChildren(note);
       if(!busy&&!files.length){const empty=make('p','ps-desktop-media-note');empty.textContent=en()?'No matching media in this folder.':'文件夹中没有符合条件的媒体。';grid.append(empty);}
       for(const file of files){
         const tile=make('div','ps-animation-tile ps-desktop-media-tile');
@@ -159,7 +162,7 @@
         }
       }
       catch(e){if(!disposed&&revision===request){if(!automatic)library={folder:library.folder,files:[]};error=(en()?'Unable to read folder: ':'无法读取文件夹：')+e.message;changed=true;}}
-      finally{if(!disposed&&revision===request){busy=false;if(changed){render();grid.scrollTop=scrollTop;updateMediaEdges();}scheduleLibraryRefresh();resumeMediaPlayback();}}
+      finally{if(!disposed&&revision===request){busy=false;if(changed){render({retryFailed:!automatic});grid.scrollTop=scrollTop;updateMediaEdges();}scheduleLibraryRefresh();restoreMediaPreview();}}
     }
     function syncMediaLoadState(){
       choose.disabled=busy;
@@ -171,13 +174,12 @@
       }
     }
     function load(file,continueOutput=window.pixelStudioWebRuntime.playing===true,startOutput=false){return mediaPlayback.load(file,continueOutput,startOutput);}
-    function switchSource(next=mediaActive){
-      const continuePlayback=next&&!mediaActive&&window.pixelStudioWebRuntime?.playing===true;
+    function switchSource(next=mediaActive,restorePreview=true){
+      const enteringMedia=next&&!mediaActive;
       const media=mediaActive=next;
-      if(!media){resumeMediaRequested=false;outputStopRevision++;mediaPlayback.stopShuffle();}
+      if(!media){mediaPreviewRequested=false;outputStopRevision++;mediaPlayback.stopShuffle();}
       if(media){
         if(mode.value!=='file')lastAnimation=mode.value;
-        if(!window.pixelStudioWebRuntime?.playing){mode.value='file';mode.dispatchEvent(new Event('change',{bubbles:true}));}
       }
       else if(mode.value==='file'){mode.value=[...mode.options].some(option=>option.value===lastAnimation)?lastAnimation:'rainbow';mode.dispatchEvent(new Event('change',{bubbles:true}));}
       gallery.style.visibility=media?'hidden':'';grid.hidden=!media;category.hidden=media;
@@ -186,7 +188,7 @@
       else if(!media&&mediaShuffle.isConnected)mediaShuffle.replaceWith(originalShuffle);
       toolbar.style.setProperty('grid-template-columns',media?'minmax(0,1fr) max-content max-content':'max-content minmax(0,1fr) max-content','important');
       search.placeholder=en()?'Search':'搜索';render();scheduleShuffle();window.pixelStudioResizePreview?.();
-      if(continuePlayback){resumeMediaRequested=true;resumeMediaPlayback();}
+      if(enteringMedia&&restorePreview){mediaPreviewRequested=true;restoreMediaPreview();}
       rememberMediaSession();
     }
     function scheduleShuffle(){
@@ -195,7 +197,7 @@
       mediaPlayback.scheduleShuffle();
     }
     shuffleCheck.addEventListener('change',()=>{scheduleShuffle();rememberMediaSession();});interval.addEventListener('change',()=>{scheduleShuffle();rememberMediaSession();});
-    document.getElementById('stopBtn').addEventListener('click',()=>{resumeMediaRequested=false;outputStopRevision++;});
+    document.getElementById('stopBtn').addEventListener('click',()=>{outputStopRevision++;});
     sourceButton.addEventListener('click',()=>{window.pixelStudioDesktopSession.cancelRestore();switchSource(!mediaActive);});choose.addEventListener('click',()=>{window.pixelStudioDesktopSession.cancelRestore();void refreshLibrary('select');});
     refresh.addEventListener('click',()=>{void refreshLibrary('scan');});
     search.addEventListener('input',()=>{if(mediaActive)render();});
@@ -207,26 +209,27 @@
       finishRestore:()=>{if(!disposed)sessionInitialized=true;},
       capture:()=>sessionInitialized?{mediaActive,selected,lastAnimation,shuffle:shuffleCheck.checked,interval:interval.value}:null,
       reportError:e=>{if(!disposed){error=(en()?'Unable to restore session: ':'无法恢复会话：')+e.message;syncMediaLoadState();}},
-      restore:async saved=>{
-      const startupStopRevision=outputStopRevision;
+      restore:async(saved,isCurrent=()=>true)=>{
+      const current=()=>!disposed&&isCurrent();
       try{
-        if(disposed)return false;
+        if(!current())return false;
         if(saved){
           selected=saved.selected;lastAnimation=saved.lastAnimation;
           shuffleCheck.checked=saved.shuffle;interval.value=saved.interval;
-          switchSource(saved.mediaActive);
+          // Startup restoration loads its saved file below, after the folder scan.
+          switchSource(saved.mediaActive,false);
         }
         await refreshLibrary('scan');
-        if(disposed)return false;
+        if(!current())return false;
         const file=mediaActive&&selected?library.files.find(item=>item.name===selected):null;
         if(file){
-          await load(file,false,false);
-          const deadline=Date.now()+20000,stopRevision=outputStopRevision;
-          while(!disposed&&mediaActive&&stopRevision===outputStopRevision&&!window.pixelStudioWebRuntime.desktopMediaReady()&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,20));
-          if(disposed||!mediaActive||stopRevision!==outputStopRevision)return false;
+          if(!await load(file,false,false))return false;
+          const deadline=Date.now()+20000;
+          while(current()&&mediaActive&&!window.pixelStudioWebRuntime.desktopMediaReady()&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,20));
+          if(!current()||!mediaActive)return false;
         }
-        return !mediaActive||(Boolean(file)&&outputStopRevision===startupStopRevision&&window.pixelStudioWebRuntime.desktopMediaReady());
-      }catch(e){if(!disposed){error=(en()?'Unable to restore media: ':'无法恢复媒体：')+e.message;syncMediaLoadState();}return false;}
+        return current()&&(!mediaActive||(Boolean(file)&&window.pixelStudioWebRuntime.desktopMediaReady()));
+      }catch(e){if(current()){error=(en()?'Unable to restore media: ':'无法恢复媒体：')+e.message;syncMediaLoadState();}return false;}
       finally{if(!disposed)sessionInitialized=true;}
       }
     });

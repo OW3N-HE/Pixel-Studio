@@ -69,7 +69,7 @@
 
   function sampleFrameFromCanvas() {
     const {w,h,d}=getFrameConfig();
-    return window.PixelStudioFrameMapping.fromRgba(offCtx.getImageData(0,0,w,h).data,w,h,ui.mapping.value,ui.protocol.value==='raw-bin'?d:255);
+    return window.PixelStudioFrameMapping.fromRgba(offCtx.getImageData(0,0,w,h).data,w,h,ui.mapping.value,255);
   }
 
   function applyPreviewAspect() {
@@ -151,7 +151,6 @@
     cadButton.addEventListener('click', () => setAppearance(true));
     rawButton.addEventListener('click', () => setAppearance(false));
     for (const input of [ui.matrixW, ui.matrixH]) {
-      input.addEventListener('input', updateDimensions);
       input.addEventListener('change', updateDimensions);
     }
     setAppearance(true);
@@ -324,7 +323,6 @@
  const frameSource=Object.freeze({
    get kind(){return getAnimationMode()==='file'?mediaType:'animation';},
    get ready(){return getAnimationMode()!=='file'||Boolean(mediaObj);},
-   get sendOptions(){return getAnimationMode()==='file'?undefined:{skipHttpResponseRead:true};},
    readFrame(){
      const mode=getAnimationMode();
      if(mode==='file')return extractFrame();
