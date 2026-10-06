@@ -51,7 +51,7 @@ UsePreviousAppDir=yes
 UsePreviousTasks=yes
 UsePreviousSetupType=no
 SetupIconFile=..\desktop\assets\pixel-studio.ico
-UninstallDisplayIcon={app}\pixel-studio-brand2.ico
+UninstallDisplayIcon={uninstallexe}
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
@@ -104,12 +104,30 @@ zh.PluginHint=请先退出 OpenRGB。标准安装使用默认目录；便携版�
 en.PluginHint=Close OpenRGB first. Use the default for a standard installation; select the actual plugins folder for a portable installation. Existing library paths and preferences are preserved. OpenRGB itself is not included.
 zh.PluginFolder=插件文件夹：
 en.PluginFolder=Plugins folder:
-zh.UninstallHint=已保留偏好设置、备份和 OpenRGB 插件 DLL。如不再使用，请在 OpenRGB 插件目录移除 PixelStudioPlugin.dll。卸载运行环境后，不要继续启用该插件。
-en.UninstallHint=Preferences, backups and the OpenRGB DLL were preserved. Remove PixelStudioPlugin.dll from the OpenRGB plugins folder if no longer needed. Do not enable it after its runtime is removed.
-zh.RemoveSettingsPrompt=是否同时删除当前卸载账户的个人设置？%n%n是：删除下列设置、桌面缓存和保存的串口。%n否（默认）：保留，重装后继续使用。%n取消：取消卸载。%n%n涉及位置：%n%1%n%n不会删除开发项目、安装备份或其他 Windows 用户的设置。
-en.RemoveSettingsPrompt=Also remove personal settings for the account running this uninstaller?%n%nYes: remove the settings, desktop cache and remembered port listed below.%nNo (default): keep them for reinstallation.%nCancel: cancel uninstall.%n%nLocations:%n%1%n%nDevelopment projects, installer backups and other Windows users' settings are not removed.
-zh.SettingsRemovedHint=已请求删除所列个人设置。备份及外部 OpenRGB 插件 DLL 仍保留；不再使用时请从 OpenRGB 插件目录移除对应 DLL。
-en.SettingsRemovedHint=Removal of the listed personal settings was requested. Backups and external OpenRGB plugin DLLs are retained; remove the corresponding DLL from OpenRGB if no longer needed.
+zh.UninstallHint=已保留个人设置和升级备份。安装器安装的 OpenRGB 插件随程序移除；若提示重启，请重启后再打开 OpenRGB。
+en.UninstallHint=Personal settings and upgrade backups were preserved. The OpenRGB plugin installed by Setup is removed with the application; restart Windows if requested before reopening OpenRGB.
+zh.UninstallTitle=卸载 Pixel Studio
+en.UninstallTitle=Uninstall Pixel Studio
+zh.RemoveSettingsPrompt=请先从托盘完全退出 Pixel Studio Desktop 和 OpenRGB。%n%n两种方式都会移除程序及安装器安装的插件。完全清除还会删除当前卸载账户的设置、缓存、记住的串口及升级备份。%n%n不会删除其他插件、PawnIO、开发项目、外部媒体或其他账户的数据。浏览器中的网页版设置需另行清除。
+en.RemoveSettingsPrompt=Quit Pixel Studio Desktop and OpenRGB from the tray first.%n%nBoth options remove the application and its installed plugin. Complete cleanup also deletes settings, caches, remembered ports and upgrade backups for the account running this uninstaller.%n%nOther plugins, PawnIO, projects, external media and other accounts are kept. Web settings in browser profiles must be cleared separately.
+zh.UninstallKeep=卸载并保留设置（默认）
+en.UninstallKeep=Uninstall and keep settings (default)
+zh.UninstallPurge=卸载并完全清除
+en.UninstallPurge=Uninstall and completely clear data
+zh.UninstallCancel=取消
+en.UninstallCancel=Cancel
+zh.UninstallName=卸载 Pixel Studio
+en.UninstallName=Uninstall Pixel Studio
+zh.UninstallBlocked=尚未开始删除文件。无法完成占用检查，或部分程序未能关闭。%n%n请保存工作，从托盘退出相关程序后点击“重试”。不要关闭 Fan Control 或无关 Node.js 程序。%n%n检查结果：%n%1
+en.UninstallBlocked=No files have been deleted. The ownership check failed, or some applications could not be closed.%n%nSave work, quit the affected applications from the tray, and click Retry. Do not stop Fan Control or unrelated Node.js processes.%n%nCheck results:%n%1
+zh.UninstallCloseApps=以下程序正在占用 Pixel Studio 文件：%n%1%n%n请先保存工作和 OpenRGB 设置。%n是：允许卸载器关闭这些程序；无响应的程序可能被强制结束，未保存内容可能丢失。%n否：自行从托盘退出相关程序，然后重新检查。%n取消：取消卸载，不删除文件。%n%n仅处理目标文件的占用者，不关闭 Fan Control 或无关 Node.js 程序。
+en.UninstallCloseApps=These applications are using Pixel Studio files:%n%1%n%nSave your work and OpenRGB settings first.%nYes: allow the uninstaller to close them; unresponsive applications may be forcibly closed and unsaved work lost.%nNo: quit them from the tray yourself, then check again.%nCancel: cancel uninstall without deleting files.%n%nOnly owners of the affected files are targeted, not Fan Control or unrelated Node.js processes.
+zh.PurgeConfirm=完全清除后，本账户的个人设置、缓存和升级备份无法恢复。确定继续？
+en.PurgeConfirm=This permanently deletes this account's personal settings, caches and upgrade backups. Continue?
+zh.SettingsRemovedHint=已清除本账户的 Pixel Studio 设置、缓存和升级备份。安装器安装的插件随程序移除；若提示重启，请重启完成删除。其他插件和共享驱动未改动。
+en.SettingsRemovedHint=This account's Pixel Studio settings, caches and upgrade backups were cleared. The installed plugin is removed with the application; restart if requested to finish removal. Other plugins and shared drivers were not changed.
+zh.CleanupFailed=程序已卸载，但个人数据或自启动清理未全部完成。请查看清理记录：%n%1%n%n请勿将此结果视为完全清除。
+en.CleanupFailed=The application was uninstalled, but data or startup cleanup did not fully complete. See the cleanup report:%n%1%n%nComplete cleanup has not been confirmed.
 en.ScopeTitle=Choose installation scope
 zh.ScopeTitle=选择安装范围
 en.ScopeSubtitle=Install for all users or only for your account.
@@ -177,13 +195,16 @@ Source: "{#PayloadDir}\desktop\*"; DestDir: "{app}\desktop"; Components: desktop
 Source: "{#PayloadDir}\app\*"; DestDir: "{app}\app"; Components: core; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#PayloadDir}\app\GETTING-STARTED.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\runtime\*"; DestDir: "{app}\runtime"; Components: web or plugin; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#PayloadDir}\plugin\PixelStudioPlugin.dll"; DestDir: "{code:PluginDirectory}"; Components: plugin; Flags: ignoreversion uninsneveruninstall
+Source: "{#PayloadDir}\plugin\PixelStudioPlugin.dll"; DestDir: "{code:PluginDirectory}"; Components: plugin; Flags: ignoreversion uninsrestartdelete
 Source: "{#PayloadDir}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "Manage-SensorServices.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Uninstall-Cleanup.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Uninstall-Preflight.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
 [Registry]
 Root: HKA; Subkey: "Software\PixelStudio\Installer"; ValueType: string; ValueName: "ProjectPath"; ValueData: "{app}\app"; Components: web or plugin; Flags: uninsdeletevalue
 Root: HKA; Subkey: "Software\PixelStudio\Installer"; ValueType: string; ValueName: "NodePath"; ValueData: "{app}\runtime\node.exe"; Components: plugin; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\PixelStudio\Installer"; ValueType: string; ValueName: "PluginPath"; ValueData: "{code:PluginDirectory}\PixelStudioPlugin.dll"; Components: plugin; Flags: uninsdeletevalue
 
 [Icons]
 Name: "{group}\Pixel Studio Desktop"; Filename: "{app}\desktop\Pixel Studio Desktop.exe"; IconFilename: "{app}\pixel-studio-brand2.ico"; Components: desktop; AppUserModelID: "com.ow3nhe.pixelstudio.desktop"
@@ -191,20 +212,13 @@ Name: "{autodesktop}\Pixel Studio Desktop"; Filename: "{app}\desktop\Pixel Studi
 Name: "{group}\Pixel Studio Web"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\app\Start-Pixel-DDP.ps1"""; WorkingDir: "{app}\app"; IconFilename: "{app}\pixel-studio-brand2.ico"; Components: web
 Name: "{autodesktop}\Pixel Studio Web"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\app\Start-Pixel-DDP.ps1"""; WorkingDir: "{app}\app"; IconFilename: "{app}\pixel-studio-brand2.ico"; Components: web; Tasks: desktopicon
 Name: "{group}\{cm:Guide}"; Filename: "{app}\GETTING-STARTED.html"; IconFilename: "{app}\pixel-studio-brand2.ico"
-Name: "{group}\Uninstall Pixel Studio"; Filename: "{uninstallexe}"; IconFilename: "{app}\pixel-studio-brand2.ico"
+Name: "{group}\{cm:UninstallName}"; Filename: "{uninstallexe}"
 
 [Run]
 Filename: "{app}\GETTING-STARTED.html"; Description: "{cm:OpenGuide}"; Flags: shellexec postinstall skipifsilent
 
 [UninstallRun]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Manage-SensorServices.ps1"" -Mode Remove"; Flags: runhidden waituntilterminated; Check: IsAdminInstallMode
-
-[UninstallDelete]
-Type: filesandordirs; Name: "{userappdata}\Pixel Studio Desktop"; Check: ShouldRemovePersonalSettings
-Type: filesandordirs; Name: "{userappdata}\pixel-studio-desktop"; Check: ShouldRemovePersonalSettings
-Type: filesandordirs; Name: "{userappdata}\Pixel Studio for OpenRGB"; Check: ShouldRemovePersonalSettings
-Type: files; Name: "{userappdata}\PixelStudio\OpenRGBPlugin.ini"; Check: ShouldRemovePersonalSettings
-Type: dirifempty; Name: "{userappdata}\PixelStudio"; Check: ShouldRemovePersonalSettings
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Manage-SensorServices.ps1"" -Mode Remove"; Flags: runhidden waituntilterminated; Check: IsAdminInstallMode; RunOnceId: "RemovePixelStudioSensorServices"
 
 [Code]
 var
@@ -212,36 +226,129 @@ var
   BackupComplete: Boolean;
   MigrationPrepared: Boolean;
   RemovePersonalSettings: Boolean;
+  CleanupScript: String;
+  CleanupReport: String;
+  CleanupPrepared: Boolean;
   UpdatingComponents: Boolean;
   ComponentsInitialized: Boolean;
   PreviousComponentsClick: TNotifyEvent;
 
 #include "PawnIO.iss"
 
-
-
-function ShouldRemovePersonalSettings: Boolean;
+function CheckUninstallProcesses: Boolean;
+var
+  Script, ReportFile, Parameters, PluginFile, RecordedProject: String;
+  Report: AnsiString;
+  ExitCode, Choice, RootKey, CloseExitCode: Integer;
+  Started: Boolean;
 begin
-  Result := RemovePersonalSettings;
+  Result := False;
+  Script := ExpandConstant('{tmp}\PixelStudio-Uninstall-Preflight.ps1');
+  ReportFile := ExpandConstant('{tmp}\PixelStudio-Uninstall-Preflight.txt');
+  if not FileCopy(ExpandConstant('{app}\Uninstall-Preflight.ps1'), Script, False) then begin
+    Log('Unable to prepare uninstall preflight. No files will be deleted.');
+    if not UninstallSilent then
+      MsgBox(FmtMessage(CustomMessage('UninstallBlocked'), ['Unable to prepare the process check.']), mbError, MB_OK);
+    Exit;
+  end;
+  PluginFile := '';
+  if IsAdminInstallMode then RootKey := HKLM64 else RootKey := HKCU;
+  if RegQueryStringValue(RootKey, 'Software\PixelStudio\Installer', 'ProjectPath', RecordedProject) then
+    if CompareText(RecordedProject, ExpandConstant('{app}\app')) = 0 then
+      RegQueryStringValue(RootKey, 'Software\PixelStudio\Installer', 'PluginPath', PluginFile);
+  Parameters := '-NoProfile -ExecutionPolicy Bypass -File "' + Script +
+    '" -InstallDir "' + ExpandConstant('{app}') + '" -ReportPath "' + ReportFile + '"';
+  if PluginFile <> '' then Parameters := Parameters + ' -PluginFile "' + PluginFile + '"';
+  if RemovePersonalSettings then Parameters := Parameters + ' -Purge';
+  repeat
+    Started := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+      Parameters, '', SW_HIDE, ewWaitUntilTerminated, ExitCode);
+    if Started and (ExitCode = 0) then begin
+      Result := True;
+      Exit;
+    end;
+    Report := 'Unable to complete the process check.';
+    LoadStringFromFile(ReportFile, Report);
+    Log('Uninstall blocked: ' + String(Report));
+    if UninstallSilent then Exit;
+    if Started and (ExitCode = 20) then begin
+      Choice := MsgBox(FmtMessage(CustomMessage('UninstallCloseApps'), [String(Report)]),
+        mbConfirmation, MB_YESNOCANCEL or MB_DEFBUTTON2);
+      if Choice = IDYES then begin
+        Started := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+          Parameters + ' -CloseApplications', '', SW_HIDE, ewWaitUntilTerminated, CloseExitCode);
+        if (not Started) or (CloseExitCode <> 0) then begin
+          Report := 'Unable to close all affected applications.';
+          LoadStringFromFile(ReportFile, Report);
+          if MsgBox(FmtMessage(CustomMessage('UninstallBlocked'), [String(Report)]),
+            mbError, MB_RETRYCANCEL) <> IDRETRY then Exit;
+        end;
+        Choice := IDRETRY;
+      end else if Choice = IDNO then begin
+        if MsgBox(FmtMessage(CustomMessage('UninstallBlocked'), [String(Report)]),
+          mbInformation, MB_RETRYCANCEL) = IDRETRY then Choice := IDRETRY;
+      end;
+    end else
+      Choice := MsgBox(FmtMessage(CustomMessage('UninstallBlocked'), [String(Report)]),
+        mbError, MB_RETRYCANCEL);
+  until Choice <> IDRETRY;
 end;
+
 
 function InitializeUninstall: Boolean;
 var
   Choice: Integer;
-  Locations: String;
+  Dialog: TSetupForm;
+  Description: TNewStaticText;
+  KeepButton, PurgeButton, CancelButton: TNewButton;
 begin
   RemovePersonalSettings := False;
   Result := True;
   { Silent upgrades must preserve profiles without prompting. }
-  if UninstallSilent then Exit;
-  Locations := ExpandConstant('{userappdata}\Pixel Studio Desktop') + #13#10 +
-    ExpandConstant('{userappdata}\pixel-studio-desktop') + #13#10 +
-    ExpandConstant('{userappdata}\Pixel Studio for OpenRGB') + #13#10 +
-    ExpandConstant('{userappdata}\PixelStudio\OpenRGBPlugin.ini');
-  Choice := MsgBox(FmtMessage(CustomMessage('RemoveSettingsPrompt'), [Locations]),
-    mbConfirmation, MB_YESNOCANCEL or MB_DEFBUTTON2);
-  Result := Choice <> IDCANCEL;
-  RemovePersonalSettings := Choice = IDYES;
+  if UninstallSilent then begin
+    Result := CheckUninstallProcesses;
+    Exit;
+  end;
+  Dialog := CreateCustomForm(ScaleX(560), ScaleY(300), False, True);
+  try
+    Dialog.Caption := CustomMessage('UninstallTitle');
+    Dialog.ClientWidth := ScaleX(560);
+    Dialog.ClientHeight := ScaleY(300);
+    Description := TNewStaticText.Create(Dialog);
+    Description.Parent := Dialog;
+    Description.SetBounds(ScaleX(20), ScaleY(16), ScaleX(520), ScaleY(138));
+    Description.AutoSize := False;
+    Description.WordWrap := True;
+    Description.Caption := CustomMessage('RemoveSettingsPrompt');
+    KeepButton := TNewButton.Create(Dialog);
+    KeepButton.Parent := Dialog;
+    KeepButton.SetBounds(ScaleX(20), ScaleY(166), ScaleX(520), ScaleY(34));
+    KeepButton.Caption := CustomMessage('UninstallKeep');
+    KeepButton.ModalResult := mrNo;
+    KeepButton.Default := True;
+    PurgeButton := TNewButton.Create(Dialog);
+    PurgeButton.Parent := Dialog;
+    PurgeButton.SetBounds(ScaleX(20), ScaleY(208), ScaleX(520), ScaleY(34));
+    PurgeButton.Caption := CustomMessage('UninstallPurge');
+    PurgeButton.ModalResult := mrYes;
+    CancelButton := TNewButton.Create(Dialog);
+    CancelButton.Parent := Dialog;
+    CancelButton.SetBounds(ScaleX(20), ScaleY(250), ScaleX(520), ScaleY(34));
+    CancelButton.Caption := CustomMessage('UninstallCancel');
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Cancel := True;
+    Dialog.ActiveControl := KeepButton;
+    Choice := Dialog.ShowModal;
+  finally
+    Dialog.Free;
+  end;
+  Result := (Choice = mrYes) or (Choice = mrNo);
+  if Result and (Choice = mrYes) then begin
+    Result := MsgBox(CustomMessage('PurgeConfirm'), mbConfirmation,
+      MB_YESNO or MB_DEFBUTTON2) = IDYES;
+    RemovePersonalSettings := Result;
+  end;
+  if Result then Result := CheckUninstallProcesses;
 end;
 
 function RunMigration(Mode: String): Boolean;
@@ -461,12 +568,38 @@ begin
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  Parameters: String;
+  ExitCode: Integer;
+  CleanupOK: Boolean;
 begin
-  if CurUninstallStep = usPostUninstall then
-    if not UninstallSilent then begin
+  if CurUninstallStep = usUninstall then begin
+    CleanupScript := ExpandConstant('{tmp}\PixelStudio-Uninstall-Cleanup.ps1');
+    { Keep failure reports outside Setup's temporary directory and purged profiles. }
+    CleanupReport := ExpandConstant('{localappdata}\PixelStudio-Uninstall-') +
+      GetDateTimeString('yyyymmdd-hhnnss-zzz', '-', '-') + '.txt';
+    CleanupPrepared := FileCopy(ExpandConstant('{app}\Uninstall-Cleanup.ps1'), CleanupScript, False);
+  end;
+  if CurUninstallStep = usPostUninstall then begin
+    CleanupOK := False;
+    if CleanupPrepared then begin
+      Parameters := '-NoProfile -ExecutionPolicy Bypass -File "' + CleanupScript +
+        '" -InstallDir "' + ExpandConstant('{app}') + '" -ReportPath "' + CleanupReport + '"';
+      if RemovePersonalSettings then Parameters := Parameters + ' -Purge';
+      CleanupOK := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+        Parameters, '', SW_HIDE, ewWaitUntilTerminated, ExitCode);
+      if CleanupOK then CleanupOK := ExitCode = 0;
+    end else
+      SaveStringToFile(CleanupReport, 'Unable to prepare the cleanup script.', False);
+    if not CleanupOK then begin
+      Log('Pixel Studio cleanup did not complete: ' + CleanupReport);
+      if not UninstallSilent then
+        MsgBox(FmtMessage(CustomMessage('CleanupFailed'), [CleanupReport]), mbError, MB_OK);
+    end else if not UninstallSilent then begin
       if RemovePersonalSettings then
         MsgBox(CustomMessage('SettingsRemovedHint'), mbInformation, MB_OK)
       else
         MsgBox(CustomMessage('UninstallHint'), mbInformation, MB_OK);
     end;
+  end;
 end;

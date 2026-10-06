@@ -17,6 +17,8 @@
 - OpenRGB 同步主题 Logo、版本和双语致谢，保留现有 Qt 界面、温度与 USB/DDP 功能。
 - 清理已确认的废弃样式、重复引用和冗余控件初始化；保留兼容设置、迁移、驱动保护及共享动画库。
 - Pixel IO 仅预留入口，当前不可用。后续主要功能迭代以桌面版为主，兼容的共享动画更新继续服务三端。
+- 同日修订卸载流程：使用 Windows Restart Manager 检测后台文件占用，经确认关闭相关程序后重新检查；无法关闭或完成检查时停止卸载，不批量结束无关进程。
+- 卸载可选择保留设置或完全清除当前卸载账户的设置、缓存、串口记录及升级备份。安装器安装的 OpenRGB 插件随程序移除；共享 PawnIO、其他插件、外部媒体和其他账户的数据保留。清理失败保留日志，不误报完全成功；恢复卸载入口的专用图标。
 
 ### 下载与升级
 
@@ -31,6 +33,14 @@ Windows x64 三合一安装包：PixelStudio-Setup-0.2.1.exe。默认选择桌�
 本版依据用户对 TEST 界面和功能的反馈整理，并从当前源码重新构建。编译和打包不代表全部设备、DPI、安装升级及 USB/DDP 场景已实测通过。最后的串口恢复、托盘和停止重启调整仍需要实际设备回归；不宣称这些问题已在所有环境复现并验证解决。构建中的 NuGet 漏洞数据查询不可用，不等于依赖安全审计通过。
 
 特别感谢：David Wang · Mango Akuma · Mark Peng · SSSSWILK · &amp;#xff1f · 3FC
+
+### 素材权利与联系
+
+如有素材权利问题，请通过 [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues) 联系维护者，说明涉及的素材与权利依据，不要公开私人证明文件。经核实后，将采取移除或替换等适当措施。本项目不代表 WLED、OpenRGB 或相关社区的官方产品；致谢不替代许可。
+
+### ESP32-C3 可选固件
+
+本次另附 `PixelStudio-C3-USB-60` 应用固件、定制源码及 `WLED-C3-USB-60-README.md`，仅适用于对应 GPIO3 原生 USB CDC 硬件。安装器不会自动刷写固件。刷写前请备份设备并阅读附带说明；60 FPS 不是所有设备的性能保证。本次卸载修订不改变固件附件。
 
 ## English
 
@@ -49,6 +59,8 @@ Release date: 2026/10/06
 - OpenRGB receives theme Logo, version and bilingual credits updates while retaining its Qt UI, temperature and USB/DDP features.
 - Removed confirmed redundant styles, includes and widget initialization while preserving migration, compatibility, driver protections and shared animations.
 - Pixel IO remains a reserved, unavailable entry. Desktop is the primary future feature focus; compatible animation-library updates remain shared across editions.
+- Same-day uninstall revision: Windows Restart Manager detects background file owners and, with consent, closes them before checking again. Uninstall is blocked if shutdown or detection fails; unrelated processes are not killed in bulk.
+- Uninstall can preserve settings or completely clear the running account's settings, caches, remembered ports and upgrade backups. The plugin installed by Setup is removed with the application; shared PawnIO, other plugins, external media and other accounts are kept. Cleanup failures retain a report rather than claim complete removal. The dedicated uninstall-entry icon is restored.
 
 ### Download and upgrade
 
@@ -62,12 +74,10 @@ Prepared from current sources following user feedback on TEST builds. Compilatio
 
 Special thanks: David Wang · Mango Akuma · Mark Peng · SSSSWILK · &amp;#xff1f · 3FC
 
-### Artwork rights and contact / 素材权利与联系
+### Artwork rights and contact
 
-Please contact the maintainer through [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues) with the relevant artwork and basis of your rights claim. Do not post private documents publicly. 经核实的素材权利问题将采取移除或替换等适当处理。本项目不代表 WLED、OpenRGB 或相关社区的官方产品；致谢不替代许可。
+For artwork rights concerns, contact the maintainer through [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues), identifying the artwork and the basis of your claim. Do not publish private documents. Confirmed issues will be addressed through removal, replacement or other appropriate action. This project is not an official product of WLED, OpenRGB or their communities; credits do not replace permission.
 
-## ESP32-C3 可选固件 / Optional firmware
+### Optional ESP32-C3 firmware
 
-本次另附 PixelStudio-C3-USB-60 应用固件、定制源码及 WLED-C3-USB-60-README.md，仅适用于对应 GPIO3 原生 USB CDC 硬件，不由安装器自动刷写。刷写前备份并阅读说明，60 FPS 不是所有设备的性能保证。
-
-Separate USB-60 firmware, custom source and instructions are supplied for the matching ESP32-C3 board. Setup does not flash firmware. Read the included guide and back up the device first; 60 FPS is not a universal guarantee.
+The release separately includes the `PixelStudio-C3-USB-60` application firmware, custom source and `WLED-C3-USB-60-README.md` for the matching ESP32-C3 hardware using GPIO3 and native USB CDC. Setup does not flash firmware automatically. Back up the device and read the included instructions before flashing; 60 FPS is not a performance guarantee for every device. These firmware assets are unchanged by the uninstall revision.
