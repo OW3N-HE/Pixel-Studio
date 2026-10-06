@@ -7,7 +7,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const languageSource = fs.readFileSync(path.join(root, 'pixel-studio-web-language.js'), 'utf8');
 const uiSource = fs.readFileSync(path.join(root, 'pixel-studio-web-ui.js'), 'utf8');
-const acorn = require(require.resolve('acorn', { paths: [path.join(root, 'firmware/wled-usb-pixel')] }));
+const acorn = require('acorn');
 const functions = new Map();
 function visit(node) {
   if (!node || typeof node !== 'object') return;
@@ -53,7 +53,7 @@ function scenario(saved, desktop, systemLanguage = 'zh-CN') {
   select.value = document.documentElement.lang === 'en' ? 'en' : 'zh-CN';
   const state = { document, language: select, VERSION: '0.1.11', updateState: 'idle', remoteVersion: '', releaseNotes: '', installerUrl: '',
     packageSelect: { value: 'installer', options: [{}, {}, {}] }, packages: {}, nativeUpdateState: 'idle', downloadOpened: false,
-    renderNativeUpdate() {} };
+    renderNativeUpdate() {}, renderReleaseNotes(node,text) { node.textContent=text; } };
   for (const key of ['packageLabel', 'updateLegend', 'updateSummary', 'updateButton', 'updateStatus', 'updateNotes', 'updateDetails', 'releaseLink', 'installerButton', 'installerStatus']) state[key] = { style: {} };
   const updateContext = vm.createContext(state);
   vm.runInContext(functions.get('renderUpdate'), updateContext);
@@ -68,11 +68,14 @@ function scenario(saved, desktop, systemLanguage = 'zh-CN') {
   function change(value) { select.value = value; select.dispatchEvent({ type: 'change' }); }
   change('en');
   assert.equal(regular.getAttribute('title'), 'Open settings');
+  assert.equal(window.pixelStudioFormatNotice('已切换到草莓小盆栽，持续发送中'), 'Selected: Strawberry Planter. Sending');
+  assert.equal(window.pixelStudioFormatNotice('已切换到草莓小盆栽，正在本地预览'), 'Selected: Strawberry Planter. Previewing locally');
   assert.ok(nodes[0].nodeValue.includes('Strawberry Planter'));
   state.updateState = 'checking'; render();
   assert.equal(state.updateStatus.textContent, 'Checking GitHub...');
   change('zh-CN');
   assert.equal(state.updateStatus.textContent, '正在检查 GitHub...');
+  assert.equal(window.pixelStudioFormatNotice('已切换到草莓小盆栽，正在本地预览'), '已切换到草莓小盆栽，正在本地预览');
   state.updateState = 'newer'; state.remoteVersion = '99.0.0'; render();
   assert.ok(state.updateStatus.textContent.startsWith('发现新版本：99.0.0'));
   change('en');

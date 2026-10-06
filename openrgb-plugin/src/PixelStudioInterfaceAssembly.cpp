@@ -71,10 +71,6 @@ void PixelStudioPanel::arrangeSettingsAndLiveControls(QSettings& settings,
     screenSettingsLayout->setContentsMargins(12, 16, 12, 12);
     connectionLayout->setContentsMargins(0, 0, 0, 0);
     displayLayout->setContentsMargins(0, 0, 0, 0);
-    const int deviceButtonWidth = qMax(fontMetrics().horizontalAdvance(QStringLiteral("Read screen size")),
-                                      fontMetrics().horizontalAdvance(text("读取屏幕尺寸"))) + 28;
-    serialScan_->setFixedSize(deviceButtonWidth, 30);
-    deviceSize_->setFixedSize(deviceButtonWidth, 30);
     width_->setFixedSize(64, 30);
     height_->setFixedSize(64, 30);
     screenToolbar->setSpacing(10);
@@ -292,18 +288,7 @@ void PixelStudioPanel::arrangeSettingsAndLiveControls(QSettings& settings,
     brightnessControls_ = controls->itemAtPosition(0, 1)->widget();
     speedLabel_ = controls->itemAtPosition(0, 2)->widget();
     speedControls_ = controls->itemAtPosition(0, 3)->widget();
-    // Native labels avoid clipping from the optical text-painting override.
-    controls->removeWidget(clockLabel_);
-    delete clockLabel_;
-    clockLabel_ = new StudioLabel(text("样式"), outputGroup);
-    controls->removeWidget(clockColorLabel_);
-    delete clockColorLabel_;
-    clockColorLabel_ = new StudioLabel(text("配色"), outputGroup);
-    for (QWidget** widget : {&brightnessLabel_, &speedLabel_}) {
-        controls->removeWidget(*widget);
-        delete *widget;
-        *widget = new StudioLabel(widget == &brightnessLabel_ ? text("亮度") : text("速度"), outputGroup);
-    }
+    // Reuse the existing labels; arrangeLiveControls owns their placement.
     for (QLabel* label : {qobject_cast<QLabel*>(brightnessLabel_), qobject_cast<QLabel*>(speedLabel_), clockLabel_, clockColorLabel_}) {
         if (!label) continue;
         label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);

@@ -33,12 +33,34 @@ module.exports=function createDdpService(webRoot){
       if(!Array.isArray(options.binary)||options.binary.length>12288||!options.binary.every(n=>Number.isInteger(n)&&n>=0&&n<=255))throw new Error('Invalid pixel frame');
       body=Buffer.from(options.binary);
     }else if(!read){body=JSON.stringify(options.json||{});if(Buffer.byteLength(body)>4096)throw new Error('DDP command is too large');}
-    await ensure();const current=endpoint;
-    const response=await fetch(current.origin+route,{
-      method:read?'GET':'POST',redirect:'error',headers:{'X-Pixel-Token':current.token,...(typeof body==='string'?{'Content-Type':'application/json'}:{})},
-      body,signal:AbortSignal.timeout(Math.max(1000,Math.min(25000,Number(options.timeout)||6000)))
+    const failure=(status,code,error,retryable=false)=>({
+      status,body:JSON.stringify({error,code,source:'bridge',retryable,route:parsed.pathname})
     });
-    return {status:response.status,body:await response.text()};
+    // Session IDs belong to one utility process. Do not revive a lost session.
+    const sessionCommand=['/api/stats','/api/update','/api/frame'].includes(parsed.pathname);
+    if(sessionCommand&&(!child||!endpoint))return failure(409,'SESSION_LOST','DDP service exited; the session is no longer available');
+    if(parsed.pathname==='/api/stop'&&(!child||!endpoint))return {status:200,body:'{"stopped":true}'};
+    try{await ensure();}catch(error){return failure(503,'BRIDGE_UNAVAILABLE',error.message);}
+    const current=endpoint,worker=child;
+    try{
+      const response=await fetch(current.origin+route,{
+        method:read?'GET':'POST',redirect:'error',headers:{'X-Pixel-Token':current.token,...(typeof body==='string'?{'Content-Type':'application/json'}:{})},
+        body,signal:AbortSignal.timeout(Math.max(1000,Math.min(25000,Number(options.timeout)||6000)))
+      });
+      const text=await response.text();
+      if(sessionCommand&&(endpoint!==current||child!==worker))return failure(409,'SESSION_LOST','DDP service changed during the request');
+      const headers={};
+      for(const name of ['X-Pixel-Dropped','X-Pixel-Send-Ms']){
+        const value=response.headers.get(name);if(value!==null)headers[name]=value;
+      }
+      return {status:response.status,body:text,headers};
+    }catch(error){
+      if(endpoint!==current||child!==worker)return failure(409,'SESSION_LOST','DDP service exited during the request');
+      const code=error.cause?.code||error.code;
+      const timeout=error.name==='TimeoutError'||error.name==='AbortError'||code==='ETIMEDOUT';
+      const transient=timeout||['ECONNRESET','EPIPE','EAGAIN'].includes(code);
+      return failure(timeout?504:503,timeout?'BRIDGE_TIMEOUT':'BRIDGE_UNAVAILABLE',error.message,transient);
+    }
   }
   async function stop(){
     closing=true;const worker=child;if(!worker)return;

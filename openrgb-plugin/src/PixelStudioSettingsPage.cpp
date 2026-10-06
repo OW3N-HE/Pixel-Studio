@@ -93,13 +93,13 @@ PixelStudioPanel::SettingsPageParts PixelStudioPanel::createSettingsPage(
         heading->setFont(headingFont); layout->addWidget(heading);
         const auto buildDate = QLocale::c().toDate(QString::fromLatin1(__DATE__).simplified(), QStringLiteral("MMM d yyyy")).toString(QStringLiteral("yyyy/MM/dd"));
         auto* version = new QLabel(english_
-        ? QStringLiteral("Version 0.2.0 · OpenRGB plugin\nBuilt: %1").arg(buildDate)
-        : text("版本 0.2.0 · OpenRGB 插件\n编译日期：%1").arg(buildDate), &about);
+        ? QStringLiteral("Version 0.2.1 · OpenRGB plugin\nBuilt: %1").arg(buildDate)
+        : text("版本 0.2.1 · OpenRGB 插件\n编译日期：%1").arg(buildDate), &about);
         layout->addWidget(version);
         auto* description = new QLabel(english_
-            ? QStringLiteral("Small pixels. Endless imagination.\n\nA pixel animation studio for WLED. The web app and OpenRGB plugin share an animation library, with live previews, custom palettes and USB / Adalight or DDP output.\n\nAuthors & collaborators\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra · GPT-6.1 Sol\nOWEN\n\nCreated through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.\n\nSpecial thanks: David Wang\n\nIndependent project. Thanks to the WLED, OpenRGB, Qt and Node.js communities. Not an official WLED or OpenRGB release.")
-            : text("方寸像素，无限想象。\n\n为 WLED 打造的像素动画工作室。网页版与 OpenRGB 插件共享动画库，支持实时预览、自定义配色，以及 USB / Adalight 和 DDP 输出。\n\n作者与协作成员\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra · GPT-6.1 Sol\nOWEN\n\n由 AI 与人类共同创作：AI 协作成员参与设计和开发；OWEN 主导产品方向、视觉取舍与设备体验反馈。\n\n特别鸣谢：David Wang\n\n独立项目，感谢 WLED、OpenRGB、Qt 与 Node.js 社区。本项目不是 WLED 或 OpenRGB 的官方发行版。"), &about);
-        description->setWordWrap(true); description->setMaximumWidth(560);
+            ? QStringLiteral("Small pixels. Endless imagination.\n\nA pixel animation studio for WLED. The web app and OpenRGB plugin share an animation library, with live previews, custom palettes and USB / Adalight or DDP output.\n\nAuthors & collaborators\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra · GPT-6.1 Sol\nOWEN\n\nCreated through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.\n\nSpecial thanks: David Wang · Mango Akuma · Mark Peng · SSSSWILK · &#xff1f · 3FC\n\nIndependent project. Thanks to the WLED, OpenRGB, Qt and Node.js communities. Not an official WLED or OpenRGB release.")
+            : text("方寸像素，无限想象。\n\n为 WLED 打造的像素动画工作室。网页版与 OpenRGB 插件共享动画库，支持实时预览、自定义配色，以及 USB / Adalight 和 DDP 输出。\n\n作者与协作成员\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra · GPT-6.1 Sol\nOWEN\n\n由 AI 与人类共同创作：AI 协作成员参与设计和开发；OWEN 主导产品方向、视觉取舍与设备体验反馈。\n\n特别感谢：David Wang · Mango Akuma · Mark Peng · SSSSWILK · &#xff1f · 3FC\n\n独立项目，感谢 WLED、OpenRGB、Qt 与 Node.js 社区。本项目不是 WLED 或 OpenRGB 的官方发行版。"), &about);
+        description->setTextFormat(Qt::PlainText); description->setWordWrap(true); description->setMaximumWidth(560);
         description->setTextInteractionFlags(Qt::TextSelectableByMouse);
         layout->addWidget(description);
         auto* sensorCredits = new QLabel(english_

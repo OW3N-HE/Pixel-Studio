@@ -23,6 +23,8 @@
   let deviceProfile = null;
   let profilePromise = null;
   let statsWindow = { at:performance.now(), frames:0, bytes:0, ms:0 };
+  let statsDisplay=null;
+  window.addEventListener('pixel-studio-language-change',()=>{if(playback.running&&statsDisplay)renderStreamStats();});
 
 
   const desktopDdp = window.pixelStudioDesktop?.ddpRequest;
@@ -40,12 +42,35 @@
     runtimeNotice.innerHTML = '当前为文件兼容模式，可使用本地预览或 USB 输出；DDP 需要本地服务。要使用最新控制，请打开 <a href="http://127.0.0.1:8766/" target="_blank" rel="noopener">本地高速 DDP 服务</a>。';
     runtimeNotice.classList.add('err');
   }
-  const ddp = {session:null,pending:null,epoch:0,releasing:Promise.resolve(),controller:null};
+  const ddp = {session:null,pending:null,epoch:0,releasing:Promise.resolve(),controller:null,notices:{}};
+  function ddpNotice(scope,message,detail='',phase='sending'){
+    if(!message){delete ddp.notices[scope];return;}
+    if(ddp.notices[scope]?.detail!==detail)logLine('[DDP '+scope+'] '+detail);
+    ddp.notices[scope]={message,detail,phase};
+  }
+  function outputNotice(){
+    return ddp.notices.frame||ddp.notices.worker||ddp.notices.update||ddp.notices.stats||null;
+  }
+  function renderStreamStats(){
+    const node=document.getElementById('streamStats'),s=statsDisplay;
+    if(!node||!s)return;
+    node.setAttribute('data-update-ui','');
+    node.textContent=s.name+' · '+(s.fps===null?'--':s.fps.toFixed(1))+' / '+s.target+' FPS';
+    const en=document.documentElement.lang==='en';
+    node.title=(en?'Computer send rate, not confirmed screen FPS.':'电脑发送速率，不代表屏幕实测帧率。')+
+      (s.stale?(en?' Statistics temporarily unavailable.':'统计暂不可用。'):'')+
+      (s.ms===undefined?'':(en?'\nFrame: ':'\n发帧耗时：')+s.ms.toFixed(1)+' ms')+
+      (s.missed===undefined?'':(en?'\nSkipped: ':'\n跳帧：')+s.missed);
+  }
 
   function serialNote(message, kind) {
     serialNotice = { message, kind };
     const node=document.getElementById('serialDiagnostic');
-    if(node) {node.textContent=window.pixelStudioFormatNotice ? window.pixelStudioFormatNotice(message, kind) : message;node.dataset.state=kind||'info';}
+    if(node) {
+      const notice=window.pixelStudioDescribeNotice?.(message,kind);
+      node.textContent=notice?.message||(window.pixelStudioFormatNotice?window.pixelStudioFormatNotice(message,kind):message);
+      node.title=notice?.detail||'';node.dataset.state=kind||'info';
+    }
   }
 
   function serialResetSession() {
@@ -239,8 +264,9 @@
     if (sent) statsWindow.ms = ms;
     if (now - statsWindow.at < 700) return;
     const seconds = (now - statsWindow.at) / 1000;
-    const name = ui.controlMode.value === 'serial' ? 'Adalight' : 'DDP';
-    document.getElementById('streamStats').textContent = name + ' · ' + (statsWindow.frames / seconds).toFixed(1) + ' / ' + ui.fps.value + ' FPS | ' + (statsWindow.bytes * 8 / seconds / 1000).toFixed(1) + ' kbps';
+    const name = ui.controlMode.value === 'serial' ? 'USB' : 'DDP';
+    statsDisplay={name,fps:statsWindow.frames/seconds,target:ui.fps.value,kbps:statsWindow.bytes*8/seconds/1000,ms:statsWindow.ms};
+    renderStreamStats();
     statsWindow = {at:now, frames:0, bytes:0, ms:statsWindow.ms};
   }
 
@@ -259,7 +285,7 @@
       return {ready:true};
     }
     if(ui.controlMode.value!=='serial')return {ready:false,error:'请选择 USB / Adalight 或 DDP 输出'};
-    if(!writer)await connect({restore:options.restore===true});
+    if(!writer)await connect({restore:options.restore===true,reuse:true});
     if(!isCurrent()||!writer)return {ready:false};
     if(serialLab.confirmedWriter!==writer)await testSerial();
     if(!isCurrent())return {ready:false};
@@ -269,7 +295,12 @@
     return {ready:true};
   }
 
-  function resetStats(now){statsWindow={at:now,frames:0,bytes:0,ms:0};}
+  function resetStats(now){
+    statsWindow={at:now,frames:0,bytes:0,ms:0};
+    // Use the same transport label and renderer before the first measured sample.
+    statsDisplay={name:ui.controlMode.value==='serial'?'USB':'DDP',fps:null,target:ui.fps.value};
+    renderStreamStats();
+  }
   function stopOutput(reason){
     serialStopHold();stopDdpPlayback();
     if(reason)logLine(reason);
@@ -316,9 +347,10 @@
     selectingSerial = true;
     const generation=++serialConnectionGeneration;
     const current=()=>generation===serialConnectionGeneration&&ui.controlMode.value==='serial';
-    let selected=null,opened=false,committed=false,selectedWriter=null,selectedReader=null;
+    let selected=null,opened=false,committed=false,selectedWriter=null,selectedReader=null,remembered=false;
     try {
-      await window.pixelStudioDesktop?.prepareSerialSelection(options.restore===true);
+      const selection=await window.pixelStudioDesktop?.prepareSerialSelection(options.restore===true,options.reuse===true);
+      remembered=selection?.remembered===true;
       if(!current())return;
       selected = await navigator.serial.requestPort();
       if(!current())return;
@@ -347,7 +379,12 @@
     } catch (err) {
       if(committed&&port===selected){stopSerialOutput();await releaseSerialConnection();}
       if(!current())return;
-      if (err.name === 'NotFoundError') {
+      // NotFoundError after choosing a port means the device disappeared, not cancel.
+      if (err.name === 'NotFoundError' && !selected) {
+        if(remembered){
+          setStatus(document.documentElement.lang==='en'?'Remembered USB device unavailable. Reconnect it or select a port.':'记住的 USB 设备不可用，请重新插入或手动选择串口。','err');
+          return;
+        }
         setStatus('已取消选择串口');
         return;
       }
@@ -431,105 +468,183 @@
 
   function ddpTargetFps() { return Math.max(1,Math.min(60,Math.round(Number(ui.fps.value)||60))); }
 
+  function ddpRequestError(route,data,status=0){
+    const operation=route.split('?')[0].split('/').pop();
+    const labels={stats:'DDP 统计查询',update:'DDP 参数更新',frame:'DDP 帧发送',start:'DDP 启动',stop:'DDP 停止',device:'WLED 配置读取',temperature:'温度查询'};
+    let message;
+    if(data.code==='SESSION_LOST'||status===409)message='DDP 会话已失效，请重新开始输出';
+    else if(data.code==='WORKER_FAILED')message='DDP 后台输出已停止，请查看诊断日志';
+    else if(data.source==='device')message=data.code==='DEVICE_TIMEOUT'?'WLED 响应超时，请检查设备地址和网络':'WLED 配置读取失败，请检查设备设置';
+    else if(data.source==='udp')message='DDP 网络发送异常';
+    else if(data.code==='BRIDGE_TIMEOUT')message=(labels[operation]||'DDP 请求')+'超时（本地服务）';
+    else if(data.code==='BRIDGE_UNAVAILABLE')message='本地 DDP 服务暂不可用';
+    else message=data.error||'DDP 请求失败';
+    return Object.assign(new Error(message),{ddpError:true,code:data.code||'DDP_REQUEST_FAILED',
+      source:data.source||'bridge',retryable:data.retryable===true,
+      detail:route.split('?')[0]+' · '+(data.source||'bridge')+' / '+(data.code||status)+' · '+(data.error||message)});
+  }
+
   async function bridgeRequest(route, options = {}) {
     if (!bridgeToken) throw new Error('DDP 需要本地服务：请双击 Start-Pixel-DDP.cmd，从 127.0.0.1:8766 打开');
-    if(desktopDdp){
-      if(options.controller?.signal.aborted)throw new Error('DDP request cancelled');
-      const result=await desktopDdp(route,{
-        ...(options.json===undefined?{}:{json:options.json}),
-        ...(options.binary===undefined?{}:{binary:Array.from(options.binary)}),timeout:options.timeout||6000
-      });
-      if(!result.ok)throw new Error(result.error||'DDP service unavailable');
-      const response=new Response(result.status===204?null:result.body,{status:result.status});
-      if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'DDP service error '+response.status);}
-      return response;
-    }
-    const controller = options.controller || new AbortController();
-    const timer = setTimeout(() => controller.abort(), options.timeout || 6000);
+    const controller=options.controller||new AbortController();
+    let timer=null,timedOut=false;
     try {
-      const response = await fetch(route, {
-        method:options.json === undefined && options.binary === undefined ? 'GET' : 'POST',
-        headers:{'X-Pixel-Token':bridgeToken,'X-Pixel-Client':webClientId,...(options.json === undefined ? {} : {'Content-Type':'application/json'})},
-        ...(options.json === undefined ? options.binary === undefined ? {} : {body:options.binary} : {body:JSON.stringify(options.json)}),
-        signal:controller.signal,cache:'no-store',keepalive:!!options.keepalive
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || '本地 DDP 服务错误 ' + response.status);
+      let response;
+      if(desktopDdp){
+        if(controller.signal.aborted)throw new Error('DDP request cancelled');
+        const result=await desktopDdp(route,{
+          ...(options.json===undefined?{}:{json:options.json}),
+          ...(options.binary===undefined?{}:{binary:Array.from(options.binary)}),timeout:options.timeout||6000
+        });
+        if(!result.ok)throw ddpRequestError(route,{error:result.error||'DDP service unavailable',code:'BRIDGE_UNAVAILABLE'});
+        response=new Response(result.status===204?null:result.body,{status:result.status,headers:result.headers||{}});
+      } else {
+        timer=setTimeout(()=>{timedOut=true;controller.abort();},options.timeout||6000);
+        response=await fetch(route,{
+          method:options.json===undefined&&options.binary===undefined?'GET':'POST',
+          headers:{'X-Pixel-Token':bridgeToken,'X-Pixel-Client':webClientId,...(options.json===undefined?{}:{'Content-Type':'application/json'})},
+          ...(options.json===undefined?options.binary===undefined?{}:{body:options.binary}:{body:JSON.stringify(options.json)}),
+          signal:controller.signal,cache:'no-store',keepalive:!!options.keepalive
+        });
+        // Consume the body within the deadline, not after clearing the timer.
+        const text=await response.text();
+        response=new Response(response.status===204?null:text,{status:response.status,headers:response.headers});
+      }
+      if(!response.ok){
+        const data=await response.json().catch(()=>({}));
+        throw ddpRequestError(route,data,response.status);
       }
       return response;
-    } finally { clearTimeout(timer); }
+    } catch(error) {
+      if(error.ddpError)throw error;
+      if(controller.signal.aborted&&!timedOut)throw error;
+      const retryable=timedOut||error.name==='TimeoutError'||error.name==='TypeError';
+      throw ddpRequestError(route,{error:error.message,source:'bridge',
+        code:timedOut||error.name==='TimeoutError'?'BRIDGE_TIMEOUT':'BRIDGE_UNAVAILABLE',retryable});
+    } finally {if(timer!==null)clearTimeout(timer);}
   }
 
   function stopDdpPlayback() {
     ddp.epoch++;
     ddp.controller?.abort();ddp.controller=null;
-    const old = ddp.session;ddp.session=null;
+    const old = ddp.session;ddp.session=null;ddp.notices={};statsDisplay=null;
     if (old) ddp.releasing = ddp.releasing.catch(() => {}).then(async () => {
       try { await bridgeRequest('/api/stop',{json:{id:old.id},keepalive:true}); }
       catch (error) { logLine('DDP 停止通知：'+error.message+'；设备将按实时超时设置退出'); }
     });
   }
 
+  function retryDdpOperation(session,scope,error,startedAt,budget){
+    if(!error.retryable){logLine(error.detail||error.message);throw error;}
+    const now=performance.now(),retry=session.retries[scope]||{since:startedAt,count:0,nextAt:0};
+    if(now-retry.since>=budget){logLine(error.detail||error.message);throw error;}
+    retry.count++;retry.nextAt=now+Math.min(1000,250*retry.count);session.retries[scope]=retry;
+    ddpNotice(scope,scope==='update'?'DDP 参数同步暂缓，正在重试':'DDP 发帧暂缓，正在重试',error.detail,scope==='update'?'sending':'recovering');
+    if(scope==='frame'){
+      statsDisplay={name:'DDP',fps:null,target:session.targetFps||ddpTargetFps(),kbps:null,stale:true};
+      renderStreamStats();
+    }
+  }
+  function clearDdpRetry(session,scope){delete session.retries[scope];ddpNotice(scope,'');}
+
   async function ensureDdpSession() {
     if (!bridgeToken) throw new Error('请双击 Start-Pixel-DDP.cmd，从本地高速入口打开 DDP 模式');
+    if(ddp.pending){
+      const epoch=ddp.epoch;
+      await ddp.pending;
+      if(epoch!==ddp.epoch)return null;
+      return ensureDdpSession();
+    }
     const {w,h,d}=getFrameConfig();
     const config={host:deviceBase(),w,h,brightness:d,mode:getAnimationMode(),thermal:window.pixelStudioTemperatureSettings||{},speed:playback.animationSpeed,fps:ddpTargetFps(),mapping:ui.mapping.value,clockFont:document.getElementById('clockFont').value,clockPalette:getAnimationMode()==='clock'?document.getElementById('clockPalette').value:(window.pixelStudioAnimationPaletteKey||'original'),match:document.getElementById('colorMode').value==='match',gamma:Number(document.getElementById('colorGamma').value)||2.8};
     const compatibilityKey=[config.host,w,h,config.mode==='file'?'file':'generated'].join('|');
     const key=[compatibilityKey,d,config.mode,playback.animationSpeed,config.fps,config.mapping,config.clockFont,config.clockPalette,config.match,config.gamma,JSON.stringify(config.thermal)].join('|');
-    if (ddp.session?.key === key) return ddp.session;
-    if (ddp.pending) { await ddp.pending; return ensureDdpSession(); }
-    if (ddp.session?.autonomous && ddp.session.compatibilityKey === compatibilityKey) {
-      const clock={animationTime:playback.animationElapsed+(performance.now()-playback.animationLastTime)/1000*playback.animationSpeed,animationWallTime:Date.now()};
-      await (await bridgeRequest('/api/update',{json:{id:ddp.session.id,...config,...clock},timeout:6500})).json();
-      ddp.session.key=key;
-      ddp.session.targetFps=config.fps;
-      document.getElementById('streamStats').textContent='DDP 后台 · 已无缝切换至 '+ui.animationMode.selectedOptions[0].textContent;
-      return ddp.session;
+    if(ddp.session?.key===key){clearDdpRetry(ddp.session,'update');return ddp.session;}
+    if(ddp.session?.autonomous&&ddp.session.compatibilityKey===compatibilityKey){
+      const session=ddp.session,epoch=ddp.epoch;
+      if(performance.now()<(session.retries.update?.nextAt||0))return session;
+      const pending=(async()=>{
+        const startedAt=performance.now();
+        const clock={animationTime:playback.animationElapsed+(startedAt-playback.animationLastTime)/1000*playback.animationSpeed,animationWallTime:Date.now()};
+        try {
+          await (await bridgeRequest('/api/update',{json:{id:session.id,...config,...clock},timeout:2500})).json();
+          if(epoch!==ddp.epoch||session!==ddp.session)return null;
+          session.key=key;session.targetFps=config.fps;clearDdpRetry(session,'update');
+        } catch(error) {
+          if(epoch!==ddp.epoch||session!==ddp.session)return null;
+          retryDdpOperation(session,'update',error,startedAt,10000);
+        }
+        return session;
+      })();
+      ddp.pending=pending;
+      try{return await pending;}finally{if(ddp.pending===pending)ddp.pending=null;}
     }
-    if (ddp.session) stopDdpPlayback();
+    if(ddp.session)stopDdpPlayback();
     const epoch=ddp.epoch;
-    ddp.pending=(async () => {
+    const pending=(async()=>{
       await ddp.releasing;
-      if (epoch!==ddp.epoch) return null;
+      if(epoch!==ddp.epoch)return null;
       const clock={animationTime:playback.animationElapsed+(performance.now()-playback.animationLastTime)/1000*playback.animationSpeed,animationWallTime:Date.now()};
-      const result=await (await bridgeRequest('/api/start',{json:{...config,...clock},timeout:20000})).json();
-      if (epoch!==ddp.epoch) {
-        await bridgeRequest('/api/stop',{json:{id:result.id}});
-        return null;
+      try {
+        const result=await (await bridgeRequest('/api/start',{json:{...config,...clock},timeout:20000})).json();
+        if(epoch!==ddp.epoch){await bridgeRequest('/api/stop',{json:{id:result.id}});return null;}
+        ddp.session={...result,key,compatibilityKey,statsAt:-Infinity,retries:{}};
+        logLine((result.autonomous?'DDP 后台动画已启动，目标 '+result.targetFps+' FPS，切换标签页不影响发送':'DDP 图片/视频由网页供帧，请保持页面在前台')+'；每帧 '+result.packetCount+' 个 UDP 包；'+(result.gammaCompensated?'按设备实时 Gamma 补偿':'直接发送原始 RGB'));
+        return ddp.session;
+      } catch(error) {
+        if(epoch!==ddp.epoch)return null;
+        logLine(error.detail||error.message);throw error;
       }
-      ddp.session={...result,key,compatibilityKey,statsAt:-Infinity};
-      logLine((result.autonomous?'DDP 后台动画已启动，目标 '+result.targetFps+' FPS，切换标签页不影响发送':'DDP 图片/视频由网页供帧，请保持页面在前台')+'；每帧 '+result.packetCount+' 个 UDP 包；'+(result.gammaCompensated?'按设备实时 Gamma 补偿':'直接发送原始 RGB'));
-      return ddp.session;
     })();
-    try { return await ddp.pending; } finally { ddp.pending=null; }
+    ddp.pending=pending;
+    try{return await pending;}finally{if(ddp.pending===pending)ddp.pending=null;}
   }
 
   async function sendFrameDdp(frame) {
     const epoch=ddp.epoch;
     const session=await ensureDdpSession();
-    if (!session || session!==ddp.session || epoch!==ddp.epoch) return;
-    if (session.autonomous) { await updateBackgroundStats(session); return; }
-    const started=performance.now();
-    const controller=new AbortController();ddp.controller=controller;
+    if(!session||session!==ddp.session||epoch!==ddp.epoch)return;
+    if(session.autonomous){await updateBackgroundStats(session);return;}
+    if(performance.now()<(session.retries.frame?.nextAt||0))return;
+    const started=performance.now(),controller=new AbortController();ddp.controller=controller;
     try {
       const response=await bridgeRequest('/api/frame?id='+session.id,{binary:frame,controller,timeout:1500});
-      if (session!==ddp.session) return;
-      const sent=response.headers.get('X-Pixel-Dropped')!=='1';
-      showStreamStats(sent,sent?frame.length+session.packetCount*10:0,performance.now()-started);
-    } finally { if(ddp.controller===controller)ddp.controller=null; }
+      if(session!==ddp.session||epoch!==ddp.epoch)return;
+      if(response.headers.get('X-Pixel-Dropped')==='1')
+        throw ddpRequestError('/api/frame',{code:'FRAME_BUSY',error:'DDP 发帧暂缓，正在重试',retryable:true});
+      clearDdpRetry(session,'frame');
+      showStreamStats(true,frame.length+session.packetCount*10,performance.now()-started);
+    } catch(error) {
+      if(session!==ddp.session||epoch!==ddp.epoch)return;
+      retryDdpOperation(session,'frame',error,started,5000);
+    } finally {if(ddp.controller===controller)ddp.controller=null;}
   }
 
   async function updateBackgroundStats(session) {
     const now=performance.now();
-    if(now-session.statsAt<750)return;
+    if(now-session.statsAt<1000)return;
     session.statsAt=now;
-    const stats=await (await bridgeRequest('/api/stats?id='+session.id,{timeout:2500})).json();
-    if(ddp.session!==session)return;
-    const fps=Number(stats.fps)||0,target=Number(stats.targetFps)||60;
-    document.getElementById('streamStats').textContent='DDP 后台 · 目标 '+target+' FPS · 实际发送 '+fps.toFixed(1)+
-      ' 帧/s · '+(Number(stats.frameMs)||0).toFixed(1)+' ms/帧 · '+(Number(stats.kbps)||0).toFixed(1)+
-      ' KB/s · 调度跳帧 '+(Number(stats.missed)||0)+(stats.frames?'':' · 正在采样');
+    try {
+      const stats=await (await bridgeRequest('/api/stats?id='+session.id,{timeout:2500})).json();
+      if(ddp.session!==session)return;
+      ddpNotice('stats','');
+      if(stats.recovering)ddpNotice('worker','DDP 网络发送暂缓，正在重试',stats.errorCode+' · '+stats.lastError,'recovering');
+      else ddpNotice('worker','');
+      statsDisplay={name:'DDP',fps:stats.frames?Number(stats.fps)||0:null,
+        target:Number(stats.targetFps)||session.targetFps||ddpTargetFps(),
+        kbps:stats.frames?(Number(stats.kbps)||0)*1024*8/1000:null,
+        ms:Number(stats.frameMs)||0,missed:Number(stats.missed)||0};
+      renderStreamStats();
+    } catch(error) {
+      if(ddp.session!==session)return;
+      if(!error.retryable){logLine(error.detail||error.message);throw error;}
+      // Telemetry is not the send path. Leave the autonomous worker running.
+      // Expired sessions and confirmed worker failures remain fatal.
+      session.statsAt=performance.now();
+      ddpNotice('stats','DDP 统计暂不可用，正在重试',error.detail,'uncertain');
+      statsDisplay={name:'DDP',fps:null,target:session.targetFps||ddpTargetFps(),kbps:null,stale:true};
+      renderStreamStats();
+    }
   }
- return {prepareOutput,resetStats,stopOutput,serialNote,serialUartFps,serialStopHold,sendFrameAdalight,deviceBase,readDeviceProfile,resetFrameCache,showStreamStats,sendOutputFrame,connect,disconnect,testSerial,isDdpMode,ddpTargetFps,bridgeRequest,stopDdpPlayback,ensureDdpSession,sendFrameDdp,updateBackgroundStats,state:{get port(){return port;},set port(value){port=value;},get writer(){return writer;},set writer(value){writer=value;},get reader(){return reader;},set reader(value){reader=value;},get deviceProfile(){return deviceProfile;},set deviceProfile(value){deviceProfile=value;},get statsWindow(){return statsWindow;},set statsWindow(value){statsWindow=value;},get serialLab(){return serialLab;},get bridgeToken(){return bridgeToken;}}};
+ return {prepareOutput,resetStats,stopOutput,serialNote,serialUartFps,serialStopHold,sendFrameAdalight,deviceBase,readDeviceProfile,resetFrameCache,showStreamStats,sendOutputFrame,connect,disconnect,testSerial,isDdpMode,ddpTargetFps,bridgeRequest,stopDdpPlayback,ensureDdpSession,sendFrameDdp,updateBackgroundStats,state:{get port(){return port;},set port(value){port=value;},get writer(){return writer;},set writer(value){writer=value;},get reader(){return reader;},set reader(value){reader=value;},get deviceProfile(){return deviceProfile;},set deviceProfile(value){deviceProfile=value;},get statsWindow(){return statsWindow;},set statsWindow(value){statsWindow=value;},get serialLab(){return serialLab;},get bridgeToken(){return bridgeToken;},get outputNotice(){return outputNotice();}}};
 });

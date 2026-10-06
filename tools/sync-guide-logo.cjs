@@ -1,20 +1,26 @@
 'use strict';
 
-// Explicit maintenance command. The application's runtime SVG is authoritative.
+// Explicit maintenance command. Copy geometry, never redesign the approved mark.
 const fs = require('node:fs');
 const path = require('node:path');
+const {themes,brandTheme,iconViewport} = require('../desktop/icons.cjs');
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const match = source.match(/(<svg class="brand-mark"[\s\S]*?<\/svg>)/);
 if (!match) throw new Error('Runtime application logo not found; guide unchanged.');
+function palette(theme) {
+  const [accent,back,center,tile,highlight,shadow] = themes[theme];
+  return '.logo-halo{fill:none;stroke:#'+accent+'}.logo-halo>rect:last-child{fill:#'+back+'}.logo-back{fill:#'+back+'}.logo-tile{fill:#'+tile+'}.logo-center{fill:#'+center+'}.logo-white{fill:#fff}.logo-tile>rect:nth-child(-n+3){fill:#'+highlight+'}.logo-tile>rect:is(:nth-child(7),:nth-child(8)){fill:#'+shadow+'}';
+}
+const viewport = iconViewport();
 const svg = match[1]
   .replace('class="brand-mark"', 'xmlns="http://www.w3.org/2000/svg"')
-  .replace('class="logo-halo"', 'fill="none" stroke="#83d5f2"')
-  .replace('class="logo-back"', 'fill="#0c161d"')
-  .replace('class="logo-tile"', 'fill="#83d5f2"')
-  .replace('class="logo-center"', 'fill="#12212b"')
-  .replace('class="logo-white"', 'fill="#ffffff"');
-if (/class="logo-/.test(svg)) throw new Error('Unmapped logo styling; guide unchanged.');
+  .replace(/viewBox="[^"]*"/, 'viewBox="'+[viewport.start,viewport.start,viewport.size,viewport.size].join(' ')+'"')
+  .replace(/>/, '><style>'+palette(brandTheme)+'</style>');
+const roles = new Set(['logo-halo','logo-back','logo-tile','logo-center','logo-white']);
+if ([...svg.matchAll(/class="([^"]+)"/g)].some(([,role])=>!roles.has(role))) {
+  throw new Error('Unmapped logo styling; guide unchanged.');
+}
 const uri = 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
 const guidePath = path.join(root, 'installer', 'GETTING-STARTED.html');
 let guide = fs.readFileSync(guidePath, 'utf8');
@@ -26,4 +32,4 @@ if ([...guide.matchAll(favicon)].length !== 1 || [...guide.matchAll(brand)].leng
 guide = guide.replace(favicon, `<link rel="icon" type="image/svg+xml" href="${uri}">`)
   .replace(brand, `$1<img src="${uri}" width="44" height="44" alt="" aria-hidden="true">`);
 fs.writeFileSync(guidePath, guide, 'utf8');
-console.log('Updated guide header and favicon from the application runtime SVG.');
+console.log('Updated guide header and favicon from the runtime geometry and fixed blue palette.');

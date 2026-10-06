@@ -25,13 +25,16 @@ The sampler is built with a generic source path map. Its local PDB is useful for
 
 ## Tests
 
-The included settings/updater tests use mocked interfaces, not real devices. The language test uses Acorn resolved from `firmware/wled-usb-pixel`; if that development directory is absent, install its test-only dependency with `npm install --prefix firmware/wled-usb-pixel acorn`. This does not install firmware.
+From the source root, restore the locked, development-only dependencies and run the explicit regression suite. Acorn is declared in the root package, not borrowed from a firmware workspace. The runner stops on the first failure and never discovers or runs historical release scripts.
+
+在源码根目录恢复锁定的测试依赖，再运行统一回归入口。测试不依赖未发布的固件开发目录；遇到失败即停止，不会自动执行历史发布脚本。
 
 ```powershell
-node tools/check-language-state.cjs
-node tools/test-desktop-settings.cjs
-node tools/test-updater.cjs
+npm ci --ignore-scripts
+npm test
 ```
+
+These are source/in-memory/mock checks. Some tests write disposable fixtures under `logs/`. They do not install software, open real devices or prove native Desktop/OpenRGB rendering, sensor access, driver compatibility or installer behavior. Those remain separate, explicitly authorized checks. To run one check, use `node tools/<test-name>.cjs` after restoring the root dependencies.
 
 ## License and upstream sources
 

@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'..');
 const source=fs.readFileSync(path.join(root,'desktop/updater.cjs'),'utf8');
 const ui=fs.readFileSync(path.join(root,'pixel-studio-web-ui.js'),'utf8');
-const acorn=require(require.resolve('acorn',{paths:[path.join(root,'firmware/wled-usb-pixel')]}));
+const acorn=require('acorn');
 const ast=acorn.parse(ui,{ecmaVersion:'latest'}),functions=new Map(),handlers=new Map();
 function visit(n){if(!n||typeof n!=='object')return;if(n.type==='FunctionDeclaration')functions.set(n.id.name,ui.slice(n.start,n.end));if(n.type==='CallExpression'&&n.callee.type==='MemberExpression'&&n.callee.property.name==='addEventListener'&&n.arguments[0]?.value==='click'&&n.callee.object.type==='Identifier')handlers.set(n.callee.object.name,ui.slice(n.arguments[1].start,n.arguments[1].end));for(const v of Object.values(n))if(Array.isArray(v))v.forEach(visit);else if(v&&typeof v==='object')visit(v);}
 visit(ast);
@@ -42,6 +42,8 @@ function downloaded(dir){return fs.readdirSync(path.join(dir,'updates'),{withFil
  for(const language of ['en','zh-CN'])await test('update UI states and language '+language,async()=>{
   const state={document:{documentElement:{lang:language}},window:{pixelStudioDesktop:{installUpdate(){}}},VERSION:'0.1.7',updateState:'idle',remoteVersion:'0.1.8',releaseNotes:'',packages:{installer:{url:base,name:'PixelStudio-Setup-0.1.8.exe',size:bytes.length}},packageSelect:{value:'installer',options:[{},{},{}]},installerUrl:'',downloadOpened:false,nativeUpdateState:'idle',nativeUpdateVersion:'',nativePercent:42};
   for(const name of ['updateLegend','updateSummary','updateButton','packageLabel','updateStatus','updateNotes','updateDetails','releaseLink','installerButton','installerStatus','nativeUpdateStatus','nativeInstall'])state[name]=element();
+  // Markdown rendering is covered separately by test-release-notes.cjs.
+  state.renderReleaseNotes=(node,text)=>{node.textContent=text;};
   const context=vm.createContext(state);vm.runInContext(functions.get('renderNativeUpdate')+'\n'+functions.get('renderUpdate'),context);
   for(const status of ['idle','checking','empty','failed','limited','timeout','invalid','latest','ahead','newer']){state.updateState=status;vm.runInContext('renderUpdate()',context);assert.ok(state.updateStatus.textContent);assert.equal(state.installerButton.disabled,!['latest','newer'].includes(status));if(language==='en')assert.ok(!/\p{Script=Han}/u.test(state.updateStatus.textContent+state.installerStatus.textContent));}
   for(const native of ['downloading','ready','failed','installing']){state.nativeUpdateState=native;state.nativeUpdateVersion='0.1.8';vm.runInContext('renderNativeUpdate()',context);assert.equal(state.nativeInstall.disabled,native!=='ready');if(language==='en')assert.ok(!/\p{Script=Han}/u.test(state.nativeUpdateStatus.textContent));}

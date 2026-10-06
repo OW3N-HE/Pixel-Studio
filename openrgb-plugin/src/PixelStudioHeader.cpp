@@ -24,7 +24,7 @@ PixelStudioPanel::HeaderParts PixelStudioPanel::createHeader(
     heading->setContentsMargins(6, 0, 6, 0);
     // Same eight-pixel mark as the web header, drawn natively for crisp DPI scaling.
     auto* brandMark = new StudioLabel(this);
-    QPixmap brandPixmap = QPixmap::fromImage(pixelStudioLogo(80));
+    QPixmap brandPixmap = QPixmap::fromImage(pixelStudioLogo(80, QColor("#4cc2ff"), QColor("#151515"), true));
     brandPixmap.setDevicePixelRatio(2.0);
     brandMark->setPixmap(brandPixmap);
     brandMark->setObjectName(QStringLiteral("PixelStudioBrandLogo"));

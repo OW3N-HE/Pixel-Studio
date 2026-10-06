@@ -61,7 +61,9 @@
     sampling.append(sampleLabel,sampleRange,sampleValue); controls.querySelector('.adjustments').append(sampling);
     const speedRow = document.getElementById('animationSpeed').closest('.speed-control');
     const status = make('output','thermal-status'); status.hidden = true; status.setAttribute('data-update-ui',''); status.setAttribute('aria-live','polite');
-    (document.querySelector('.ps-playback-messages') || controls.parentElement).append(status);
+    const playbackMessages = document.querySelector('.ps-playback-messages');
+    if (playbackMessages?.querySelector('.ps-playback-feedback')) status.classList.add('ps-playback-source');
+    (playbackMessages || controls.parentElement).append(status);
 
     const dialog = make('dialog','ps-settings ps-media-dialog'); dialog.id = 'thermalColorsDialog'; dialog.setAttribute('data-update-ui','');
     dialog.setAttribute('aria-labelledby','thermalColorsTitle');
@@ -130,7 +132,8 @@
       setText(sampleUnit,local('s','秒'));
       for (const input of [sampleRange,sampleNumber]) input.setAttribute('aria-label',local('Sampling interval in seconds','温度采样间隔，秒'));
       for (const option of font.options) setText(option,option.value === 'fixed' ? local('Fixed pixels','固定点阵') : [...clockFont.options].find(item => item.value === option.value)?.textContent || text(option.value));
-      setText(custom,local('Custom','自定义配色')); custom.setAttribute('aria-label',text('custom')); custom.title = text('custom');
+      const customLabel = local('Custom','自定义');
+      setText(custom,customLabel); custom.setAttribute('aria-label',customLabel); custom.title = customLabel;
       setText(title,text('custom')); close.setAttribute('aria-label',text('close'));
       setText(enabledText,local('Enable custom colors','启用自定义配色'));
       setText(hint,local('When disabled, CPU and GPU use the selected brand colors. Saved custom colors are kept. Apply saves changes; Cancel leaves them unchanged.','未勾选时使用 CPU / GPU 品牌配色，并保留已保存的自定义颜色。点击应用才保存，取消不作更改。'));
@@ -157,6 +160,7 @@
         else if (!sample?.cpu && sample?.diagnostics?.elevated === false)
           message += local(' The sampler is not elevated; CPU driver access may require administrator permission.',' 采集器未提升权限；CPU 驱动访问可能需要管理员权限。');
       }
+      status.classList.toggle('err', !['ready','loading'].includes(lastStatus));
       status.hidden = !isActive || !message; setText(status,message);
       for (const [node,id] of titleNodes) setText(node,text(id));
     }

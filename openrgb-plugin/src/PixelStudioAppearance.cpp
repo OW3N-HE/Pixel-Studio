@@ -32,7 +32,10 @@ void PixelStudioPanel::applyTheme() {
     outputBoard_->setThemeColors(accent, idle);
     if (auto* logo = findChild<QLabel*>(QStringLiteral("PixelStudioBrandLogo"))) {
         const qreal dpr = devicePixelRatioF();
-        QImage image = pixelStudioLogo(qRound(logo->width() * dpr), accent, background);
+        const bool neutral = key == QStringLiteral("dark");
+        QImage image = pixelStudioLogo(qRound(logo->width() * dpr), accent,
+            QColor("#151515"), true, neutral ? QColor("#686868") : accent,
+            neutral ? QColor("#303030") : QColor("#2b2b2b"));
         image.setDevicePixelRatio(dpr);
         logo->setPixmap(QPixmap::fromImage(image));
     }

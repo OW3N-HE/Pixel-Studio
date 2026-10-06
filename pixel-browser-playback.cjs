@@ -18,21 +18,25 @@
  };
  // Presentation owns DOM writes; the scheduler reports lifecycle events.
  factory.createPresentation=function(options){
-  const window=options.window||globalThis;
-  const {ui,setStatus}=options;
+  const {setStatus}=options;
   return {
    status:setStatus,
-   started(){
-    setStatus('正在发送','ok');
-    window.document.getElementById('streamStats').textContent='0.0 / '+ui.fps.value+' FPS | 0.0 kbps';
-   },
+   // Transport statistics, including the initial placeholder, belong to output.
+   started(){setStatus('正在发送','ok');},
    imageCompleted(){setStatus('静态图片已发送完成','ok');},
    stopped(){setStatus('已停止');}
   };
  };
  // Pure rules shared by Web, Desktop and the OpenRGB Node adapter.
  factory.policy=Object.freeze({
-  shuffleSeconds(value){return Math.max(3,Math.min(3600,Number(value)||20));},
+  shuffleSeconds(value){return Math.max(3,Math.min(99,Math.round(Number(value)||20)));},
+  playMode(value,enabled=false){return ['fixed','sequential','random'].includes(value)?value:(enabled?'random':'fixed');},
+  chooseSequential(candidates,current){
+   const choices=[...new Set(candidates)].filter(value=>typeof value==='string'&&value);
+   if(!choices.length)return null;
+   const next=choices[(choices.indexOf(current)+1)%choices.length];
+   return next===current?null:next;
+  },
   chooseNext(candidates,current,random=Math.random){
    const choices=[...new Set(candidates)].filter(mode=>typeof mode==='string'&&mode&&mode!==current);
    if(!choices.length)return null;

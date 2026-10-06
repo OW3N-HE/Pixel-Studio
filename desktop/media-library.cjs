@@ -64,7 +64,9 @@ module.exports=function(options){
   async function read(id){
     const entry=await resolve(id),stat=await fs.stat(entry.filename);
     if(!stat.isFile())throw new Error('Not a regular file.');
-    return {url:'pixel-media://library/'+id,type:entry.type,lastModified:stat.mtimeMs};
+    // A stable, private identity across scans/restarts; replacing a file resets its speed.
+    const speedKey=crypto.createHash('sha256').update(JSON.stringify([entry.filename,stat.size,stat.mtimeMs])).digest('hex');
+    return {url:'pixel-media://library/'+id,type:entry.type,lastModified:stat.mtimeMs,speedKey};
   }
   async function respond(request){
     if(!['GET','HEAD'].includes(request.method))return new Response(null,{status:405});

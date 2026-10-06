@@ -38,7 +38,7 @@ foreach ($file in @('main.cjs','preload.cjs','session-controller.js','media-play
     Copy-SourceFile (Join-Path $root "desktop\$file") "desktop\$file"
 }
 # Explicit generated branding inputs; never sweep design drafts into an archive.
-foreach ($file in @('ice.png','mint.png','amber.png','rose.png','pixel-studio.ico','brand-geometry.json')) {
+foreach ($file in @('pixel-studio.ico','brand-geometry.json')) {
     Copy-SourceFile (Join-Path $root "desktop\assets\$file") "desktop\assets\$file"
 }
 Get-ChildItem -LiteralPath (Join-Path $root 'temperature') -File | Where-Object { $_.Extension -in @('.cs','.csproj') } | ForEach-Object {
@@ -54,6 +54,10 @@ foreach ($file in @('check-language-state.cjs','test-desktop-session.cjs','test-
     Copy-SourceFile (Join-Path $root "tools\$file") "tools\$file"
 }
 Copy-SourceFile (Join-Path $root 'README.md') 'README.md'
+Copy-SourceFile (Join-Path $root 'package.json') 'package.json'
+Copy-SourceFile (Join-Path $root 'package-lock.json') 'package-lock.json'
+Copy-SourceFile (Join-Path $root 'tools\run-tests.cjs') 'tools\run-tests.cjs'
+Copy-SourceFile (Join-Path $root 'tools\test-release-notes.cjs') 'tools\test-release-notes.cjs'
 Copy-SourceFile (Join-Path $root 'tools\test-dimension-settings.cjs') 'tools\test-dimension-settings.cjs'
 Copy-SourceFile (Join-Path $PSScriptRoot 'SOURCE-BUILD.md') 'SOURCE-BUILD.md'
 Copy-SourceFile (Join-Path $PSScriptRoot 'SOURCE-BUILD.md') 'installer\SOURCE-BUILD.md'

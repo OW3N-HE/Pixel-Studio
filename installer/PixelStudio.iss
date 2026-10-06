@@ -190,8 +190,8 @@ Name: "{group}\Pixel Studio Desktop"; Filename: "{app}\desktop\Pixel Studio Desk
 Name: "{autodesktop}\Pixel Studio Desktop"; Filename: "{app}\desktop\Pixel Studio Desktop.exe"; IconFilename: "{app}\pixel-studio-brand2.ico"; Components: desktop; Tasks: desktopicon; AppUserModelID: "com.ow3nhe.pixelstudio.desktop"
 Name: "{group}\Pixel Studio Web"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\app\Start-Pixel-DDP.ps1"""; WorkingDir: "{app}\app"; IconFilename: "{app}\pixel-studio-brand2.ico"; Components: web
 Name: "{autodesktop}\Pixel Studio Web"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\app\Start-Pixel-DDP.ps1"""; WorkingDir: "{app}\app"; IconFilename: "{app}\pixel-studio-brand2.ico"; Components: web; Tasks: desktopicon
-Name: "{group}\{cm:Guide}"; Filename: "{app}\GETTING-STARTED.html"
-Name: "{group}\Uninstall Pixel Studio"; Filename: "{uninstallexe}"
+Name: "{group}\{cm:Guide}"; Filename: "{app}\GETTING-STARTED.html"; IconFilename: "{app}\pixel-studio-brand2.ico"
+Name: "{group}\Uninstall Pixel Studio"; Filename: "{uninstallexe}"; IconFilename: "{app}\pixel-studio-brand2.ico"
 
 [Run]
 Filename: "{app}\GETTING-STARTED.html"; Description: "{cm:OpenGuide}"; Flags: shellexec postinstall skipifsilent
@@ -212,7 +212,6 @@ var
   BackupComplete: Boolean;
   MigrationPrepared: Boolean;
   RemovePersonalSettings: Boolean;
-  LanguageOK, LanguageCancel: TNewButton;
   UpdatingComponents: Boolean;
   ComponentsInitialized: Boolean;
   PreviousComponentsClick: TNotifyEvent;

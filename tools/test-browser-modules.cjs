@@ -11,6 +11,7 @@ function environment(){
     dispatchEvent(event){for(const fn of this.listeners.get(event.type)||[])fn({...event,target:this});return true;}
     append(...children){this.children.push(...children);}
     setAttribute(name,value){this.attributes[name]=value;}
+    setCustomValidity(value){this.validationMessage=value;}
     removeAttribute(name){delete this.attributes[name];if(name==='src')this.src='';}
     play(){this.paused=false;return Promise.resolve();}
     pause(){this.paused=true;}
@@ -44,6 +45,7 @@ function environment(){
     Image:class extends Element{constructor(){super('img');this.complete=false;this.naturalWidth=15;this.naturalHeight=27;}},MutationObserver:class{observe(){}},Event:class{constructor(type){this.type=type;}},
     crypto:{randomUUID:()=> 'mock-client-000000000000000'},
     addEventListener:(name,fn)=>{const list=events.get(name)||[];list.push(fn);events.set(name,list);},
+    dispatchEvent:event=>{for(const fn of [...events.get(event.type)||[]])fn(event);},
     setTimeout:(fn,ms)=>{timers.set(++id,{fn,ms});return id;},clearTimeout:key=>timers.delete(key),
     setInterval:(fn,ms)=>{timers.set(++id,{fn,ms,interval:true});return id;},clearInterval:key=>timers.delete(key),
     fetch:async()=>{throw Error('Unexpected mock network request');}};
@@ -59,9 +61,26 @@ async function run(){
   vm.runInContext(load('pixel-animation-runtime.js'),context,{filename:'pixel-animation-runtime.js'});
   assert(env.window.pixelStudioWebRuntime);assert.equal(env.window.pixelStudioWebRuntime.playing,false);
   assert(env.ids.get('animationGallery').children.length>0);
+  const firstMode=env.window.PixelStudioAnimationCatalog.galleryModes[0];
+  assert.equal(env.ids.get('animationMode').value,firstMode,'Fresh web pages start with the first catalog animation');
+  assert.equal(env.ids.get('animationGallery').children[0].dataset.mode,firstMode);
+  assert.equal(env.ids.get('animationGallery').children[0].attributes['aria-pressed'],'true');
+  assert.equal(env.ids.get('preview').src,'data:image/png;base64,mock');
+  assert.equal(env.ids.get('status').textContent,'正在本地预览','The status must not repeat the animation title');
+  // Exercise the runtime's language-change hook without loading a browser UI.
+  env.window.pixelStudioFormatNotice=text=>env.window.document.documentElement.lang==='en'
+    ? ({'正在本地预览':'Previewing locally','正在发送':'Sending'}[text]||text) : text;
+  for(const [language,expected] of [['en','Previewing locally'],['zh-CN','正在本地预览'],['en','Previewing locally']]){
+    env.window.document.documentElement.lang=language;
+    env.window.dispatchEvent({type:'pixel-studio-language-change'});
+    assert.equal(env.ids.get('status').textContent,expected);
+    assert.equal(env.ids.get('animationMode').value,firstMode);
+    assert.equal(env.window.pixelStudioWebRuntime.playing,false);
+  }
   for(const mode of ['thermal_icons','clock','wave','fire','thermal_digits']){
     env.ids.get('animationMode').value=mode;env.ids.get('animationMode').dispatchEvent({type:'change'});
     assert.equal(env.ids.get('preview').src,'data:image/png;base64,mock');
+    assert.equal(env.ids.get('status').textContent,'Previewing locally','Animation switching must not duplicate names in status');
   }
   env.ids.get('animationSpeed').dispatchEvent({type:'input'});
   env.ids.get('stopBtn').dispatchEvent({type:'click'});
@@ -90,6 +109,9 @@ async function run(){
   for(const name of modules)vm.runInContext(load(name),desktopContext,{filename:name});
   vm.runInContext(load('pixel-animation-runtime.js'),desktopContext,{filename:'pixel-animation-runtime.js'});
   const runtime=dw.pixelStudioWebRuntime,mode=desktop.ids.get('animationMode'),stop=desktop.ids.get('stopBtn');
+  assert.equal(mode.value,dw.PixelStudioAnimationCatalog.galleryModes[0],'Fresh desktop installs share the catalog default');
+  assert.equal(runtime.playing,false,'Choosing an initial animation does not start device output');
+  assert.equal(desktop.ids.get('status').textContent,'正在本地预览');
   const tickPreview=()=>{
     const entry=[...desktop.timers.entries()].find(([,timer])=>timer.ms===16);
     assert(entry,'An independent preview timer must exist');desktop.timers.delete(entry[0]);entry[1].fn();
@@ -112,8 +134,64 @@ async function run(){
   const replacingImage=runtime.replaceDesktopMedia({url:'pixel-media://library/image',type:'image/png',name:'image.png'});
   const image=desktop.nodes.filter(node=>node.tag==='img').at(-1);image.complete=true;
   const beforeImage=desktop.dataUrlCalls;image.onload();assert.equal(await replacingImage,true);assert(desktop.dataUrlCalls>beforeImage);assert.equal(runtime.playing,false);
+  // Read-only preview state must distinguish no source, pending decode and failure.
+  assert.equal(runtime.previewStatus,'ready');
+  mode.value='wave';mode.dispatchEvent({type:'change'});
+  assert.equal(runtime.previewStatus,'ready');
+  mode.value='file';mode.dispatchEvent({type:'change'});
+  assert.equal(runtime.previewStatus,'empty');
+  assert.equal(desktop.ids.get('status').dataset.noticeSource,'媒体模式：请选择图片或视频');
+  runtime.loadDesktopMedia({...firstVideo,url:'pixel-media://library/loading'});
+  assert.equal(runtime.previewStatus,'loading');
+  const loadingVideo=desktop.nodes.filter(node=>node.tag==='video').at(-1);
+  loadingVideo.readyState=1;loadingVideo.onloadedmetadata();
+  assert.equal(runtime.previewStatus,'loading','Metadata alone is not a decoded video frame');
+  loadingVideo.readyState=2;
+  assert.equal(runtime.previewStatus,'ready');
+  const lateError=loadingVideo.onerror;lateError();
+  assert.equal(runtime.previewStatus,'error');
+  runtime.loadDesktopMedia({url:'pixel-media://library/recovered',type:'image/png',name:'recovered.png'});
+  assert.equal(runtime.previewStatus,'loading');
+  const recovered=desktop.nodes.filter(node=>node.tag==='img').at(-1);recovered.complete=true;recovered.onload();
+  assert.equal(runtime.previewStatus,'ready');
+  lateError();assert.equal(runtime.previewStatus,'ready','An old decode error must not poison a newer source');
+  const failedSwap=runtime.replaceDesktopMedia({...firstVideo,url:'pixel-media://library/failed-swap'});
+  assert.equal(runtime.previewStatus,'ready','Keep reporting the valid preview while its replacement decodes');
+  desktop.nodes.filter(node=>node.tag==='video').at(-1).onerror();
+  await assert.rejects(failedSwap,/Unable to decode/);
+  assert.equal(runtime.previewStatus,'ready','A failed replacement must retain the working preview');
+  mode.value='wave';mode.dispatchEvent({type:'change'});
+  mode.value='file';mode.dispatchEvent({type:'change'});
+  const failedFirst=runtime.replaceDesktopMedia({...firstVideo,url:'pixel-media://library/failed-first'});
+  assert.equal(runtime.previewStatus,'loading');
+  desktop.nodes.filter(node=>node.tag==='video').at(-1).onerror();
+  await assert.rejects(failedFirst,/Unable to decode/);
+  assert.equal(runtime.previewStatus,'error');
+  mode.value='wave';mode.dispatchEvent({type:'change'});
+  const animations=dw.PixelStudioAnimations;
+  dw.PixelStudioAnimations={...animations,draw(){throw new Error('Mock preview failure');}};
+  tickPreview();assert.equal(runtime.previewStatus,'error');
+  dw.PixelStudioAnimations=animations;
+  mode.value='clock';mode.dispatchEvent({type:'change'});
+  assert.equal(runtime.previewStatus,'ready');
+  assert.equal(runtime.playing,false,'Preview status tracking must never start output');
   for(const fn of desktop.events.get('pagehide')||[])fn();assert.equal(desktop.timers.size,0);
+  console.log('PASS preview states: empty, pending metadata/decode, ready, failure, recovery, stale callbacks and retained-source replacement.');
   console.log('PASS desktop decoded-media handoff, output-off video preview, stop without rewind, late decode, stale selection and image preview.');
+
+  // Reordered catalogs must not require changing a hard-coded startup animation.
+  const reordered=environment(),reorderedContext=vm.createContext(reordered.window);
+  for(const name of modules)vm.runInContext(load(name),reorderedContext,{filename:name});
+  const catalog=reordered.window.PixelStudioAnimationCatalog;
+  reordered.window.PixelStudioAnimationCatalog={...catalog,galleryModes:['fire',...catalog.galleryModes.filter(id=>id!=='fire')]};
+  reordered.ids.get('animationMode').value='rainbow';
+  vm.runInContext(load('pixel-animation-runtime.js'),reorderedContext,{filename:'pixel-animation-runtime.js'});
+  assert.equal(reordered.ids.get('animationMode').value,'fire');
+  assert.equal(reordered.ids.get('animationGallery').children[0].attributes['aria-pressed'],'true');
+  assert.equal(reordered.window.pixelStudioWebRuntime.playing,false);
+  for(const fn of reordered.events.get('pagehide')||[])fn();
+  assert.equal(reordered.timers.size,0);
+  console.log('PASS catalog-driven Web/Desktop defaults, reordered catalog, and name-free bilingual animation status.');
 
   // Playback clock and generation invalidation with a fake output dependency.
   const playbackFactory=require('../pixel-browser-playback.cjs');let sent=0,prepares=0;
@@ -155,6 +233,9 @@ async function run(){
   };
   vm.runInContext(load('pixel-animation-runtime.js'),buttonContext,{filename:'pixel-animation-runtime.js'});
   buttons.ids.get('startBtn').dispatchEvent({type:'click'});await flush();assert.equal(bw.pixelStudioWebRuntime.playing,true);assert.equal(buttonFrames,1);
+  buttons.ids.get('animationMode').value='wave';buttons.ids.get('animationMode').dispatchEvent({type:'change'});
+  assert.equal(buttons.ids.get('status').textContent,'正在发送','Output status must not repeat the animation title');
+  assert.equal(bw.pixelStudioWebRuntime.playing,true);
   buttons.ids.get('connectBtn').dispatchEvent({type:'click'});await flush();assert.equal(bw.pixelStudioWebRuntime.playing,false);assert.equal(buttonFrames,1,'Changing the connection must not restart output');
   buttons.ids.get('startBtn').dispatchEvent({type:'click'});await flush();assert.equal(buttonFrames,2);
   connectionGate=deferred();buttons.ids.get('connectBtn').dispatchEvent({type:'click'});buttons.ids.get('stopBtn').dispatchEvent({type:'click'});

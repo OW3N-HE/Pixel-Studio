@@ -31,7 +31,7 @@ $compiler = (Resolve-Path -LiteralPath $IsccPath).Path
 # Deliberately require a separately assembled payload; never scoop up the private workspace.
 $required = @(
     'LICENSE', 'app\index.html', 'app\pixel-rgb-canvas.cjs', 'app\pixel-animation-designs.cjs', 'app\pixel-animation-engine.cjs', 'app\pixel-clock-renderer.cjs', 'app\pixel-animation-catalog.cjs', 'app\pixel-animation-runtime.js', 'app\pixel-output-protocols.cjs', 'app\pixel-output-transports.cjs', 'app\pixel-render-settings.cjs', 'app\pixel-frame-mapping.cjs', 'app\pixel-frame-pipeline.cjs', 'app\pixel-browser-media.cjs', 'app\pixel-browser-playback.cjs', 'app\pixel-browser-output.cjs', 'app\pixel-studio-web-ui.js',
-    'app\pixel-studio-web-ui.css', 'app\pixel-studio-web-language.js',
+  'app\pixel-settings-schema.cjs', 'app\pixel-studio-web-ui.css', 'app\pixel-studio-web-language.js',
     'app\pixel-studio-web-palettes.js', 'app\pixel-circuit-palette.cjs',
     'app\pixel-headless-renderer.cjs', 'app\pixel-stream-worker.cjs',
     'app\pixel-ddp-bridge.cjs', 'app\openrgb-plugin\pixel-studio-host.cjs',

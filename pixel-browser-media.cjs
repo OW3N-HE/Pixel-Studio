@@ -6,10 +6,31 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(options){
  const window=options.window||globalThis;
  const {document,setTimeout,clearTimeout,URL,Image}=window;
- const {ui,getFrameConfig,getAnimationMode,getAnimationTime,setStatus}=options;
+ const {ui,getFrameConfig,getAnimationMode,getAnimationTime,setStatus,getPlaybackRate=()=>1,onMediaReady=()=>{}}=options;
  let mediaObj=null,mediaType=null,animationPreviewTimer=null;
  let pendingMedia=null,mediaUrl=null,mediaGeneration=0,mediaDisposed=false;
- let replacementCancel=null;
+ let replacementCancel=null,previewFailed=false;
+ function applyPlaybackRate(video,file){
+   if(!video||typeof video.play!=='function')return;
+   const value=Number(getPlaybackRate(file));
+   const rate=Math.max(0.25,Math.min(3,Number.isFinite(value)?value:1));
+   video.defaultPlaybackRate=rate;
+   video.playbackRate=rate;
+ }
+ function syncPlaybackRate(){
+   // Static images have no time base; output cadence and shuffle stay unchanged.
+   for(const item of new Set([mediaObj,pendingMedia]))applyPlaybackRate(item);
+ }
+ function hasReadyMedia(){
+   return Boolean(mediaObj && (mediaType==='video'
+     ? mediaObj.readyState>=2 : mediaObj.complete&&mediaObj.naturalWidth>0));
+ }
+ function previewStatus(){
+   if(previewFailed)return 'error';
+   if(getAnimationMode()!=='file')return 'ready';
+   if(hasReadyMedia())return 'ready';
+   return pendingMedia||replacementCancel||mediaObj?'loading':'empty';
+ }
  function releaseMedia(){
    replacementCancel?.();replacementCancel=null;
    mediaGeneration++;
@@ -19,7 +40,7 @@
      if(typeof item.pause==='function')item.pause();
    }
    if(mediaUrl!==null)URL.revokeObjectURL(mediaUrl);
-   mediaUrl=null;pendingMedia=null;mediaObj=null;mediaType=null;
+   mediaUrl=null;pendingMedia=null;mediaObj=null;mediaType=null;previewFailed=false;
  }
  window.addEventListener?.('pagehide',()=>{
    mediaDisposed=true;stopAnimationPreview();releaseMedia();
@@ -61,7 +82,9 @@
       const sourceH = mediaObj.videoHeight || mediaObj.naturalHeight || mediaObj.height || 0;
       drawToDisplayCanvas(w, h, sourceW, sourceH);
       if (!document.hidden) ui.preview.src = offscreen.toDataURL('image/png');
+      previewFailed=false;
     } catch (e) {
+      previewFailed=true;
       return null;
     }
     return sampleFrameFromCanvas();
@@ -176,6 +199,7 @@
         if (getAnimationMode() !== 'file') buildGeneratedFrame(getAnimationMode());
         else if (mediaType === 'video' && mediaObj?.readyState >= 2) extractFrame();
       } catch (error) {
+        previewFailed=true;
         setStatus('预览失败：' + error.message, 'err');
         return;
       }
@@ -199,23 +223,27 @@
     offscreen.height = h;
     offCtx.setTransform(1, 0, 0, 1, 0, 0);
     const t = getAnimationTime();
-    if (!drawPixelAnimation(mode,t)) return null;
+    if (!drawPixelAnimation(mode,t)) { previewFailed=true; return null; }
     if (window.pixelStudioRecolor && window.PixelStudioFramePipeline.paletteModes.includes(mode)) {
       const image=offCtx.getImageData(0,0,w,h);
       window.PixelStudioFramePipeline.recolorRgba(image.data,mode,window.pixelStudioAnimationPaletteKey||'original',window.pixelStudioRecolor);
       offCtx.putImageData(image,0,0);
     }
     if (!document.hidden) ui.preview.src = offscreen.toDataURL('image/png');
-    return sampleFrameFromCanvas();
+    const frame=sampleFrameFromCanvas();
+    previewFailed=false;
+    return frame;
   }
 
   function showStaticPreview(file,desktopUrl) {
     if (mediaDisposed || !file) return;
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      if(getAnimationMode()==='file'&&!hasReadyMedia())previewFailed=true;
       setStatus('请选择图片或视频文件。','err');
       return;
     }
     if(desktopUrl&&(!window.pixelStudioDesktop?.edition||!/^pixel-media:\/\/library\/[a-z0-9-]+$/i.test(desktopUrl))){
+      if(getAnimationMode()==='file'&&!hasReadyMedia())previewFailed=true;
       setStatus('媒体地址无效。','err');return;
     }
     releaseMedia();
@@ -238,6 +266,8 @@
         if(!current())return;
         pendingMedia = null;
         mediaObj = video;
+        onMediaReady(file);
+        syncPlaybackRate();
         video.play().catch(() => {});
         applyPreviewAspect();
         updatePreviewByMode();
@@ -246,7 +276,7 @@
       };
       video.onerror = () => {
         if(!current())return;
-        releaseMedia();
+        releaseMedia();previewFailed=true;
         setStatus('视频读取失败，请重新选择文件。','err');
       };
       video.src = sourceUrl;
@@ -261,13 +291,14 @@
       if(!current())return;
       pendingMedia = null;
       mediaObj = img;
+      onMediaReady(file);
       updatePreviewByMode();
       startAnimationPreview();
       setStatus(window.pixelStudioDesktop?.edition?'图片已就绪':'图片已就绪，可点击开始发送');
     };
     img.onerror = () => {
       if(!current())return;
-      releaseMedia();
+      releaseMedia();previewFailed=true;
       setStatus('图片读取失败，请重新选择文件。', 'err');
     };
     img.src = sourceUrl;
@@ -275,6 +306,7 @@
   function replaceDesktopMedia(file,url,shouldCommit) {
     if(!window.pixelStudioDesktop?.edition||!file||!/^pixel-media:\/\/library\/[a-z0-9-]+$/i.test(url)||! /^(image|video)\//.test(file.type))return Promise.reject(new Error('Invalid desktop media.'));
     replacementCancel?.();
+    if(getAnimationMode()==='file'&&!hasReadyMedia())previewFailed=false;
     const generation=mediaGeneration,isVideo=file.type.startsWith('video/');
     const next=isVideo?document.createElement('video'):new Image();
     return new Promise((resolve,reject)=>{
@@ -286,18 +318,22 @@
         if(settled)return;settled=true;clearTimeout(timer);
         next.onload=next.onloadeddata=next.onerror=null;
         if(replacementCancel===cancel)replacementCancel=null;
+        if(error&&generation===mediaGeneration&&getAnimationMode()==='file'&&!hasReadyMedia())previewFailed=true;
         if(!accepted){if(isVideo){next.pause();next.removeAttribute('src');next.load();}else next.src='';}
         error?reject(error):resolve(Boolean(accepted));
       }
       async function commit(){
         if(settled||committing)return;committing=true;
         try{
-          if(isVideo)await next.play();
+          if(isVideo){applyPlaybackRate(next,file);await next.play();}
           if(settled)return;
           if(mediaDisposed||mediaGeneration!==generation||!shouldCommit()){finish(null,false);return;}
           // Swap only a decoded source. The output loop and connection stay alive.
           replacementCancel=null;releaseMedia();
           mediaObj=next;mediaType=isVideo?'video':'image';
+          // Restore preferences only after a successful swap, not during decoding.
+          onMediaReady(file);
+          syncPlaybackRate();
           startAnimationPreview();
           finish(null,true);
         }catch(error){finish(error);}
@@ -310,6 +346,7 @@
   }
   function updatePreviewByMode() {
     if (!mediaObj || mediaType !== 'image') return;
+    previewFailed=true;
     const { w, h } = getFrameConfig();
     offscreen.width = w;
     offscreen.height = h;
@@ -317,10 +354,12 @@
     const sourceH = mediaObj.videoHeight || mediaObj.naturalHeight || mediaObj.height || 0;
     drawToDisplayCanvas(w, h, sourceW, sourceH);
     ui.preview.src = offscreen.toDataURL('image/png');
+    previewFailed=false;
   }
  // Playback consumes one frame-source contract. Mode selection, decoding and
  // drawing remain here; connection and scheduling never choose a renderer.
  const frameSource=Object.freeze({
+   get previewStatus(){return previewStatus();},
    get kind(){return getAnimationMode()==='file'?mediaType:'animation';},
    get ready(){return getAnimationMode()!=='file'||Boolean(mediaObj);},
    readFrame(){
@@ -336,5 +375,5 @@
      mediaType=mode;applyPreviewAspect();buildGeneratedFrame(mode);
    }
  });
- return {frameSource,drawToDisplayCanvas,extractFrame,sampleFrameFromCanvas,applyPreviewAspect,drawStudioClock,drawPixelAnimation,makeAnimationThumbnail,setupCadPixelPreview,stopAnimationPreview,startAnimationPreview,buildGeneratedFrame,showStaticPreview,replaceDesktopMedia,updatePreviewByMode,state:{get mediaObj(){return mediaObj;},set mediaObj(value){if(value===null)releaseMedia();else mediaObj=value;},get mediaType(){return mediaType;},set mediaType(value){mediaType=value;}}};
+ return {frameSource,syncPlaybackRate,drawToDisplayCanvas,extractFrame,sampleFrameFromCanvas,applyPreviewAspect,drawStudioClock,drawPixelAnimation,makeAnimationThumbnail,setupCadPixelPreview,stopAnimationPreview,startAnimationPreview,buildGeneratedFrame,showStaticPreview,replaceDesktopMedia,updatePreviewByMode,state:{get mediaObj(){return mediaObj;},set mediaObj(value){if(value===null)releaseMedia();else mediaObj=value;},get mediaType(){return mediaType;},set mediaType(value){mediaType=value;}}};
 });

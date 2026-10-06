@@ -3,7 +3,7 @@
 (() => {
   window.pixelStudioMediaPlayback=Object.freeze({create(options){
     const {bridge,runtime,policy}=options;
-    let timer=null,disposed=false;
+    let timer=null,disposed=false,scheduleRevision=0;
     async function load(file,continueOutput=runtime.playing===true,startOutput=false){
       if(disposed||options.isBusy())return false;
       options.setBusy(true);options.setError('');
@@ -14,7 +14,7 @@
         const result=await bridge.mediaFile(file.id);
         if(!current())return false;
         if(!result.ok)throw new Error(result.error);
-        const source={url:result.url,type:result.type,name:file.name};
+        const source={url:result.url,type:result.type,name:file.name,speedKey:result.speedKey};
         if(continueOutput||runtime.playing){
           // Output can stop while decoding without cancelling the selected preview.
           if(!await runtime.replaceDesktopMedia(source,current)||!current())return false;
@@ -42,20 +42,24 @@
         }
       }
     }
-    function stopShuffle(){clearTimeout(timer);timer=null;}
+    function stopShuffle(){scheduleRevision++;clearTimeout(timer);timer=null;}
     function scheduleShuffle(){
       stopShuffle();
-      if(disposed||!options.isActive()||!options.shuffleEnabled())return;
+      const mode=policy.playMode(options.playbackMode?.(),options.shuffleEnabled());
+      if(disposed||!options.isActive()||mode==='fixed')return;
+      const revision=scheduleRevision;
       const seconds=policy.shuffleSeconds(options.shuffleInterval());
       timer=setTimeout(async()=>{
         try{
           if(!disposed&&!options.isBusy()&&!options.isSuspended()&&runtime.playing){
             const files=options.files();
-            const name=policy.chooseNext(files.map(file=>file.name),options.selected());
+            const candidates=files.map(file=>file.name);
+            const name=mode==='sequential'?policy.chooseSequential(candidates,options.selected())
+              :policy.chooseNext(candidates,options.selected());
             const file=files.find(item=>item.name===name);
             if(file)await load(file,true);
           }
-        }finally{scheduleShuffle();}
+        }finally{if(revision===scheduleRevision)scheduleShuffle();}
       },seconds*1000);
     }
     return Object.freeze({load,scheduleShuffle,stopShuffle,dispose(){disposed=true;stopShuffle();}});

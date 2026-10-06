@@ -13,6 +13,8 @@ $payload = Join-Path $root "release-staging\unified-payload-$version-$stamp"
 if ($LASTEXITCODE -ne 0) { throw 'Preparing sources failed.' }
 $sdk = Join-Path $root '.tools\dotnet\dotnet.exe'
 if (-not (Test-Path -LiteralPath $sdk -PathType Leaf)) { throw 'The local .NET SDK is required to build the sensor component.' }
+& node (Join-Path $root 'desktop\icons.cjs')
+if ($LASTEXITCODE -ne 0) { throw 'Icon generation failed.' }
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
 & $sdk publish (Join-Path $root 'temperature\PixelStudio.Sensors.csproj') -c Release -o (Join-Path $source 'app\temperature') "-p:PathMap=$root=/_/PixelStudio" --nologo
@@ -23,8 +25,6 @@ $oldWebSource = $env:PIXEL_STUDIO_WEB_SOURCE
 $env:PIXEL_STUDIO_WEB_SOURCE = Join-Path $source 'app'
 Push-Location (Join-Path $root 'desktop')
 try {
-    & node '.\icons.cjs'
-    if ($LASTEXITCODE -ne 0) { throw 'Icon generation failed.' }
     $electronDist = Join-Path $root 'desktop\node_modules\electron\dist'
     if (-not (Test-Path -LiteralPath (Join-Path $electronDist 'electron.exe') -PathType Leaf)) { throw 'The local Electron runtime is required.' }
     & '.\node_modules\.bin\electron-builder.cmd' --dir --win --x64 --config electron-builder.unified.cjs --publish never "-c.electronDist=$electronDist"

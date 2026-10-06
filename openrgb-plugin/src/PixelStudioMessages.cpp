@@ -59,7 +59,6 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QSlider>
-#include <QSettings>
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QSpinBox>

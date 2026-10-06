@@ -5,6 +5,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const source=fs.readFileSync(path.join(root,'desktop/preload.cjs'),'utf8');
+const catalog=require('../pixel-animation-catalog.cjs');
 class Element {
   constructor(tag='div'){this.tagName=tag.toUpperCase();this.children=[];this.listeners={};this.attributes={};this.value='';}
   setAttribute(key,value){this.attributes[key]=value;}
@@ -14,14 +15,16 @@ class Element {
   dispatchEvent(event){this.listeners[event.type]?.(event);return true;}
   click(){this.listeners.click?.();}
 }
-async function run(language,legacy=false){
+async function run(language,legacy=false,playback={values:{brightness:'137'}}){
   const body=new Element(),output=new Element('fieldset'),notice=new Element(),updates=new Element('fieldset');
   output.append(notice);body.append(output,updates);updates.id='psSoftwareUpdates';
   body.querySelector=selector=>selector==='[data-update-ui]'?notice:selector.startsWith(':scope >')?updates:null;
-  const ids={webLanguage:new Element('select'),webTheme:new Element('select'),brightness:new Element('input'),disconnectBtn:new Element('button')};
+  const ids={webLanguage:new Element('select'),webTheme:new Element('select'),brightness:new Element('input'),disconnectBtn:new Element('button'),animationMode:new Element('select')};
+  ids.animationMode.options=[...catalog.galleryModes,'file'].map(value=>({value}));
+  ids.animationMode.value=catalog.galleryModes[0];ids.brightness.value='255';
   ids.webLanguage.value=language;ids.webTheme.value='ice';
   const calls=[],events=[],listeners={};
-  const settings={launchAtLogin:true,startHidden:true,closeToTray:true,resumePlayback:true,canLaunchAtLogin:true,playback:{values:{brightness:'137'}}};
+  const settings={launchAtLogin:true,startHidden:true,closeToTray:true,resumePlayback:true,canLaunchAtLogin:true,playback};
   const ipcRenderer={on(){},send:(...args)=>calls.push(args),invoke:async(channel,patch)=>{calls.push([channel,patch]);return channel==='desktop:settings'?{...settings,...patch}:true;}};
   const window={addEventListener:(name,callback)=>{listeners[name]=callback;},dispatchEvent:event=>{events.push(event.type);listeners[event.type]?.(event);}};
   const document={documentElement:{lang:language,dataset:{}},getElementById:id=>ids[id],querySelector:()=>body,createElement:tag=>new Element(tag)};
@@ -36,7 +39,9 @@ async function run(language,legacy=false){
   const switches=group.children.find(node=>node.className==='ps-desktop-switches');
   assert.equal(switches.children.length,4);
   for(const option of switches.children){assert.equal(option.children[0].checked,true);assert.equal(option.children[0].disabled,false);if(language==='en')assert.ok(!/\p{Script=Han}/u.test(option.children[1].textContent));}
-  assert.equal(ids.brightness.value,'137');assert.ok(!calls.some(([channel])=>channel==='desktop:resume'||channel==='desktop:restore-connection'));assert.equal(document.documentElement.dataset.desktopReady,'true');assert.ok(events.includes('pixel-studio-desktop-ready'));
+  assert.equal(ids.brightness.value,playback?.values?.brightness||'255');assert.ok(!calls.some(([channel])=>channel==='desktop:resume'||channel==='desktop:restore-connection'));assert.equal(document.documentElement.dataset.desktopReady,'true');assert.ok(events.includes('pixel-studio-desktop-ready'));
+  const savedMode=playback?.values?.animationMode;
+  assert.equal(ids.animationMode.value,ids.animationMode.options.some(option=>option.value===savedMode)?savedMode:catalog.galleryModes[0]);
   const close=switches.children[2].children[0];close.checked=false;await close.listeners.change();assert.ok(calls.some(([channel,patch])=>channel==='desktop:settings'&&patch?.closeToTray===false));
   assert.equal(typeof window.pixelStudioDesktop.downloadUpdate,'function');
   await window.pixelStudioDesktop.downloadUpdate('0.1.8');assert.ok(calls.some(([channel,request])=>channel==='desktop:update'&&request.version==='0.1.8'));
@@ -44,6 +49,10 @@ async function run(language,legacy=false){
 (async()=>{
   await run('en',true);console.log('PASS reproduce previous nested-notice insertion failure');
   for(const language of ['en','zh-CN']){await run(language);console.log('PASS desktop settings, remembered values, resume initialization and update IPC: '+language);}
+  for(const playback of [null,{}, {values:{}}, {values:{animationMode:'removed-animation'}}, {values:{animationMode:'wave'}}, {values:{animationMode:'rainbow'}}, {values:{animationMode:'file'}}]){
+    await run('en',false,playback);
+  }
+  console.log('PASS fresh/missing/invalid desktop history uses the catalog default; valid animation and media choices remain restorable without automatic output.');
   const ui=fs.readFileSync(path.join(root,'pixel-studio-web-ui.js'),'utf8');
   const css=fs.readFileSync(path.join(root,'pixel-studio-web-ui.css'),'utf8');
   assert.ok(ui.includes("updateArea.id = 'psSoftwareUpdates'"));

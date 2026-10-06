@@ -1,0 +1,9 @@
+{
+  "name": "pixel-studio-development",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Development-only regression tools; not an application runtime package.",
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "node tools/run-tests.cjs" },
+  "devDependencies": { "acorn": "8.14.0" }
+}

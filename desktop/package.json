@@ -1,6 +1,6 @@
 {
   "name": "pixel-studio-desktop",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Pixel Studio desktop with tray and login startup",
   "author": "OWEN",
   "license": "GPL-2.0-or-later",
@@ -16,7 +16,7 @@
     "appId": "com.ow3nhe.pixelstudio.desktop",
     "productName": "Pixel Studio Desktop",
     "directories": { "output": "dist" },
-    "files": ["main.cjs", "preload.cjs", "session-controller.js", "media-playback.js", "media-library.cjs", "media-library-ui.js", "media-thumbnails.js", "ddp-service.cjs", "updater.cjs", "icons.cjs", "assets/ice.png", "assets/mint.png", "assets/amber.png", "assets/rose.png", "assets/pixel-studio.ico", "assets/brand-geometry.json", "package.json"],
+    "files": ["main.cjs", "preload.cjs", "session-controller.js", "media-playback.js", "media-library.cjs", "media-library-ui.js", "media-thumbnails.js", "ddp-service.cjs", "updater.cjs", "icons.cjs", "assets/pixel-studio.ico", "assets/brand-geometry.json", "package.json"],
     "extraResources": [],
     "win": { "icon": "assets/pixel-studio.ico", "target": "nsis" },
     "nsis": {

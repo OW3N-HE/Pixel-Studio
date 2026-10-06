@@ -25,7 +25,10 @@ const validClient=id=>typeof id==='string'&&/^[a-zA-Z0-9-]{16,64}$/.test(id);
 const udp = dgram.createSocket('udp4');
 udp.on('error', error => console.error('UDP:', error.message));
 
-function fail(message, status = 400) { const e = new Error(message); e.status = status; throw e; }
+function fail(message, status = 400, code = 'DDP_REQUEST_FAILED', source = 'bridge') {
+  const e = new Error(message);Object.assign(e,{status,code,source,retryable:false});throw e;
+}
+const transientUdpCodes=new Set(['EAGAIN','EINTR','ENOBUFS','ENETDOWN','ENETUNREACH','EHOSTUNREACH','ETIMEDOUT','ECONNREFUSED']);
 function perceptualLut(brightness, inverseGamma) {
   return framePipeline.outputLut(brightness,inverseGamma);
 }
@@ -39,15 +42,23 @@ function deviceHost(value) {
   return url.hostname;
 }
 async function deviceJSON(host, route, payload) {
-  const response = await fetch('http://' + host + route, {
-    method: payload === undefined ? 'GET' : 'POST', redirect: 'error',
-    ...(payload === undefined ? {} : { headers: {'Content-Type':'application/json'}, body:JSON.stringify(payload) }),
-    signal: AbortSignal.timeout(4500)
-  });
-  if (!response.ok) fail('WLED HTTP ' + response.status, 502);
-  const data = await response.json();
-  if (data.error) fail('WLED error ' + data.error, 502);
-  return data;
+  try {
+    const response = await fetch('http://' + host + route, {
+      method: payload === undefined ? 'GET' : 'POST', redirect: 'error',
+      ...(payload === undefined ? {} : { headers: {'Content-Type':'application/json'}, body:JSON.stringify(payload) }),
+      signal: AbortSignal.timeout(4500)
+    });
+    if (!response.ok) fail('WLED HTTP ' + response.status,502,'DEVICE_HTTP','device');
+    const data = await response.json();
+    if (data.error) fail('WLED error ' + data.error,502,'DEVICE_HTTP','device');
+    return data;
+  } catch(error) {
+    if(!error.source){
+      const timeout=error.name==='TimeoutError'||error.name==='AbortError';
+      Object.assign(error,{status:timeout?504:502,code:timeout?'DEVICE_TIMEOUT':'DEVICE_UNAVAILABLE',source:'device',retryable:false});
+    }
+    throw error;
+  }
 }
 function body(req, maximum) {
   return new Promise((resolve, reject) => {
@@ -67,24 +78,30 @@ function json(res, value, status = 200) {
   res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
   res.end(JSON.stringify(value));
 }
-async function release(session) {
-  if (!session || !session.active) return;
+function release(session) {
+  if (!session) return Promise.resolve();
+  if (session.releasing) return session.releasing;
+  if (!session.active) return Promise.resolve();
   session.active = false;
-  // Keep the reservation until the release command completes, avoiding a stop/start race.
-  if (session.worker) {
-    const worker = session.worker; session.worker = null;
-    try { await worker.terminate(); } catch (_) {}
-  }
-  try { await deviceJSON(session.host, '/json/state', {live:false}); }
-  catch (error) { console.error('Release:', error.message); }
-  finally { if (sessions.get(session.id) === session) sessions.delete(session.id); }
+  // Every stop caller waits for the same device release and reservation removal.
+  session.releasing = (async () => {
+    if (session.worker) {
+      const worker = session.worker; session.worker = null;
+      try { await worker.terminate(); } catch (_) {}
+    }
+    try { await deviceJSON(session.host, '/json/state', {live:false}); }
+    catch (error) { console.error('Release:', error.message); }
+    finally { if (sessions.get(session.id) === session) sessions.delete(session.id); }
+  })();
+  return session.releasing;
 }
 async function sendPixels(session, frame) {
  const started=performance.now();
  const encoded=protocols.encodeDdp(frame,{lut:session.lut,sequence:session.sequence});
  for(const packet of encoded.packets){
   if(!session.active)fail('Playback stopped',409);session.sequence=packet[1];
-  await new Promise((resolve,reject)=>udp.send(packet,4048,session.host,error=>error?reject(error):resolve()));
+  try { await new Promise((resolve,reject)=>udp.send(packet,4048,session.host,error=>error?reject(error):resolve())); }
+  catch(error){Object.assign(error,{status:503,source:'udp',retryable:transientUdpCodes.has(error.code)});throw error;}
  }
  return performance.now()-started; // Local UDP completion, NOT a device acknowledgement.
 }
@@ -96,7 +113,7 @@ async function startAnimationWorker(session, input, w, h, fps, speed) {
   session.confirmed = false;
   session.stats = {targetFps:fps,fps:0,kbps:0,frameMs:0,frames:0,missed:0,uptime:0,mode:input.mode};
   const worker = new Worker(path.join(__dirname,'pixel-stream-worker.cjs'), {workerData:{
-    host:session.host,w,h,fps,speed,animationTime:input.animationTime,animationWallTime:input.animationWallTime,mode:input.mode,thermal:input.thermal,mapping:String(input.mapping || ''),clockFont:['rounded','classic','segment'].includes(input.clockFont)?input.clockFont:'rounded',clockPalette:(['original','mint','amber','ice','rose','violet'].includes(input.clockPalette) || /^custom:(#[0-9a-f]{6}):(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i.test(input.clockPalette))?input.clockPalette:'mint',lut:Array.from(session.lut)
+    retryDdpSendErrors:true,host:session.host,w,h,fps,speed,animationTime:input.animationTime,animationWallTime:input.animationWallTime,mode:input.mode,thermal:input.thermal,mapping:String(input.mapping || ''),clockFont:['rounded','classic','segment'].includes(input.clockFont)?input.clockFont:'rounded',clockPalette:(['original','mint','amber','ice','rose','violet'].includes(input.clockPalette) || /^custom:(#[0-9a-f]{6}):(#[0-9a-f]{6}):(#[0-9a-f]{6})$/i.test(input.clockPalette))?input.clockPalette:'mint',lut:Array.from(session.lut)
   }});
   session.worker = worker;
   await new Promise((resolve,reject) => {
@@ -104,14 +121,14 @@ async function startAnimationWorker(session, input, w, h, fps, speed) {
     const timer=setTimeout(()=>failed(new Error('Animation worker startup timed out')),6000);
     function failed(error) {
       clearTimeout(timer);
-      session.workerError=error.message;session.continuous=false;
+      session.workerError=error.message;session.workerErrorCode=error.code;session.continuous=false;
       if(!ready)reject(error);
       if(session.worker===worker){session.worker=null;void worker.terminate();}
     }
     worker.on('message',message=>{
       if(message.type==='ready'){ready=true;clearTimeout(timer);resolve();}
       else if(message.type==='stats')session.stats=message.stats;
-      else if(message.type==='error')failed(new Error(message.message));
+      else if(message.type==='error')failed(Object.assign(new Error(message.message),{code:message.code}));
     });
     worker.on('error',failed);
     worker.on('exit',code=>{
@@ -134,6 +151,7 @@ const server = http.createServer(async (req, res) => {
       res.end(html); return;
     }
     const webAssets = {
+  '/pixel-settings-schema.cjs':'text/javascript',
       '/pixel-clock-renderer.cjs':'text/javascript',
       '/pixel-animation-catalog.cjs':'text/javascript',
       '/pixel-animation-runtime.js':'text/javascript',
@@ -187,6 +205,7 @@ const server = http.createServer(async (req, res) => {
       if (input.mode !== undefined && !/^[a-zA-Z0-9_-]{1,64}$/.test(input.mode)) fail('Invalid animation name');
       if (![w,h].every(n => Number.isInteger(n) && n >= 1 && n <= 512) || w * h > 4096 ||
           !Number.isInteger(brightness) || brightness < 0 || brightness > 255) fail('Invalid size or brightness; DDP supports up to 4096 pixels');
+      await Promise.all([...sessions.values()].filter(s => s.host === host && s.releasing).map(s => s.releasing));
       if ([...sessions.values()].some(s => s.host === host)) fail('Another sender is active or stopping. Stop it first.', 409);
       const session = {id:crypto.randomBytes(16).toString('hex'),host,active:true,preparing:true,lastAt:performance.now(),sequence:0,busy:false,bytes:w*h*3};
       session.webClient=validClient(req.headers['x-pixel-client'])?req.headers['x-pixel-client']:null;
@@ -230,7 +249,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/update' && req.method === 'POST') {
       const input = JSON.parse((await body(req, 4096)).toString());
       const session = sessions.get(input.id);
-      if (!session?.active || !session.worker) fail('Playback session is not available', 409);
+      if (!session?.active || !session.worker) fail('Playback session is not available',409,'SESSION_LOST');
       const brightness = Number(input.brightness), fps = Number(input.fps ?? 60), speed = Number(input.speed ?? 1);
       if (!/^[a-zA-Z0-9_-]{1,64}$/.test(input.mode || '') || !Number.isInteger(brightness)
           || brightness < 0 || brightness > 255 || !Number.isInteger(fps) || fps < 1 || fps > 60
@@ -246,14 +265,14 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === '/api/stats' && req.method === 'GET') {
       const session=sessions.get(url.searchParams.get('id'));
-      if(!session?.active)fail('Stream stopped; start playback again',409);
-      if(session.workerError)fail('Animation worker: '+session.workerError,502);
+      if(!session?.active)fail('Stream stopped; start playback again',409,'SESSION_LOST');
+      if(session.workerError)fail('Animation worker: '+session.workerError,502,'WORKER_FAILED','worker');
       session.confirmed=true;
       json(res,{autonomous:!!session.worker,...session.stats});return;
     }
     if (url.pathname === '/api/frame' && req.method === 'POST') {
       const session = sessions.get(url.searchParams.get('id'));
-      if (!session?.active) fail('Stream expired; start playback again', 409);
+      if (!session?.active) fail('Stream expired; start playback again',409,'SESSION_LOST');
       if (session.worker) fail('The background worker owns this stream',409);
       if (session.busy) { res.writeHead(204,{'X-Pixel-Dropped':'1'});res.end();req.resume();return; }
       session.busy = true;
@@ -278,7 +297,12 @@ const server = http.createServer(async (req, res) => {
       json(res,{stopped:true});return;
     }
     fail('Not found',404);
-  } catch (error) { if (!res.headersSent && !res.destroyed) json(res,{error:error.message},error.status || 502); }
+  } catch (error) {
+    if (!res.headersSent && !res.destroyed) json(res,{
+      error:error.message,code:error.code||'DDP_REQUEST_FAILED',source:error.source||'bridge',
+      retryable:error.retryable===true,route:req.url.split('?')[0]
+    },error.status || 502);
+  }
 });
 server.requestTimeout = 8000;
 server.headersTimeout = 5000;

@@ -1,183 +1,73 @@
-# Pixel Studio V0.2.0
+# Pixel Studio V0.2.1
 
 ## 简体中文
 
-发布日期：2026/10/02
-
-### 2026/10/03 修订
-
-本次更新现有 V0.2.0 发布附件，版本号和首次发布日期不变。已安装 V0.2.0 的用户请手动下载并安装本次修订包；同版本修订不会触发版本号升级提示。原有更新内容保留如下。
-
-- 优化 PawnIO 驱动准备页面：主要状态与下一步操作更清晰，技术信息收进可展开的详细信息区，保留重新检测和官方网站入口。
-- 确认缺少 PawnIO 时，必须在明确同意后完成驱动安装才能继续，不提供跳过。已有兼容驱动直接复用，未知或更新版本不自动覆盖，不操作 Fan Control 或风扇设置。
-- 修正桌面媒体卡片在滚动区域边角处的选中框裁切，与动画卡片的边框处理保持一致。
-- 改善媒体缩略图失败后的重试、刷新与过期任务取消，避免失败结果长期留在缓存中。
-- 修正桌面隐藏窗口时的随机播放调度，保留停止设备输出时预览时间线继续运行的行为。
-- 清理没有界面入口的旧 HTTP/WebSocket 输出和废弃控件；这不包括仍在使用的本地服务及更新下载功能。
-- 修正停止输出时动画与媒体切换后的预览恢复，恢复上次选择的媒体；预览持续播放，播放按钮只控制像素屏输出，不重置预览时间线。
-- 继续分离连接与输出会话：连接串口不自动开始推流，取消串口选择不破坏原连接。
-- 改善调整窗口及矩阵尺寸时的布局抖动；尺寸在提交前校验，宽高须为 1~512 的整数，总像素不超过 4096。空值、0、负数或超限输入保留上次有效尺寸，不再默默变成 1 x 1，也不会按无效草稿创建巨量预览节点。
-- 尺寸简短提示常驻宽高同行；网页与桌面标题按大写字形边界与 Logo 居中，保留原 Logo 造型、字号及 16px 水平间距。不支持字形裁边的旧浏览器保留原行框居中行为。
-- 源码 ZIP 补齐根目录 README 与媒体缩略图、OpenRGB 预览、网页外壳和尺寸边界回归脚本。
-
-此前修订的 14 项自动化回归通过，测试载荷完成 520 项资源一致性比对，用户已确认新的 PawnIO 页面显示正常。后续尺寸保护完成 31 项隔离边界检查及 22 项动画/媒体窗口尺寸场景检查；标题调整后通过网页外壳模拟检查。此次三合一编译成功，新载荷核对 596 个文件、完成 537 项一致性比对。最后的同行提示与标题对齐尚未重新进行安装后的视觉验收；以上不代替实际驱动安装、所有硬件、DPI 或升级路径测试。
+发布日期：2026/10/06
 
 ### 更新内容
 
-- 动画绘制与目录从 HTML 中分离，共享引擎管理 96 个内置模式。
-- 时钟绘制、渲染参数、像素排列及配色处理拥有明确模块边界。
-- 后台直接调用共享引擎，不再读取页面源码或模拟网页控件。
-- 网页运行时拆分媒体预览、播放计时与连接输出，入口保留控件事件及模块组装。
-- 协议编码与连接的启动、发送、停止分离。
-- 打包资源白名单及模拟回归检查同步补齐。
-- 更新网页与桌面界面，统一卡片、选中强调框、圆角滚动底框、边缘淡入淡出及双语控件。
-- 桌面新增媒体库，支持选择文件夹、搜索、缩略图、手动刷新和文件夹监听；动画/媒体切换及定时随机播放保留 15:27 卡片比例。
-- 低分辨率图片/视频按像素图清晰缩放，高清素材平滑缩放；桌面媒体默认保持比例、居中最大化并补黑边，不拉伸。
-- 悬停或聚焦时直接显示完整文件名，不先显示短名称再展开，不改变卡片尺寸。
-- 预览与设备输出分离：停止输出不暂停或重置预览，启动输出使用当前帧；图片播放期间保持静态画面及播放状态，按设置间隔切换。
-- 修正媒体切换、停止输出后的随机切换、输出状态闪烁、异步取消，以及 OpenRGB 开始输出后无法切换动画的问题。
-- 桌面媒体会话恢复与连接恢复各自负责，记住串口不再依赖当前选择的是动画还是媒体。
-- 减少后台窗口预览重绘及 PNG 编码开销，不主动停止设备输出；未提供实际 CPU 降幅保证。
-- 新用户的网页/桌面主题默认跟随系统，保留已有偏好；应用、安装包及 Sensor 固定图标使用冰蓝色，认可的 Logo 造型不变。
-- 协作成员加入 GPT-6.1 Sol；OpenRGB 关于日期统一为 YYYY/MM/DD，关于和更新检查同步为 0.2.0。
-- 移除旧名称数字指纹及无效兼容分支，修复精简旧媒体 UI 后的桌面启动错误，并补齐源码归档模块清单。
-- 新三合一安装包提供网页、桌面及 OpenRGB 组件，保留随包依赖声明。
-
-### 保留的行为
-
-- 保留认可的 Logo 造型与泛光、中英文切换，以及四张独立温度动画卡片。
-- 桌面专属采样器与 Web/OpenRGB 共享采样器的所有权不变，动画渲染不接管采样生命周期。
-- 保留既有连接及设备颜色检测规则，不新增未知设备 Gamma 推测。
-- 保留兼容 PawnIO 复用与独立授权流程，不关闭 Fan Control 或修改风扇设置。
+- 修缮网页与桌面界面，统一控件、文字、设置分组和软件更新布局；改善窄窗口与竖向布局，保持底部播放及导航区域的可用空间。这不是 iOS/Android 原生版。
+- 优化动画与桌面媒体卡片拖动排序、固定／顺序／随机播放模式、选中标题、滚动条和拖动时的选中框对比。
+- USB/DDP 状态简化为连接状态或发送帧率，改善启动闪烁及失败原因提示；发送帧率不代表灯屏实测帧率。
+- 修正 DDP 重复停止请求的释放等待，重新开始前等待正在停止的旧会话。
+- 桌面托盘根据播放状态提供停止／继续发送；退出时先收起界面、保存状态，再清理服务，避免退出前闪出服务不可用。
+- 桌面切回 USB 或重新开始时可恢复记住的串口；不可用时不自动改用其他设备，仍可手动选择或清除记忆。
+- 统一主题 Logo 与预览高光比例；浅色强调蓝为 #0078D4，灰黑主题保留灰白像素。固定系统图标采用冰蓝色且无外泛光；任务栏固定图标可能受 Windows 缓存影响。
+- 帮助页同步 Logo，并统一品牌文字字号及视觉居中。更新特别感谢名单。
+- OpenRGB 同步主题 Logo、版本和双语致谢，保留现有 Qt 界面、温度与 USB/DDP 功能。
+- 清理已确认的废弃样式、重复引用和冗余控件初始化；保留兼容设置、迁移、驱动保护及共享动画库。
+- Pixel IO 仅预留入口，当前不可用。后续主要功能迭代以桌面版为主，兼容的共享动画更新继续服务三端。
 
 ### 下载与升级
 
-推荐 Windows x64 安装包 [PixelStudio-Setup-0.2.0.exe](https://github.com/OW3N-HE/Pixel-Studio/releases/download/v0.2.0/PixelStudio-Setup-0.2.0.exe)。桌面版默认勾选，网页版和 OpenRGB 插件按需选择；安装包不包含 OpenRGB 主程序。另提供网页版、对应源码 ZIP 与 SHA-256 校验文件。
+Windows x64 三合一安装包：PixelStudio-Setup-0.2.1.exe。默认选择桌面版，网页版和 OpenRGB 插件按需安装；不包含 OpenRGB 主程序。同时提供 Web、对应源码 ZIP 和 SHA256SUMS.txt。
 
-升级前请备份设置、保存工作及 OpenRGB 设置，并从托盘完全退出桌面版/OpenRGB。安装器可能关闭占用更新文件的相关程序，未保存的工作可能丢失。
+升级前备份设置、保存工作并从托盘退出 Pixel Studio/OpenRGB。安装器可能关闭占用文件的程序。保留用户设置与独立采样器边界；兼容 PawnIO 直接复用，新驱动安装需要明确同意，不自动覆盖未知或更新版本，不操作 Fan Control 或风扇设置。
 
-温度服务需要管理员授权；兼容 PawnIO 驱动会复用，新驱动安装需要另行同意。未知或更新版本不会自动覆盖，不修改 Fan Control 或风扇设置。采样持续运行不代表传感器永远可用，权限、硬件或通信问题仍可能使读数暂时显示 `--`。
+安装包未签名，Windows 可能提示安全警告。Web ZIP 应完整解压后使用启动脚本，直接打开 HTML 不会启动本地服务。
 
-安装包未签名。网页版压缩包需完整解压后使用启动脚本；直接打开 `index.html` 不会启动本地温度服务。源码包供开发者构建，不包含 SDK、第三方安装器或私人工作区文件。
+### 验证边界
 
-### 架构与模块分工
+本版依据用户对 TEST 界面和功能的反馈整理，并从当前源码重新构建。编译和打包不代表全部设备、DPI、安装升级及 USB/DDP 场景已实测通过。最后的串口恢复、托盘和停止重启调整仍需要实际设备回归；不宣称这些问题已在所有环境复现并验证解决。构建中的 NuGet 漏洞数据查询不可用，不等于依赖安全审计通过。
 
-这是职责分层图，浏览器、桌面和 OpenRGB 的实际连接实现仍保留各自的平台边界。
-
-```text
-网页 / 桌面 / OpenRGB
-    |
-平台适配：界面、设置、权限与连接入口
-    |
-播放调度 + 渲染设置 <--- 共享动画目录
-    |
-共享动画引擎：动画 / 时钟 / 温度 <--- 桌面专属或网页/OpenRGB共享采样器
-    |
-配色 + RGB 转换 + 像素映射
-    |
-亮度 / Gamma + 输出会话
-    +--- Adalight / DDP 编码 ---> USB / 串口控制器或 WLED 网络输出
-```
-
-### 验证与验收范围
-
-源码与模拟检查已通过，包括 960 帧本地修改前基准精确哈希、浏览器与 Node 帧一致性、100 次工作线程快速动画切换、模拟网页启动/播放/串口握手，以及协议、资源、语言、设置和更新器回归。本地基准不是已发布二进制或灯屏实测；更早的 1,900 帧记录含明确记录的采集计时误差，不能宣称全部精确时间匹配。
-
-已编译 TEST 包，用户安装后反馈修复后的版本运行正常；桌面页面隔离启动以及会话、资源、语言模拟检查通过。以上不代表全部设备、升级路径或分辨率均已验收；最终兼容代码精简按源码与构建核对，不声称最终二进制已重新进行灯屏实测。
-
-本版不承诺新控制器协议、所有分辨率自动适配或已量化的 CPU/FPS 提升。已有未知或更新版本的 PawnIO 不自动覆盖。升级前请备份设置，并从托盘完全退出桌面版/OpenRGB。
-
-### 动画素材权利与联系
-
-如您是权利人或其授权代表，认为 Pixel Studio 中的动画或图案涉及侵权，请通过 [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues) 联系维护者，说明对应动画、相关权利及主张依据。我们会核实通知，并根据核实结果采取下架、删除或替换等适当措施。请勿在公开 Issue 中提交隐私文件或个人信息，可先请求私下联系渠道。本声明不表示获得官方认可或授权，也不代替适用的许可与授权。
+特别感谢：David Wang · Mango Akuma · Mark Peng · SSSSWILK · &amp;#xff1f · 3FC
 
 ## English
 
-Release date: 2026/10/02
-
-### Revision dated 2026/10/03
-
-This revision replaces the existing V0.2.0 release assets without changing the version number or original release date. Existing V0.2.0 users should download and install the revised package manually; a same-version revision does not trigger a version-upgrade notification. The original release details are retained below.
-
-- Simplified the PawnIO preparation page with a clear status and next action, expandable technical details, and separate recheck and official-website links.
-- When PawnIO is confirmed missing, installation must complete after explicit consent before setup can continue; there is no skip option. Compatible installations are reused, unknown/newer versions are not automatically overwritten, and Fan Control and fan settings are left untouched.
-- Corrected Desktop media-card selection-ring clipping at scrolling-container corners, following the animation-card border treatment.
-- Improved thumbnail failure retries, refresh and cancellation of stale tasks so failed results are not permanently cached.
-- Corrected hidden-window shuffle scheduling while preserving the continuously running preview timeline when device output is stopped.
-- Removed obsolete HTTP/WebSocket output paths with no UI entry point and retired controls, not active local services or update downloads.
-- Corrected preview restoration when switching Animation/Media with output stopped, restoring the previously selected media. Preview stays active; Play controls only pixel-display output without resetting the preview timeline.
-- Further separated connection and output sessions: connecting a serial port does not start streaming, and cancelling port selection preserves the existing connection.
-- Improved layout stability during window and matrix resizing. Dimensions are validated before applying: integers from 1 to 512, with at most 4096 pixels. Empty, zero, negative or oversized input retains the last valid size instead of silently becoming 1 x 1 or allocating excessive preview nodes from invalid drafts.
-- Compact dimension guidance stays beside width/height. Web/Desktop headings align uppercase letter bounds with the Logo while preserving Logo geometry, font size and the 16px horizontal gap. Older browsers without text-box trimming retain the previous line-box centering fallback.
-- Added the root README and media-thumbnail, OpenRGB-preview, Web-shell and dimension-boundary regression scripts to the source ZIP.
-
-The earlier revision passed 14 automated regression entry points and 520 TEST-payload consistency comparisons, and the user accepted the PawnIO page appearance. Subsequent dimension safeguards passed 31 isolated boundary checks and 22 animation/media window-size scenarios; the Web-shell mock checks passed after the heading adjustment. The latest three-in-one build succeeded, with 596 payload files reviewed and 537 consistency comparisons. The final inline hint and title alignment have not received a new installed visual acceptance check. These results do not replace actual driver installation, hardware, DPI or upgrade-path testing.
+Release date: 2026/10/06
 
 ### What's new
 
-- Shared animation registry and catalog for 96 built-in modes.
-- Independent clock drawing, render settings, frame mapping and palette processing.
-- DOM-free headless rendering.
-- Separate browser media/preview, playback/timing and output adapters.
-- Separate Adalight/DDP encoding and Node USB/DDP connection lifecycle.
-- Packaging allowlists and simulated regression coverage updated for the new modules.
-- Redesigned shared Web/Desktop interface with consistent gallery cards, selection rings, rounded scrolling surfaces, edge fades and bilingual controls.
-- Desktop media library: folder selection, search, thumbnails, manual refresh and folder watching. Added Animation/Media switching and timed shuffle while preserving 15:27 card proportions.
-- Low-resolution image/video thumbnails use crisp pixel scaling; high-resolution thumbnails use smooth scaling. Media is proportionally maximized, centered and letterboxed without stretching.
-- Full filenames appear directly on hover/focus without an intermediate truncated-name state or resizing the card.
-- Preview and device output are independent: stopping output does not stop or restart the preview timeline; starting output uses the current frame. Static images remain in the playing state for the selected interval.
-- Corrected media replacement, idle shuffle, output status flicker, asynchronous cancellation and OpenRGB animation switching after output starts.
-- Desktop media-session restoration and connection restoration have independent ownership. Remembered USB selection does not depend on choosing an animation rather than media.
-- Reduced hidden-window preview redraw and PNG encoding work without intentionally stopping device output.
-- Web/Desktop default theme follows the system for new profiles; existing preferences are preserved. Fixed application, installer and Sensor icons use ice blue, retaining approved Logo geometry.
-- Updated credits include GPT-6.1 Sol. OpenRGB About dates use YYYY/MM/DD; About and update checks identify version 0.2.0.
-- Removed retired-name migration fingerprints and dead compatibility branches; corrected Desktop startup after removing obsolete media UI, and completed source archive module lists.
-- Fresh three-in-one installer provides Web, Desktop and OpenRGB components with retained dependency notices.
-
-### Preserved behavior
-
-- Approved Logo geometry/glow, bilingual behavior and four separate temperature cards.
-- Desktop owns its sampler; Web/OpenRGB share a separate sampler.
-- Existing connection and device-color detection policies remain.
-- Compatible PawnIO reuse and separate installation consent remain.
+- Refined shared Web/Desktop controls, typography, settings and updater layout, with improved narrow/portrait layouts and preserved playback/navigation space. This is not a native iOS/Android release.
+- Improved animation/Desktop media card ordering, fixed/sequential/random playback modes, selection titles and scrollbar/drag feedback.
+- Simplified USB/DDP status and host sending FPS; improved startup flicker and failure details. Host FPS is not measured display FPS.
+- Repeated DDP stop requests now share release completion; new sessions wait for stopping sessions.
+- Desktop tray offers Stop/Resume output. Exit hides the UI, saves state and then shuts down services without displaying shutdown-related service errors.
+- Desktop can reuse the remembered USB device after switching outputs or restarting sending. Missing devices are not replaced automatically; manual selection and forgetting remain available.
+- Updated theme branding, #0078D4 light accent and grayscale black-theme pixels. Fixed system icons use ice blue without outer glow. Pinned taskbar icons may retain Windows-cached artwork.
+- Synchronized help-page branding, heading size and optical alignment; updated special thanks.
+- OpenRGB receives theme Logo, version and bilingual credits updates while retaining its Qt UI, temperature and USB/DDP features.
+- Removed confirmed redundant styles, includes and widget initialization while preserving migration, compatibility, driver protections and shared animations.
+- Pixel IO remains a reserved, unavailable entry. Desktop is the primary future feature focus; compatible animation-library updates remain shared across editions.
 
 ### Download and upgrade
 
-Use the Windows x64 installer [PixelStudio-Setup-0.2.0.exe](https://github.com/OW3N-HE/Pixel-Studio/releases/download/v0.2.0/PixelStudio-Setup-0.2.0.exe). Desktop is selected by default; Web and the OpenRGB plugin are optional. OpenRGB itself is not bundled. Separate Web and corresponding-source ZIP archives and SHA-256 checksums are provided.
+Use PixelStudio-Setup-0.2.1.exe for Windows x64. Desktop is selected by default; Web and the OpenRGB plugin are optional. OpenRGB itself is not bundled. Web/source ZIP archives and SHA256SUMS.txt are also provided.
 
-Back up settings, save work and OpenRGB settings, and fully exit Desktop/OpenRGB from the tray before upgrading. The installer may close programs holding update files; unsaved work may be lost.
+Back up settings, save work and fully exit Pixel Studio/OpenRGB before upgrading. Setup may close programs holding files. Compatible PawnIO is reused; driver installation requires separate consent. Unknown/newer drivers are not automatically overwritten; Fan Control and fan settings are untouched. The installer is unsigned. Extract the complete Web ZIP and use its launch scripts.
 
-The temperature service requires administrator authorization. Compatible PawnIO drivers are reused; driver installation requires separate consent. Unknown or newer versions are not automatically overwritten. Fan Control and fan settings are not changed. Continuous sampling does not guarantee sensor availability; permission, hardware or communication problems may temporarily produce `--` readings.
+### Validation boundaries
 
-The installer is unsigned. Fully extract the Web archive and use its launch scripts; opening `index.html` alone does not start the local temperature service. The source archive is for developer builds and excludes SDKs, third-party installers and private workspace files.
+Prepared from current sources following user feedback on TEST builds. Compilation/packaging is not proof of all hardware, DPI, installation or upgrade scenarios. Final USB restore, tray and stop/restart changes still need device regression testing. NuGet vulnerability metadata was unavailable during builds; no completed security audit is claimed.
 
-### Architecture and module responsibilities
+Special thanks: David Wang · Mango Akuma · Mark Peng · SSSSWILK · &amp;#xff1f · 3FC
 
-This is a logical responsibility diagram; actual browser, Desktop and OpenRGB connection implementations remain platform-specific.
+### Artwork rights and contact / 素材权利与联系
 
-```text
-Web / Desktop / OpenRGB
-    |
-Platform adapters: UI, settings, permissions and connection entry points
-    |
-Playback scheduling + render settings <--- Shared animation catalog
-    |
-Shared animation engine: animation / clock / temperature <--- Platform-owned samplers
-    |
-Palette processing + RGB conversion + pixel mapping
-    |
-Brightness / Gamma + output session
-    +--- Adalight / DDP encoding ---> USB / serial controllers or WLED network output
-```
+Please contact the maintainer through [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues) with the relevant artwork and basis of your rights claim. Do not post private documents publicly. 经核实的素材权利问题将采取移除或替换等适当处理。本项目不代表 WLED、OpenRGB 或相关社区的官方产品；致谢不替代许可。
 
-### Validation and acceptance scope
+## ESP32-C3 可选固件 / Optional firmware
 
-Source and simulated checks passed, including 960 exact local pre-refactor frame hashes, browser/Node frame agreement, 100 rapid worker animation updates, mocked browser bootstrap/playback/serial handshake, protocol/resource checks, and language/settings/updater regressions. Local fixtures are not captures from a released binary or physical display. An older 1,900-frame fixture includes explicitly documented capture-time jitter; it is not an all-frame exact-time equivalence claim.
+本次另附 PixelStudio-C3-USB-60 应用固件、定制源码及 WLED-C3-USB-60-README.md，仅适用于对应 GPIO3 原生 USB CDC 硬件，不由安装器自动刷写。刷写前备份并阅读说明，60 FPS 不是所有设备的性能保证。
 
-TEST packages were compiled and installed by the user, who reported normal operation after the fixes. Isolated Desktop-page startup and mocked session/resource/language checks passed. These results do not certify every device, upgrade path or resolution. Final compatibility cleanups are source- and build-checked; no new physical-device run is claimed for the final binaries.
-
-No new controller protocol, universally adaptive artwork or measured CPU/FPS improvement is promised. Existing unknown/newer PawnIO versions are not automatically replaced. Back up settings and fully exit Desktop/OpenRGB before upgrading.
-
-### Artwork rights and contact
-
-If you are a rights holder or an authorized representative and believe that an animation or artwork included in Pixel Studio infringes your rights, please contact the maintainer through [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues). Please identify the animation, the relevant rights and the basis of your claim. After reviewing the notice, we will take appropriate action, which may include removal or replacement of the material. Please do not post private documents or personal information in a public issue; you may first request a private contact channel. This notice does not imply official endorsement or authorization, nor does it replace applicable licenses or permissions.
+Separate USB-60 firmware, custom source and instructions are supplied for the matching ESP32-C3 board. Setup does not flash firmware. Read the included guide and back up the device first; 60 FPS is not a universal guarantee.

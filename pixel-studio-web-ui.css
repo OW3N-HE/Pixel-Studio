@@ -1,253 +1,422 @@
-/* Shared surfaces; the web shell does not style the OpenRGB plugin. */
-/* Light appearance changes contrast, not the approved logo or board geometry. */
-/* Apple-inspired semantic roles, adapted for our blue-outlined controls. */
-html[data-theme=light]{--bg:#fff;--panel:#fff;--surface:#f2f2f7;--surface-deep:#f2f2f7;--surface-raised:#e5e5ea;--text:#1c1c1e;--muted:#636366;--brand:#0088ff;--brand-rgb:0,136,255;--logo-tile:#0088ff;--line:#0088ff;--selection:#1e6ef4;--preview-idle:rgba(66,133,255,.45);--preview-core:#0088ff;--preview-glow:#0088ff}
-html[data-theme=black]{--bg:#000;--panel:#101010;--surface:#080808;--surface-deep:#000;--surface-raised:#1c1c1c;--text:#f2f2f7;--muted:#98989d;--brand:#007bd9;--brand-rgb:0,123,217;--logo-tile:#007bd9;--line:rgba(0,145,255,.38);--selection:#0082e6;--preview-idle:rgba(0,145,255,.28);--preview-core:#007bd9;--preview-glow:#007bd9}
+/* Shared web/desktop surfaces; OpenRGB keeps its own styling. */
+/* Neutral light/dark surfaces reserve blue for active states. */
+html[data-theme=light]{
+  --bg:#ededed;
+  --panel:#f7f7f7;
+  --surface:#f5f5f5;
+  --surface-deep:#fff;
+  --surface-raised:#e8e8e8;
+  --text:#1c1c1c;
+  --muted:#555555;
+  --brand:#0078d4;
+  --brand-rgb:0,120,212;
+  --on-brand:#fff;
+  --logo-tile:#0078d4;
+  --line:#919191;
+  --selection:#0078d4;
+  --preview-idle:var(--line);
+  --preview-core:var(--brand);
+  --preview-glow:var(--brand);
+  --neutral-control-fill:#fff;
+  --neutral-action-fill:#fff;
+  --neutral-slider-accent:var(--brand);
+  --neutral-slider-track:#8a8a8a;
+  --neutral-slider-shell:#fff;
+  --neutral-slider-stroke:#dedede;
+  --neutral-slider-shadow:0 1px 2px rgba(0,0,0,.12);
+  --settings-heading-fill:var(--bg);
+  --settings-dialog-shadow:0 16px 48px rgba(0,0,0,.18);
+  --idle-border-base:#919191;
+  --idle-border-lift:0%;
+}
+html[data-theme=black]{
+  --bg:#202020;
+  --panel:#2b2b2b;
+  --surface:#2b2b2b;
+  --surface-deep:#323232;
+  --surface-raised:#3b3b3b;
+  --text:#f2f2f2;
+  --muted:#c6c6c6;
+  --brand:#4cc2ff;
+  --brand-rgb:76,194,255;
+  --on-brand:#202020;
+  --logo-tile:#4cc2ff;
+  --line:#707070;
+  --selection:#4cc2ff;
+  --preview-idle:var(--line);
+  --preview-core:var(--brand);
+  --preview-glow:var(--brand);
+  --neutral-control-fill:#3a3a3a;
+  --neutral-action-fill:#404040;
+  --neutral-slider-accent:var(--brand);
+  --neutral-slider-track:#9b9b9b;
+  --neutral-slider-shell:#454545;
+  --neutral-slider-stroke:#505050;
+  --neutral-slider-shadow:0 1px 2px rgba(0,0,0,.24);
+  --settings-heading-fill:var(--bg);
+  --settings-dialog-shadow:0 18px 56px rgba(0,0,0,.36);
+  --idle-border-base:#707070;
+  --idle-border-lift:0%;
+}
+/* Shared geometry and the resting-border palette for all themes. */
+:root{--ui-corner-radius:10px;--ui-focus-ring-width:2px;--ui-focus-ring-gap:2px;--idle-border-lift:15%;--idle-border-base:#3b6477}
+html[data-theme=mint]{--idle-border-base:#3b6650}
+html[data-theme=amber]{--idle-border-base:#7b5940}
+html[data-theme=rose]{--idle-border-base:#79536b}
+html[data-theme=ocean]{--idle-border-base:#416b91}
+html[data-theme=dark]{--idle-border-base:#565656}
+html[data-theme]{--line:color-mix(in srgb,var(--idle-border-base),var(--brand) var(--idle-border-lift))}
 html[data-theme=black] .ps-web button:focus-visible,html[data-theme=black] .ps-web input:focus-visible,html[data-theme=black] .ps-web select:focus-visible,html[data-theme=black] .ps-settings :focus-visible{outline-color:var(--selection)}
-html[data-theme=light] .ps-web .brand-mark{filter:drop-shadow(0 1px 3px rgba(var(--brand-rgb),.15))}
-html[data-theme=light] .ps-web .ps-play-toggle{color:#fff}
-html[data-theme=light] .ps-web .ps-import-button,html[data-theme=light] .ps-web #webSettingsToggle{color:var(--selection)}
+/* Theme-matched pixels; the SVG shares the preview frame's layered rim and glow. */
+html[data-theme] .ps-web .brand-mark{
+  --logo-bg:#151515;
+  --logo-center:#2b2b2b;
+  --logo-tile:var(--brand);
+  filter:none;
+}
+/* Preserve the neutral pixel palette without a separate shadow effect. */
+html[data-theme=dark] .ps-web .brand-mark{
+  --logo-center:#303030;
+  --logo-tile:#686868;
+}
+html[data-theme] .ps-web .brand-mark .logo-halo{
+  stroke:var(--brand);
+}
+html:is([data-theme=light],[data-theme=black]) .ps-web .ps-play-toggle:not(.is-playing){
+  background:var(--brand);
+  color:var(--on-brand,#fff);
+}
+html[data-theme=light] .ps-web .ps-import-button{color:var(--text)}
+html[data-theme=light] .ps-web #webSettingsToggle{color:var(--text)}
+html[data-theme=light] .ps-web input::placeholder{color:#595959;opacity:1}
 html[data-theme=light] .ps-web .ps-library-well,html[data-theme=black] .ps-web .ps-library-well,html[data-theme=light] .ps-web .ps-settings,html[data-theme=light] .ps-web .ps-settings-group{border-color:var(--line)}
-html[data-theme=light] .ps-web .animation-card[aria-pressed=true]::after,html[data-theme=black] .ps-web .animation-card[aria-pressed=true]::after{border-color:var(--selection);box-shadow:none}
 html[data-theme=light] .ps-web button:focus-visible,html[data-theme=light] .ps-web input:focus-visible,html[data-theme=light] .ps-web select:focus-visible,html[data-theme=light] .ps-settings :focus-visible{outline-color:var(--selection)}
-html[data-theme=light] .ps-web input:not([type=range]):not([type=checkbox]):not([type=color]):focus-visible,html[data-theme=light] .ps-web select:focus-visible{border-color:var(--selection);box-shadow:0 0 0 3px #4285ff1a}
+html[data-theme=light] .ps-web input:not([type=range]):not([type=checkbox]):not([type=color]):focus-visible,html[data-theme=light] .ps-web select:focus-visible{border-color:var(--selection);box-shadow:0 0 0 3px rgba(var(--brand-rgb),.1)}
 html[data-theme=light] .ps-web input[type=checkbox]{accent-color:var(--selection)}
 html[data-theme=light] .ps-web .brand-name{text-shadow:none}
-html[data-theme=light] .ps-web .animation-title{color:var(--text);text-shadow:none;background-color:rgba(255,255,255,.84)}
 html[data-theme=light] .ps-web .ps-favorite[aria-pressed=true]{color:#a82f57}
 html[data-theme=light] .ps-settings::backdrop{background:#0005}
 html[data-theme=light] .ps-web select:not([multiple]):not([size]){background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4L6 8L10 4' fill='none' stroke='%23616161' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important}
 .ps-web .ps-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
-.ps-web .ps-clear-filter{min-height:36px;padding:6px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text)}
+.ps-web .ps-clear-filter{min-height:36px;padding:6px 12px;border:1px solid var(--line);border-radius:var(--ui-corner-radius);background:var(--surface-raised);color:var(--text)}
 .ps-web .ps-clear-filter:hover{border-color:var(--brand)}
 /* Thermal controls reuse the clock's label widths and two equal columns. */
-.ps-web .studio-controls.ps-thermal-controls{height:auto;min-height:132px}
 .ps-web .studio-controls.ps-thermal-controls .adjustments{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .ps-web .studio-controls.ps-thermal-controls .adjustments>div{grid-template-columns:var(--control-label) minmax(0,1fr) 86px}
 .ps-web .studio-controls #thermalStyling{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:var(--control-gap);margin:16px 0 0;padding:0}
-.ps-web .studio-controls #thermalStyling .ps-setting-row{display:grid;grid-template-columns:var(--control-label) minmax(0,1fr);gap:12px;margin:0;padding:0;height:39px}
-.ps-web #thermalStyling .ps-setting-field{min-width:0;height:39px}
+.ps-web .studio-controls #thermalStyling .ps-setting-row{display:grid;grid-template-columns:var(--control-label) minmax(0,1fr);gap:12px;margin:0;padding:0;height:var(--ui-control-height,40px)}
+.ps-web #thermalStyling .ps-setting-field{min-width:0;height:var(--ui-control-height,40px)}
 .ps-web #thermalStyling .thermal-colors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.ps-web #thermalStyling select,.ps-web #thermalStyling button{width:100%;min-width:0;height:39px;min-height:39px;margin:0;font:inherit;box-sizing:border-box}
-.ps-web #thermalStyling button{display:flex;align-items:center;justify-content:center;padding:0 6px;border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text);white-space:nowrap;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
-.ps-web #thermalStyling button[aria-pressed=true]{border-color:var(--brand)}
-.ps-web .studio-controls.ps-thermal-controls select,.ps-web .studio-controls.ps-thermal-controls input[type=number]{padding-top:2px!important;padding-bottom:0!important;line-height:normal!important}
+.ps-web #thermalStyling select,.ps-web #thermalStyling button{width:100%;min-width:0;height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);margin:0;font:inherit;box-sizing:border-box}
+.ps-web #thermalStyling button{display:flex;align-items:center;justify-content:center;padding:0 6px;border-radius:var(--ui-corner-radius);white-space:nowrap;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
+/* All custom-color buttons inherit the shared themed fills, contours and states. */
 .ps-web .thermal-status{display:block;margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
 .ps-web #thermalColorsDialog{width:min(600px,calc(100vw - 32px));background:var(--panel);color:var(--text)}
 .ps-web #thermalColorsDialog .thermal-enable{white-space:normal}
 .ps-web #thermalColorsDialog .ps-help{margin:12px 0 22px;font-size:14px}
 .ps-web #thermalColorsDialog .ps-setting-row{grid-template-columns:minmax(0,1fr) 96px;align-items:center}
 .ps-web #thermalColorsDialog .thermal-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}
-.ps-web #thermalColorsDialog .thermal-actions button{display:flex;align-items:center;justify-content:center;white-space:normal;line-height:1.3;min-height:42px}
-@media(max-width:760px){.ps-web .studio-controls.ps-thermal-controls .adjustments,.ps-web .studio-controls #thermalStyling{grid-template-columns:1fr;row-gap:16px}}
+.ps-web #thermalColorsDialog .thermal-actions button{display:flex;align-items:center;justify-content:center;white-space:normal;line-height:1.3;min-height:var(--ui-control-height,40px)}
+@media(max-width:600px){.ps-web .studio-controls.ps-thermal-controls .adjustments,.ps-web .studio-controls #thermalStyling{grid-template-columns:1fr;row-gap:16px}}
 body.ps-web{margin:0;padding:0;background:var(--bg);background-image:none!important;color:var(--text)}
 .ps-web *,.ps-settings *{box-sizing:border-box}
 .ps-web .wrap,.ps-web .wrap *,.ps-settings,.ps-settings *{background-image:none!important}
-.ps-web .wrap{width:100%;max-width:1920px;height:100dvh;min-height:520px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:16px;background:var(--bg)}
-.ps-web .topbar{--brand-size:52px;flex:0 0 var(--brand-size);min-height:var(--brand-size);height:var(--brand-size);margin:0;padding:0;border:0;background:transparent;align-items:center}
-.ps-web .brand{display:flex;align-items:center;gap:16px;min-width:0}.ps-web .brand-mark{display:block;width:var(--brand-size);height:var(--brand-size);padding:0;margin:0;box-sizing:border-box}.ps-web .brand-name{font-size:clamp(24px,2.5vw,36px);letter-spacing:1px;line-height:1.1}
-.ps-web .workspace{display:flex;flex:1;flex-direction:column;align-items:stretch;width:100%;max-width:none;min-width:0;min-height:0;gap:8px;margin:0}
-.ps-web .studio-stage{display:grid;grid-template-columns:var(--preview-column,minmax(180px,36%)) minmax(0,1fr);gap:16px;flex:1;width:100%;max-width:none;align-self:stretch;min-height:0;padding:0;background:transparent;border:0;border-radius:20px}
+.ps-web .wrap{width:100%;max-width:none;height:100dvh;min-height:520px;margin:0 auto;padding:var(--ps-layout-gap);display:flex;flex-direction:column;gap:var(--ps-layout-gap);background:var(--bg)}
+.ps-web .topbar{--brand-size:52px;flex:0 0 var(--brand-size);min-height:var(--brand-size);height:var(--brand-size);margin:0;padding:0;border:0;background:transparent;align-items:center;flex-wrap:nowrap;gap:16px}
+.ps-web .brand{display:flex;flex:1;align-items:center;gap:var(--brand-ink-gap,16px);min-width:0}.ps-web .brand-mark{display:block;flex:none;width:var(--brand-size);height:var(--brand-size);padding:0;margin:0;box-sizing:border-box}.ps-web .brand-name{font-size:24px;letter-spacing:1px}
+.ps-web .workspace{display:flex;flex:1;flex-direction:column;align-items:stretch;width:100%;max-width:none;min-width:0;min-height:0;gap:var(--ps-layout-gap);margin:0}
+.ps-web .studio-stage{--ps-preview-layout:side-by-side;display:grid;grid-template-columns:var(--preview-column,minmax(180px,36%)) minmax(0,1fr);gap:16px;flex:1;width:100%;max-width:none;align-self:stretch;min-height:0;padding:0;background:transparent;border:0;border-radius:var(--ui-corner-radius)}
 .ps-web .preview-card,.ps-web .library-card{width:100%;max-width:none;align-self:stretch;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent}
 .ps-web .preview-card{display:flex;flex-direction:column}
 .ps-web #animationHint{display:none}
 .ps-web .preview-stage{display:flex;flex:1;align-items:center;justify-content:center;min-height:0;height:100%;padding:12px;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
 .ps-web .preview-stage::before,.ps-web .preview-stage::after{content:none}
  .ps-web .ps-preview-frame{position:relative;flex:none;padding:var(--board-inset,1px);border:0;border-radius:0;background:transparent;overflow:visible;isolation:isolate}
-.ps-web .ps-preview-board{--preview-core-opacity:1;position:absolute;left:-10px;top:-10px;display:block;pointer-events:none;z-index:0}
+.ps-web .ps-preview-board{--preview-core-opacity:1;--preview-glow-opacity:.085;position:absolute;left:-10px;top:-10px;display:block;pointer-events:none;z-index:0}
 .ps-web .ps-preview-frame #preview{position:relative;z-index:2}
 .ps-web #preview{display:block;margin:0;padding:0;border:0!important;border-radius:0!important;max-width:none;max-height:none;box-shadow:none;background:#030b0f}
-.ps-web .library-card{display:flex;flex-direction:column;gap:12px}
-.ps-web .library-toolbar{display:grid;grid-template-columns:minmax(100px,145px) minmax(90px,1fr) auto;align-items:center;gap:10px;margin:0;padding:0}
-.ps-web .library-toolbar input,.ps-web .library-toolbar select{height:42px;min-width:0}
-.ps-web .ps-shuffle-group{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.ps-web .library-card{--ps-library-control-gap:10px;display:flex;flex-direction:column;gap:var(--ps-library-control-gap)}
+.ps-web .library-toolbar{--ps-library-search-min:var(--ui-control-height,40px);box-sizing:border-box;display:flex;flex:0 0 var(--ui-control-height,40px);height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);flex-wrap:nowrap;align-items:center;gap:var(--ps-library-control-gap);margin:0;padding:0}
+.ps-web .library-toolbar input,.ps-web .library-toolbar select{box-sizing:border-box;height:var(--ui-control-height,40px);min-width:0;margin:0}
+.ps-web .ps-shuffle-group{display:flex;align-items:center;gap:0;white-space:nowrap}
 .ps-web .ps-shuffle{display:flex;align-items:center;gap:7px;margin:0;color:var(--text);font-size:14px}
 .ps-web .ps-shuffle input{width:17px;height:17px;margin:0}
 .ps-web .ps-unit{font-size:12px;color:var(--muted)}
-.ps-web .ps-library-well{display:flex;flex:1;min-height:0;flex-direction:column;border:1px solid rgba(var(--brand-rgb),.2);background:var(--surface-deep);overflow:hidden}
-.ps-web #animationGallery{display:grid;flex:1;min-height:0;max-height:none;height:auto;align-content:start;margin:0;border:0;border-radius:0;background:transparent;overflow-y:auto;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
-.ps-web .ps-animation-tile{position:relative;min-width:0}
-.ps-web .animation-card{width:100%;height:100%;min-height:0;background:var(--surface);box-shadow:none;overflow:hidden}
-.ps-web .animation-card:hover{background:var(--surface-raised);transform:none}
-.ps-web .animation-card[aria-pressed=true]{background:var(--surface-raised)}
-.ps-web .animation-thumb{display:flex;align-items:center;justify-content:center;flex:1;min-height:0;border:0;background:transparent}
-.ps-web .animation-thumb img{image-rendering:pixelated}
-.ps-web .animation-title{display:flex;align-items:center;justify-content:center;font-size:14px;text-align:center}
+.ps-web .ps-library-well{display:flex;flex:1;min-height:0;flex-direction:column;border:2px solid var(--line);background:var(--surface-deep);overflow:hidden}
+.ps-web #animationGallery{display:grid;flex:1;min-height:0;max-height:none;height:auto;margin:0;border:0;border-radius:0;background:transparent;overflow-y:auto;scrollbar-gutter:auto}
 .ps-web .ps-favorite{position:absolute;top:7px;right:7px;z-index:1;display:grid;place-items:center;width:31px;min-width:0;height:31px;padding:6px;border:0;border-radius:50%;background:rgba(var(--brand-rgb),.16);color:var(--brand)}
 .ps-web .ps-favorite svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
 .ps-web .ps-favorite[aria-pressed=true]{color:#ffa5bd}.ps-web .ps-favorite[aria-pressed=true] svg{fill:currentColor}
 .ps-web .ps-empty{margin:12px;text-align:center;color:var(--muted)}
-.ps-web .studio-controls{flex:none;display:block;width:100%;max-width:none;align-self:stretch;margin:0;padding:12px 14px;border:1px solid transparent;border-radius:17px;background:transparent;box-shadow:none}
+.ps-web .studio-controls{flex:none;display:block;width:100%;max-width:none;align-self:stretch;margin:0;padding:12px 14px;border:1px solid transparent;border-radius:var(--ui-corner-radius);background:transparent;box-shadow:none}
 .ps-web .adjustments{display:grid;grid-template-columns:1fr;align-items:center;gap:16px;margin:0;padding:0}
 .ps-web .ps-clock-controls .adjustments{grid-template-columns:1fr 1fr;gap:24px}
 .ps-web .adjustments>div{display:grid;grid-template-columns:58px minmax(0,1fr) 86px;align-items:center;gap:12px;padding:0;margin:0}
 .ps-web .adjustments label{margin:0;color:var(--text);font-size:15px;line-height:1.4}
 .ps-web .adjustments input[type=range]{width:100%!important;min-width:0;margin:0;padding:0}
-.ps-web .adjustments input[type=number]{height:39px;text-align:center}
+.ps-web .adjustments input[type=number]{height:var(--ui-control-height,40px);text-align:center}
 .ps-web #clockStyling{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:16px 0 0;padding:0;border:0;background:transparent}
 .ps-web #clockStyling .ps-setting-row{grid-template-columns:58px minmax(0,1fr);gap:12px;margin:0}
 .ps-web #clockStyling .ps-setting-label{display:block;align-self:center;margin:0;padding:0;font-size:15px;line-height:1.4}
 .ps-web #clockStyling .ps-setting-field{display:flex;min-width:0;gap:10px;margin:0;padding:0}
-.ps-web #clockStyling select{flex:1 1 0;min-width:0;width:0;margin:0;min-height:39px;height:39px;font-size:14px}
-.ps-web #clockStyling .ps-custom-colors{flex:1 1 0;min-width:0;height:39px;padding:7px;border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text);font-size:13px;white-space:nowrap}
-.ps-web .ps-shuffle-group>input[type=number]{width:64px;max-width:64px;min-width:64px;flex:0 0 64px}
+.ps-web #clockStyling select{flex:1 1 0;min-width:0;width:0;margin:0;min-height:var(--ui-control-height,40px);height:var(--ui-control-height,40px);font-size:14px}
+.ps-web #clockStyling .ps-custom-colors{flex:1 1 0;min-width:0;height:var(--ui-control-height,40px);padding:7px;border-radius:var(--ui-corner-radius);font-size:13px;white-space:nowrap}
 .ps-web .ps-settings input[type=color]{height:44px;padding:4px;cursor:pointer}
 .ps-web .ps-playback-bar{display:flex;flex:none;width:100%;max-width:none;align-self:stretch;align-items:center;gap:14px;min-height:52px;padding:0 2px}
-.ps-web .ps-play-toggle{display:grid;place-items:center;flex:none;width:96px;min-width:96px;height:52px;padding:13px;border:0;border-radius:12px;background:var(--brand);color:var(--surface-deep)}
+.ps-web .ps-playback-messages{display:grid;align-content:center;gap:2px}
+.ps-web .ps-playback-messages>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ps-web .ps-playback-messages .ps-playback-source{display:none!important}
+.ps-web .ps-playback-feedback .ps-playback-state{color:var(--text)}
+.ps-web .ps-playback-feedback :is(.ps-playback-note,.ps-playback-separator){color:var(--muted)}
+.ps-web .ps-playback-feedback .ps-playback-error{color:var(--danger)}
+.ps-web .ps-play-toggle{display:grid;place-items:center;flex:none;width:96px;min-width:96px;height:52px;padding:13px;border:0;border-radius:var(--ui-corner-radius);background:var(--brand);color:var(--surface-deep)}
 .ps-web .ps-play-toggle svg{width:26px;height:26px;fill:currentColor}.ps-web .ps-play-toggle.is-playing{background:#d65360;color:white}
 .ps-web .ps-playback-messages{min-width:0;flex:1}.ps-web .ps-playback-messages .status{margin:0;min-height:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
-.ps-web #streamStats{max-width:36%;margin:0;padding:0;border:0;color:var(--muted);font-size:12px;text-align:right}
+.ps-web .ps-current-animation{color:var(--text);font-size:12px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-web #streamStats{min-width:0;max-width:36%;margin:0;padding:0;border:0;color:var(--muted);font-size:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .ps-web button,.ps-web input,.ps-web select,.ps-settings button,.ps-settings input,.ps-settings select{font:inherit}
 .ps-web button,.ps-settings button{cursor:pointer}
-.ps-web input:not([type=range]):not([type=checkbox]),.ps-web select,.ps-settings input:not([type=range]):not([type=checkbox]),.ps-settings select{min-width:0;width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-deep);color:var(--text)}
-.ps-web .ps-shuffle-group>input{width:64px;text-align:center;padding:8px}
+.ps-web input:not([type=range]):not([type=checkbox]),.ps-web select,.ps-settings input:not([type=range]):not([type=checkbox]),.ps-settings select{min-width:0;width:100%;padding:9px 11px;border:2px solid var(--line);border-radius:var(--ui-corner-radius);background:var(--surface-deep);color:var(--text)}
 .ps-web button:focus-visible,.ps-web input:focus-visible,.ps-web select:focus-visible,.ps-settings :focus-visible{outline:2px solid var(--brand);outline-offset:3px}
 .ps-web input[type=range],.ps-settings input[type=range],.ps-web input[type=checkbox],.ps-settings input[type=checkbox]{accent-color:var(--brand)}
-.ps-web #webSettingsToggle{display:grid;place-items:center;grid-template-columns:1fr;grid-template-rows:1fr;box-sizing:border-box;width:var(--brand-size);height:var(--brand-size);min-width:var(--brand-size);margin:0;padding:0;line-height:0;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text)}
+.ps-web #webSettingsToggle{display:grid;place-items:center;grid-template-columns:1fr;grid-template-rows:1fr;box-sizing:border-box;width:var(--brand-size);height:var(--brand-size);min-width:var(--brand-size);margin:0;padding:0;line-height:0;border:2px solid var(--line);border-radius:var(--ui-corner-radius);background:var(--panel);color:var(--text)}
 .ps-web #webSettingsToggle svg{display:block;width:26px;height:26px;margin:0;fill:currentColor}
 .ps-web .ps-header-actions button:hover:not(:disabled),.ps-web #webSettingsToggle:hover:not(:disabled){background:var(--surface-raised);border-color:var(--brand);filter:none}
-html .ps-web .ps-settings.ps-media-dialog label,html .ps-web .ps-settings.ps-media-dialog label span,html .ps-web .ps-settings.ps-media-dialog p{font-family:inherit;font-size:16px!important;line-height:1.5}
-.ps-settings{width:min(860px,calc(100vw - 40px));max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:none;overflow:hidden}
+html .ps-web .ps-settings.ps-media-dialog label,html .ps-web .ps-settings.ps-media-dialog label span,html .ps-web .ps-settings.ps-media-dialog:not(.ps-import-dialog) p{font-family:inherit;font-size:16px!important;line-height:1.5}
+.ps-settings{width:min(860px,calc(100vw - 40px));max-height:calc(100dvh - 40px);margin:auto;padding:0;border:2px solid var(--line);border-radius:var(--ui-corner-radius);background:var(--panel);color:var(--text);box-shadow:none;overflow:hidden}
 .ps-settings[open]{display:flex;flex-direction:column}.ps-settings::backdrop{background:#02080db3}
-.ps-settings-heading{display:flex;flex:none;justify-content:space-between;align-items:center;gap:20px;padding:15px 24px;border-bottom:1px solid var(--line)}
+.ps-settings-heading{display:flex;flex:none;justify-content:space-between;align-items:center;gap:20px;padding:15px 24px;border-bottom:2px solid var(--line)}
 .ps-settings-heading h2{margin:0;font-size:19px;font-weight:600}
-.ps-settings .ps-close{width:36px;height:36px;padding:0;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:27px}
+.ps-settings .ps-close{width:36px;height:36px;padding:0;border:0;border-radius:var(--ui-corner-radius);background:transparent;color:var(--muted);font-size:27px}
 .ps-settings .ps-close:hover{background:var(--surface-raised);color:var(--text)}
 .ps-settings-body{overflow-y:auto;min-height:0;padding:20px 24px 24px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
-.ps-settings-group{min-width:0;margin:0 0 22px;padding:17px 20px 20px;border:1px solid var(--line);border-radius:13px;background:transparent}
+.ps-settings-group{min-width:0;margin:0 0 22px;padding:17px 20px 20px;border:2px solid var(--line);border-radius:var(--ui-corner-radius);background:transparent}
 .ps-settings-group legend{padding:0 8px;color:var(--text);font-size:16px}
 .ps-setting-row{display:grid;grid-template-columns:minmax(100px,.85fr) minmax(0,1.6fr);align-items:center;gap:20px;margin:0 0 14px}
 .ps-setting-row:last-child{margin-bottom:0}.ps-setting-label{margin:0;padding:0;color:var(--text);font-size:14px;line-height:1.5}
 .ps-setting-field{display:flex;min-width:0;align-items:center;gap:10px}.ps-setting-field>select,.ps-setting-field>input{flex:1}
-.ps-settings button:not(.ps-close){min-height:39px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text);white-space:nowrap}
+.ps-settings button:not(.ps-close){min-height:var(--ui-control-height,40px);padding:8px 14px;border:2px solid var(--line);border-radius:var(--ui-corner-radius);background:var(--surface-raised);color:var(--text);white-space:nowrap}
 .ps-settings button:not(.ps-close):hover{border-color:var(--brand)}
-.ps-settings .ps-input-action{display:grid;grid-template-columns:minmax(0,1fr) 134px}
-.ps-web .ps-settings .ps-size-fields{display:flex;flex-direction:row;width:100%;min-width:0;flex-wrap:nowrap;align-items:center;gap:9px}
-.ps-web .ps-settings .ps-size-notice{flex:1 1 0;min-width:0;margin:0;color:var(--muted);font-size:12px;line-height:1.6;white-space:nowrap;overflow-x:auto}
-.ps-web .ps-settings .ps-size-fields>input[type=number]{width:68px;min-width:48px;max-width:76px;flex:0 1 68px;text-align:center;padding:9px 5px}
-.ps-settings .ps-size-fields>label:not(.ps-check){margin:0;flex:none;color:var(--text)}
+.ps-web .ps-settings .ps-input-action{display:grid;grid-template-columns:minmax(0,1fr) 150px}
+.ps-web .ps-settings .ps-input-action button{min-width:0;max-width:100%;width:100%;white-space:nowrap;line-height:1.3}
+.ps-web .ps-settings .ps-size-fields{display:flex;flex-direction:row;box-sizing:border-box;width:100%;min-width:0;flex-wrap:wrap;align-items:center;gap:9px;padding:4px}
+.ps-web .ps-settings .ps-size-pair{display:flex;flex:0 0 auto;align-items:center;gap:9px;min-width:0}
+.ps-web .ps-settings .ps-size-notice{flex:0 1 auto;min-width:0;max-width:100%;margin:0;color:var(--muted);font-size:12px;line-height:1.6;white-space:normal;overflow-wrap:anywhere}
+.ps-web .ps-settings{--input-error:#ffadb6}
+html[data-theme=light] .ps-web .ps-settings{--input-error:#a51d35}
+.ps-web .ps-settings .ps-size-notice.is-invalid{color:var(--input-error);font-weight:600}
+.ps-web .ps-settings .ps-size-fields input[aria-invalid=true]{border-color:var(--input-error);outline:1px solid var(--input-error);outline-offset:1px}
+.ps-web .ps-settings .ps-size-fields input[type=number]{width:68px;min-width:48px;max-width:76px;flex:0 1 68px;text-align:center;padding:9px 5px}
+.ps-settings .ps-size-pair>label{margin:0;flex:none;color:var(--text)}
 .ps-settings .ps-check{display:flex;align-items:center;gap:7px;margin:0;color:var(--text);white-space:nowrap}
 .ps-settings .ps-size-fields .ps-check{margin-left:auto}.ps-settings input[type=checkbox]{width:17px;height:17px;margin:0}
 .ps-settings .ps-fps input[type=range]{width:100%;min-width:0;padding:0}.ps-settings .ps-fps input[type=number]{width:76px;flex:0 0 76px;text-align:center}
 .ps-settings .ps-help{display:block;margin:14px 0 0;font-size:12px;line-height:1.6;color:var(--muted)}.ps-settings .ps-warning{color:var(--amber)}
+/* Field hints share the control column without shifting the main row's center. */
+.ps-settings .ps-setting-with-help{row-gap:6px}
+.ps-settings .ps-setting-row>.ps-field-help{grid-column:2;grid-row:2;min-width:0;margin:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:760px){.ps-settings .ps-setting-row>.ps-field-help{grid-column:1;grid-row:auto}}
 .ps-settings input:disabled,.ps-settings select:disabled,.ps-web input:disabled{opacity:.5;cursor:not-allowed}
 .ps-web .ps-header-actions{display:flex;align-items:center;gap:16px;margin-left:auto;flex:none}
-.ps-web .ps-import-button{display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:0 15px;height:var(--brand-size);min-height:var(--brand-size);border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);font-size:13px;white-space:nowrap}
+.ps-web .ps-import-button{display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:0 14px;height:var(--brand-size);min-height:var(--brand-size);border:2px solid var(--line);border-radius:var(--ui-corner-radius);background:var(--panel);color:var(--text);font-size:16px;white-space:nowrap}
 .ps-web .ps-import-button:hover{border-color:var(--brand)}
+/* Decorative vector icons survive localized button text updates. */
+.ps-web #psMediaToggle{flex:0 0 var(--brand-size);width:var(--brand-size);min-width:var(--brand-size);padding:0;gap:0}
+.ps-web #psMediaToggle::before{
+  content:"";
+  display:block;
+  flex:0 0 20px;
+  width:20px;
+  height:20px;
+  background-color:currentColor;
+  pointer-events:none;
+  mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2216%22%20rx%3D%222%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%229%22%20r%3D%221.3%22%20fill%3D%22%23000%22%20stroke%3D%22none%22%2F%3E%3Cpath%20d%3D%22m3%2016%205-5%204%204%203-3%206%206%22%2F%3E%3C%2Fsvg%3E");
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2216%22%20rx%3D%222%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%229%22%20r%3D%221.3%22%20fill%3D%22%23000%22%20stroke%3D%22none%22%2F%3E%3Cpath%20d%3D%22m3%2016%205-5%204%204%203-3%206%206%22%2F%3E%3C%2Fsvg%3E");
+  mask-size:contain;
+  -webkit-mask-size:contain;
+  mask-position:center;
+  -webkit-mask-position:center;
+  mask-repeat:no-repeat;
+  -webkit-mask-repeat:no-repeat;
+}
+.ps-web #psMediaToggle[data-media-target=animations]::before{
+  mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%223%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%2214%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E");
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%223%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%2214%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%2214%22%20width%3D%227%22%20height%3D%227%22%20rx%3D%221%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E");
+}
 .ps-media-dialog{width:min(640px,calc(100vw - 24px))}
-.ps-media-description{margin:0 0 18px;color:var(--muted);font-size:13px;line-height:1.6}
 .ps-media-dialog .ps-settings-group{margin-bottom:0}
-@media(max-width:480px){.ps-web .ps-import-button{padding:8px;font-size:12px}.ps-web .brand-name{font-size:19px}.ps-web .ps-settings .ps-size-fields{gap:6px}.ps-web .ps-settings .ps-size-fields>input[type=number]{flex-basis:52px;width:52px}.ps-settings .ps-size-fields .ps-check{font-size:12px}}
-@media(min-width:761px) and (max-height:680px){.ps-web .studio-controls{padding:12px 16px}.ps-web .studio-stage{gap:18px}}
-@media(max-width:1000px){.ps-web .library-toolbar{grid-template-columns:110px minmax(90px,1fr)}.ps-web .ps-shuffle-group{grid-column:1/-1;justify-content:flex-end}.ps-web .adjustments{gap:18px}.ps-web .adjustments>div{grid-template-columns:42px minmax(0,1fr) 72px;gap:8px}}
-@media(max-width:760px){.ps-web .wrap{min-height:100dvh;height:auto}.ps-web .workspace{display:flex}.ps-web .brand-name{font-size:24px}.ps-web .studio-stage{flex:none;grid-template-columns:1fr;gap:20px}.ps-web .preview-stage{height:260px;flex:none}.ps-web .ps-library-well{flex:none;height:390px}.ps-web .studio-controls{padding:16px}.ps-web .adjustments{grid-template-columns:1fr;gap:16px}.ps-web .adjustments>div{grid-template-columns:48px minmax(0,1fr) 76px}.ps-web #clockStyling{grid-template-columns:1fr;gap:12px}.ps-web .ps-playback-bar{position:sticky;bottom:0;z-index:4;padding:10px 0;background:var(--bg)}.ps-web .ps-play-toggle{width:64px;min-width:64px}.ps-web #streamStats{max-width:30%;font-size:10px}.ps-settings{width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}.ps-settings-heading{padding:12px 16px}.ps-settings-body{padding:16px}.ps-settings-group{padding:14px}.ps-setting-row{grid-template-columns:1fr;gap:7px}.ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 110px}}
+@media(max-width:480px){.ps-web .ps-settings .ps-size-fields,.ps-web .ps-settings .ps-size-pair{gap:6px}.ps-web .ps-settings .ps-size-fields input[type=number]{flex-basis:52px;width:52px}}
+@media(width > 600px) and (max-height:680px){.ps-web .studio-stage{gap:var(--ps-layout-gap)}}
+@media(max-width:1000px){.ps-web .ps-shuffle-group{justify-content:flex-end}.ps-web .adjustments{gap:18px}.ps-web .adjustments>div{grid-template-columns:42px minmax(0,1fr) 72px;gap:8px}}
+/* Stack only when the available CSS width cannot fit a usable preview and library. */
+@media(max-width:600px){
+  .ps-web .wrap{min-height:100dvh;height:auto}
+  .ps-web .workspace{display:flex}
+  .ps-web .studio-stage{--ps-preview-layout:stacked;flex:none;grid-template-columns:1fr;gap:20px}
+  .ps-web .preview-stage{height:clamp(280px,55dvh,520px);flex:none;padding:3px}
+  .ps-web .ps-library-well{flex:none;height:clamp(160px,24dvh,220px)}
+  .ps-web .studio-controls{padding:16px}
+  .ps-web .adjustments{grid-template-columns:1fr;gap:16px}
+  .ps-web .adjustments>div{grid-template-columns:48px minmax(0,1fr) 76px}
+  .ps-web #clockStyling{grid-template-columns:1fr;gap:12px}
+  .ps-web .ps-playback-bar{position:static;flex-wrap:wrap;row-gap:4px;padding:0;background:var(--bg)}
+  .ps-web .ps-play-toggle{width:64px;min-width:64px}
+  .ps-web .ps-playback-messages{flex:1 1 140px}
+  /* Wrap the status as a whole item rather than splitting connection words. */
+  .ps-web #streamStats{flex:0 1 auto;min-width:0;max-width:100%;margin-left:auto;font-size:12px;white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-width:760px){
+  .ps-settings{width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}
+  .ps-settings-heading{padding:12px 16px}
+  .ps-settings-body{padding:16px}
+  .ps-settings-group{padding:14px}
+  .ps-setting-row{grid-template-columns:1fr;gap:7px}
+}
 @media(max-width:1000px){.ps-web .ps-clock-controls .adjustments,.ps-web #clockStyling{column-gap:18px}.ps-web #clockStyling .ps-setting-row{grid-template-columns:42px minmax(0,1fr);gap:8px}}
-@media(max-width:760px){.ps-web .ps-clock-controls .adjustments{grid-template-columns:1fr;gap:16px}.ps-web #clockStyling .ps-setting-row{grid-template-columns:48px minmax(0,1fr)}}
+@media(max-width:600px){.ps-web .ps-clock-controls .adjustments{grid-template-columns:1fr;gap:16px}.ps-web #clockStyling .ps-setting-row{grid-template-columns:48px minmax(0,1fr)}}
 /* Shared control geometry keeps the two-row panel stable across animation types. */
 .ps-web [hidden]{display:none!important}
-.ps-web .studio-controls{min-height:132px}
-.ps-web .adjustments>div,.ps-web #clockStyling .ps-setting-row{height:39px;min-height:39px}
-.ps-web .adjustments label,.ps-web #clockStyling .ps-setting-label{display:flex;align-items:center;height:39px;line-height:20px;padding:0;margin:0}
+/* Narrow layouts follow their visible controls; wide layouts reserve two rows below. */
+.ps-web .studio-controls{min-height:0}
+.ps-web .adjustments>div,.ps-web #clockStyling .ps-setting-row{height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px)}
+.ps-web .adjustments label,.ps-web #clockStyling .ps-setting-label{display:flex;align-items:center;height:var(--ui-control-height,40px);line-height:20px;padding:0;margin:0}
 .ps-web .adjustments,.ps-web .ps-clock-controls .adjustments{row-gap:16px}
-.ps-web input:not([type=range]):not([type=checkbox]):not([type=color]),.ps-web select{height:42px;line-height:normal;padding-top:0;padding-bottom:0}
-.ps-web .adjustments input[type=number],.ps-web #clockStyling select{height:39px;padding-top:0;padding-bottom:0}
+.ps-web input:not([type=range]):not([type=checkbox]):not([type=color]),.ps-web select{height:var(--ui-control-height,40px);line-height:normal;padding-top:0;padding-bottom:0}
+.ps-web .adjustments input[type=number],.ps-web #clockStyling select{height:var(--ui-control-height,40px);padding-top:0;padding-bottom:0}
 .ps-web .ps-palette-controls .adjustments{grid-template-columns:1fr 1fr;column-gap:24px}
-.ps-web .ps-animation-colors{display:grid;grid-template-columns:58px minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px;margin-top:16px;height:39px}
+.ps-web .ps-animation-colors{display:grid;grid-template-columns:58px minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px;margin-top:16px;height:var(--ui-control-height,40px)}
 .ps-web .ps-animation-colors label{margin:0;line-height:20px;font-size:15px}
-.ps-web .ps-animation-colors select,.ps-web .ps-animation-colors button{height:39px;min-width:0}
-.ps-web .ps-animation-colors button{border:1px solid var(--line);border-radius:9px;background:var(--surface-raised);color:var(--text);padding:0 12px}
-.ps-web #streamStats{white-space:normal;font-variant-numeric:tabular-nums}
-@media(min-width:761px){.ps-web .studio-controls{height:132px}.ps-web .ps-animation-colors{grid-template-columns:58px minmax(0,1fr) minmax(0,calc(50% - 12px));column-gap:12px}}
-@media(max-width:1000px) and (min-width:761px){.ps-web .ps-palette-controls .adjustments{column-gap:18px}.ps-web .ps-animation-colors{grid-template-columns:42px minmax(0,1fr) minmax(0,calc(50% - 9px));column-gap:8px}}
-@media(max-width:760px){.ps-web .ps-palette-controls .adjustments{grid-template-columns:1fr}.ps-web .ps-animation-colors{grid-template-columns:48px minmax(0,1fr);height:auto}.ps-web .ps-animation-colors button{grid-column:2}}
+.ps-web .ps-animation-colors select,.ps-web .ps-animation-colors button{height:var(--ui-control-height,40px);min-width:0}
+.ps-web .ps-animation-colors button{border-radius:var(--ui-corner-radius);padding:0 12px}
+@media(max-width:1000px) and (width > 600px){.ps-web .ps-palette-controls .adjustments{column-gap:18px}}
+@media(max-width:600px){.ps-web .ps-palette-controls .adjustments{grid-template-columns:1fr}.ps-web .ps-animation-colors{grid-template-columns:48px minmax(0,1fr);height:auto}.ps-web .ps-animation-colors button{grid-column:2}}
 html[lang=en] .ps-web .adjustments>div{grid-template-columns:100px minmax(0,1fr) 86px}
 html[lang=en] .ps-web #clockStyling .ps-setting-row{grid-template-columns:100px minmax(0,1fr)}
 /* Palette row shares the same half-width and label column as brightness. */
 .ps-web .ps-animation-colors label{color:var(--text);font-weight:inherit}
-.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) max-content}
-.ps-web .ps-settings .ps-input-action button{min-width:134px;max-width:100%;white-space:normal;line-height:1.3}
-@media(min-width:761px){
+@media(width > 600px){
 .ps-web .ps-animation-colors{grid-template-columns:58px minmax(0,1fr) minmax(0,calc(50% - 12px));column-gap:12px}
 .ps-web .ps-animation-colors select{width:calc(100% - 12px)}
 html[lang=en] .ps-web .ps-animation-colors{grid-template-columns:100px minmax(0,1fr) minmax(0,calc(50% - 12px))}
 }
-@media(min-width:761px) and (max-width:1000px){
+@media(width > 600px) and (max-width:1000px){
 .ps-web .ps-animation-colors{grid-template-columns:42px minmax(0,1fr) minmax(0,calc(50% - 9px));column-gap:8px}
 .ps-web .ps-animation-colors select{width:calc(100% - 10px)}
 html[lang=en] .ps-web .ps-animation-colors{grid-template-columns:100px minmax(0,1fr) minmax(0,calc(50% - 9px))}
 }
-@media(max-width:480px){.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 110px}.ps-web .ps-settings .ps-input-action button{min-width:0}}
 /* The clock and animation palettes use identical row boxes, without inherited offsets. */
 .ps-web .studio-controls{--control-label:58px;--control-gap:24px}
 .ps-web .studio-controls .adjustments{margin:0!important;padding:0!important;row-gap:16px!important;column-gap:var(--control-gap)!important}
-.ps-web .studio-controls .adjustments>div{height:39px!important;min-height:39px!important;margin:0!important;padding:0!important}
-.ps-web .studio-controls #clockStyling,.ps-web .studio-controls .ps-animation-colors{height:39px;min-height:39px;margin:16px 0 0!important;padding:0!important;align-items:center;box-sizing:border-box}
+.ps-web .studio-controls .adjustments>div{height:var(--ui-control-height,40px)!important;min-height:var(--ui-control-height,40px)!important;margin:0!important;padding:0!important}
+.ps-web .studio-controls #clockStyling,.ps-web .studio-controls .ps-animation-colors{height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);margin:16px 0 0!important;padding:0!important;align-items:center;box-sizing:border-box}
 .ps-web .studio-controls #clockStyling{column-gap:var(--control-gap)!important}
-.ps-web .studio-controls #clockStyling .ps-setting-row{height:39px;min-height:39px;margin:0!important;padding:0!important;align-items:center}
-.ps-web .studio-controls #clockStyling .ps-setting-field{height:39px;min-height:0;align-items:center}
-.ps-web .studio-controls label{height:39px;display:flex;align-items:center;margin:0!important;padding:0!important;color:var(--text);font-size:15px;line-height:20px;font-weight:inherit}
-.ps-web .studio-controls input:not([type=range]),.ps-web .studio-controls select,.ps-web .studio-controls .ps-custom-colors,.ps-web .studio-controls .ps-animation-colors button{height:39px!important;min-height:39px!important;max-height:39px!important;box-sizing:border-box;margin-top:0!important;margin-bottom:0!important}
-.ps-web input:not([type=range]):not([type=checkbox]):not([type=color]),.ps-web select{padding-top:2px!important;padding-bottom:0!important;line-height:normal;vertical-align:middle}
-.ps-web .studio-controls select,.ps-web .studio-controls input[type=number]{padding-top:2px!important;padding-bottom:0!important;line-height:normal!important}
+.ps-web .studio-controls #clockStyling .ps-setting-row{height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);margin:0!important;padding:0!important;align-items:center}
+.ps-web .studio-controls #clockStyling .ps-setting-field{height:var(--ui-control-height,40px);min-height:0;align-items:center}
+.ps-web .studio-controls label{height:var(--ui-control-height,40px);display:flex;align-items:center;margin:0!important;padding:0!important;color:var(--text);font-size:var(--ui-label-font-size,16px);line-height:20px;font-weight:inherit}
+.ps-web .studio-controls input:not([type=range]),.ps-web .studio-controls select,.ps-web .studio-controls .ps-custom-colors,.ps-web .studio-controls .ps-animation-colors button{height:var(--ui-control-height,40px)!important;min-height:var(--ui-control-height,40px)!important;max-height:var(--ui-control-height,40px)!important;box-sizing:border-box;margin-top:0!important;margin-bottom:0!important}
 /* One caption size for ordinary animations, clocks and temperature controls. */
 html .ps-web .studio-controls select,html .ps-web .studio-controls input[type=number],html .ps-web .studio-controls button.ps-custom-colors,html .ps-web .studio-controls .ps-animation-colors button{font-family:inherit!important;font-size:16px!important;font-weight:inherit!important;letter-spacing:normal}
 .ps-web .studio-controls select option{line-height:normal}
 /* Use identical label and field anchors for animation, clock and thermal rows. */
 html .ps-web .studio-controls .adjustments>div{grid-template-columns:var(--control-label) minmax(0,1fr) 86px;column-gap:12px}
 html .ps-web .studio-controls #clockStyling .ps-setting-row,html .ps-web .studio-controls #thermalStyling .ps-setting-row{grid-template-columns:var(--control-label) minmax(0,1fr);column-gap:12px;align-items:center}
-.ps-web .studio-controls .ps-custom-colors,.ps-web .studio-controls .ps-animation-colors button{display:flex;align-items:center;justify-content:center;padding-top:2px!important;padding-bottom:0!important;line-height:1.2}
-.ps-web .thermal-sample-value{display:grid;grid-template-columns:minmax(0,1fr) 14px;gap:8px;align-items:center;min-width:0;height:39px}
-.ps-web .studio-controls .thermal-sample-value input[type=number]{width:100%;min-width:0;padding-left:4px;padding-right:4px}
-.ps-web .thermal-sample-unit{display:flex;align-items:center;height:39px;color:var(--muted);font-size:12px;line-height:1}
+.ps-web .studio-controls .ps-custom-colors,.ps-web .studio-controls .ps-animation-colors button{display:flex;align-items:center;justify-content:center}
+/* Center the editable number and unit as one compact pair, inside a full-sized shell. */
+.ps-web .thermal-sample-value{display:flex;align-items:center;justify-content:center;gap:4px;box-sizing:border-box;width:100%;min-width:0;height:var(--ui-control-height,40px);padding:0 8px;border:1px solid var(--ui-control-stroke);border-radius:var(--ui-corner-radius);background:var(--ui-control-fill);cursor:text}
+.ps-web .thermal-sample-unit{position:static}
 @media(max-width:1000px){html .ps-web .studio-controls .adjustments>div,html .ps-web .studio-controls #clockStyling .ps-setting-row,html .ps-web .studio-controls #thermalStyling .ps-setting-row{column-gap:8px}}
-@media(max-width:760px){.ps-web .studio-controls{--control-label:48px}html[lang=en] .ps-web .studio-controls{--control-label:100px}}
+@media(max-width:600px){.ps-web .studio-controls{--control-label:48px}html[lang=en] .ps-web .studio-controls{--control-label:100px}}
 .ps-web .ps-preview-frame{margin:0!important}
-.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 150px}
-.ps-web .ps-settings .ps-input-action button{min-width:0;width:100%}
-@media(min-width:761px){
+@media(width > 600px){
 .ps-web .studio-controls .ps-animation-colors{grid-template-columns:var(--control-label) minmax(0,1fr) minmax(0,calc(50% - var(--control-gap)/2));column-gap:12px}
 .ps-web .studio-controls .ps-animation-colors select{width:calc(100% - 12px)}
-.ps-web .preview-stage{align-items:flex-start!important;justify-content:flex-start!important;padding:3px!important}
+.ps-web:not(.ps-compact-navigation) .preview-stage{align-items:flex-start!important;justify-content:flex-start!important;padding:3px!important}
 html[lang=en] .ps-web .studio-controls{--control-label:100px}
 html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-columns:var(--control-label) minmax(0,1fr) minmax(0,calc(50% - var(--control-gap)/2))}
 }
-@media(min-width:761px) and (max-width:1000px){.ps-web .studio-controls{--control-label:42px;--control-gap:18px}.ps-web .studio-controls .ps-animation-colors{column-gap:8px}.ps-web .studio-controls .ps-animation-colors select{width:calc(100% - 10px)}}
-@media(max-width:760px){.ps-web .studio-controls #clockStyling,.ps-web .studio-controls .ps-animation-colors{height:auto;min-height:39px}.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 120px}}
+@media(width > 600px) and (max-width:1000px){.ps-web .studio-controls{--control-label:42px;--control-gap:18px}.ps-web .studio-controls .ps-animation-colors{column-gap:8px}.ps-web .studio-controls .ps-animation-colors select{width:calc(100% - 10px)}}
+@media(max-width:600px){.ps-web .studio-controls #clockStyling,.ps-web .studio-controls .ps-animation-colors{height:auto;min-height:var(--ui-control-height,40px)}}
+@media(max-width:760px){.ps-web .ps-settings .ps-input-action{grid-template-columns:minmax(0,1fr) 120px}}
 /* Settings: equal outer insets and optically centered button captions. */
 .ps-web .ps-settings-heading{padding:16px;min-height:68px;box-sizing:border-box}
-.ps-web .ps-settings .ps-close{display:flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;min-height:36px;margin:0;padding:0;line-height:1}
+.ps-web .ps-settings .ps-close{position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;min-height:36px;margin:0;padding:0;font-size:0;line-height:0}
+/* Draw the close icon around the button center, independent of font bearings. */
+.ps-web .ps-settings .ps-close::before,
+.ps-web .ps-settings .ps-close::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:16px;
+  height:2px;
+  border-radius:1px;
+  background:currentColor;
+  transform:translate(-50%,-50%) rotate(45deg);
+  pointer-events:none;
+}
+.ps-web .ps-settings .ps-close::after{
+  transform:translate(-50%,-50%) rotate(-45deg);
+}
 .ps-web .ps-settings-body{padding:24px}
 .ps-web .ps-settings-group{padding:20px;margin:0 0 24px}
 .ps-web .ps-settings .ps-output-settings{margin-bottom:0}
-.ps-web .ps-settings .ps-input-action button,.ps-web .ps-settings .ps-presets button,.ps-web .ps-settings .ps-about-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:39px;padding:2px 14px 0;line-height:1.25;text-align:center}
+.ps-web .ps-settings .ps-input-action button,.ps-web .ps-settings .ps-presets button,.ps-web .ps-settings .ps-about-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:var(--ui-control-height,40px);padding:0 14px;line-height:20px;text-align:center}
+/* Read-only USB status uses the same flex-centered caption as adjacent actions. */
+.ps-web .ps-settings #webPortStatus{
+  display:flex;align-items:center;box-sizing:border-box;
+  width:100%;min-width:0;height:var(--ui-control-height,40px);margin:0;
+  padding:2px 11px 0;border:1px solid var(--ui-control-stroke);border-radius:var(--ui-corner-radius);
+  background:var(--ui-control-fill);color:var(--text);
+  font:inherit;font-size:var(--ui-control-font-size,16px);line-height:1.25;
+  white-space:nowrap;overflow:hidden;
+}
 .ps-web .ps-about-body p{margin:0 0 16px;line-height:1.7}
 .ps-web .ps-about-body p:last-child{margin-bottom:0}
 .ps-web .ps-about-body h3{margin:20px 0 10px;font-size:16px}
 @media(max-width:760px){.ps-web .ps-settings-body{padding:16px}.ps-web .ps-settings-group{padding:16px;margin-bottom:16px}}
 
 /* Media import uses app-localized controls rather than native file captions. */
-.ps-web .ps-import-dialog .ps-media-description{margin:0 0 24px;font-size:14px;line-height:1.7}
 .ps-web .ps-import-dialog .ps-media-fields{margin:0;padding:20px;display:grid;gap:20px;min-width:0}
 .ps-web .ps-import-dialog .ps-setting-row{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:0}
 .ps-web .ps-import-dialog .ps-setting-label{font-size:15px;line-height:1.5;margin:0}
 .ps-web .ps-import-dialog .ps-setting-field{min-width:0;width:100%}
-.ps-web .ps-import-dialog .ps-file-picker{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:16px;width:100%;min-width:0;padding:12px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--surface-deep)}
-.ps-web .ps-import-dialog .ps-file-picker button{margin:0;min-height:44px;padding:10px 16px;font-size:15px;line-height:1.4}
-.ps-web .ps-import-dialog .ps-file-name{font-size:14px;line-height:1.6;color:var(--text);min-width:0;overflow-wrap:anywhere}
+.ps-web .ps-import-dialog .ps-file-picker{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;width:100%;min-width:0;padding:0;box-sizing:border-box;border:0;border-radius:var(--ui-corner-radius);background:transparent}
+.ps-web .ps-import-dialog .ps-file-picker button{margin:0;min-height:var(--ui-control-height,40px);padding:2px 14px 0;font:inherit;line-height:1.25}
+.ps-web .ps-import-dialog .ps-file-name{display:flex;align-items:center;box-sizing:border-box;min-height:var(--ui-control-height,40px);padding:8px 12px;border:1px solid var(--ui-control-stroke);border-radius:var(--ui-corner-radius);background:var(--ui-control-fill);font-size:14px;line-height:20px;color:var(--text);min-width:0;overflow-wrap:anywhere}
 .ps-web .ps-import-dialog #scaleMode{width:100%;font-size:15px}
 @media(max-width:480px){.ps-web .ps-import-dialog .ps-file-picker{grid-template-columns:minmax(0,1fr);gap:12px}.ps-web .ps-import-dialog .ps-file-picker button{width:100%}}
+/* Read-only diagnostics expose this session's existing log without running device probes. */
+html body.ps-web .ps-diagnostics-dialog{
+  --settings-content-bottom:var(--settings-content-inset);
+}
+html body.ps-web .ps-diagnostics-dialog .ps-diagnostics-body{
+  display:flex;flex-direction:column;gap:12px;
+}
+html body.ps-web .ps-diagnostics-dialog :is(.ps-help,h3){
+  margin:0;
+}
+html body.ps-web .ps-diagnostics-dialog h3{
+  font-size:var(--ui-control-font-size);font-weight:400;line-height:var(--ui-control-line-height);
+}
+html body.ps-web .ps-diagnostics-dialog .ps-diagnostic-log{
+  flex:none;min-width:0;min-height:64px;max-height:none;margin:0;padding:12px;
+  border:1px solid var(--ui-control-stroke);border-radius:var(--ui-corner-radius);
+  background:var(--ui-control-fill);color:var(--text);
+  font:13px/1.6 "Cascadia Code","Consolas",monospace;
+  white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;user-select:text;
+}
+html body.ps-web .ps-diagnostics-dialog #log:empty::before{
+  content:attr(data-empty-message);color:var(--muted);
+}
 /* Standalone About action: same side and bottom insets as the settings body. */
 .ps-web #studioSettings > .ps-settings-body > .ps-about-button {
   display: flex;
   width: 100%;
-  min-height: 48px;
-  margin: 24px 0 0;
+  min-height: 44px;
+  margin: 0;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-}
-@media (max-width: 760px) {
-  .ps-web #studioSettings > .ps-settings-body > .ps-about-button { margin-top: 16px; }
 }
 /* Center uppercase ink rather than the font's ascent/descent line box. */
 .ps-web .brand > .brand-name {
@@ -262,18 +431,20 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
   padding: 0;
   line-height: 1;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ps-web select:not([multiple]):not([size]) {
   appearance: none;
   -webkit-appearance: none;
-  --select-height: 42px;
-  padding-right: calc(var(--select-height) + 4px) !important;
+  /* Match the category field: 12px inset, 12px arrow and 8px text clearance. */
+  padding-left: 12px !important;
+  padding-right: 32px !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4L6 8L10 4' fill='none' stroke='%23a9c3cf' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-size: 12px 12px !important;
-  background-position: right calc((var(--select-height) - 12px) / 2) center !important;
+  background-position: right 12px center !important;
 }
-.ps-web .studio-controls select:not([multiple]):not([size]) { --select-height: 39px; }
 
 /* Keep the scrollport inside the dialog frame, clear of rounded corners. */
 .ps-web .ps-settings {
@@ -297,17 +468,78 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
 .ps-web #studioSettings > .ps-settings-body {
   display: flex;
   flex-direction: column;
-  gap: 24px;
 }
 .ps-web #studioSettings > .ps-settings-body > * { flex-shrink: 0; }
-.ps-web #studioSettings > .ps-settings-body > .ps-settings-group {
-  width: 100%;
-  margin: 0;
-  padding: 20px;
+/* Keep section captions outside one shared card, without tabs or per-option cards. */
+html body.ps-web #studioSettings > .ps-settings-body{
+  gap:var(--ps-layout-gap);
 }
-.ps-web #studioSettings > .ps-settings-body > .ps-about-button {
-  margin: 0;
-  min-height: 44px;
+html body.ps-web #studioSettings > .ps-settings-body > .ps-settings-group{
+  width:100%;min-width:0;margin:0;padding:0;
+  border:0;border-radius:0;background:transparent;box-shadow:none;
+}
+html body.ps-web #studioSettings > .ps-settings-body > .ps-settings-group > legend{
+  float:none;display:block;width:100%;margin:0 0 8px;padding:0;
+  color:var(--text);font-size:var(--ui-control-font-size);font-weight:400;line-height:20px;
+}
+html body.ps-web #studioSettings .ps-settings-group-body{
+  min-width:0;padding:var(--ps-layout-gap);
+  border:1px solid var(--ui-group-stroke);border-radius:calc(var(--ui-corner-radius) + 6px);
+  background:var(--surface);box-shadow:none;
+}
+/* Toggle rows remain horizontal when the other settings fields stack at narrow widths. */
+.ps-web #studioSettings .ps-setting-row:has(> .ps-preview-switch-field){
+  grid-template-columns:minmax(0,1fr) auto;gap:16px;
+  min-height:var(--ui-control-height);
+}
+.ps-web #studioSettings .ps-setting-row:has(> .ps-preview-switch-field) > .ps-setting-label{
+  min-width:0;
+}
+/* Preview appearance stays separate from device settings, with a labelled switch. */
+.ps-web #studioSettings .ps-preview-switch-field{
+  min-height:var(--ui-control-height);justify-content:flex-end;
+}
+.ps-web #studioSettings .ps-preview-switch{
+  position:relative;display:inline-flex;align-items:center;justify-content:flex-end;
+  flex:none;gap:12px;width:auto;height:var(--ui-control-height);margin:0;padding:0;cursor:pointer;
+}
+.ps-web #studioSettings .ps-switch-state{
+  min-width:3ch;color:var(--text);text-align:right;line-height:var(--ui-control-line-height);
+}
+.ps-web #studioSettings .ps-preview-switch input[type=checkbox]{
+  position:absolute;inset:0 0 0 auto;z-index:1;width:40px;height:100%;margin:0;opacity:0;cursor:pointer;
+}
+.ps-web #studioSettings .ps-switch-track{
+  position:relative;display:block;flex:none;box-sizing:border-box;width:40px;height:22px;
+  border:1px solid var(--ui-control-stroke);border-radius:999px;background:var(--ui-control-fill);
+  pointer-events:none;transition:background-color 180ms ease,border-color 180ms ease;
+}
+.ps-web #studioSettings .ps-switch-track::before{
+  content:"";position:absolute;box-sizing:border-box;top:3px;left:3px;width:14px;height:14px;
+  border-radius:999px;background:var(--muted);transform:translateX(0);
+  transition:transform 180ms cubic-bezier(.2,.8,.2,1),width 100ms ease,background-color 180ms ease;
+}
+.ps-web #studioSettings .ps-preview-switch input:checked + .ps-switch-track{
+  border-color:var(--brand);background:var(--brand);
+}
+.ps-web #studioSettings .ps-preview-switch input:checked + .ps-switch-track::before{
+  transform:translateX(18px);background:var(--on-brand,#fff);
+}
+.ps-web #studioSettings .ps-preview-switch:active .ps-switch-track::before{
+  width:18px;
+}
+.ps-web #studioSettings .ps-preview-switch:active input:checked + .ps-switch-track::before{
+  transform:translateX(14px);
+}
+.ps-web #studioSettings .ps-preview-switch input:focus-visible + .ps-switch-track{
+  outline:var(--ui-focus-ring-width) solid var(--ui-focus-ring-color);
+  outline-offset:var(--ui-focus-ring-gap);
+}
+@media(prefers-reduced-motion:reduce){
+  .ps-web #studioSettings .ps-switch-track,
+  .ps-web #studioSettings .ps-switch-track::before{transition:none}
+  .ps-web #studioSettings .ps-preview-switch:active .ps-switch-track::before{width:14px}
+  .ps-web #studioSettings .ps-preview-switch:active input:checked + .ps-switch-track::before{transform:translateX(18px)}
 }
 .ps-web .ps-settings [data-update-ui] .ps-update-actions {
   display: grid;
@@ -334,8 +566,8 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
 .ps-web .ps-settings .ps-update-details {
   margin: 16px 0 0;
   padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: 2px solid var(--line);
+  border-radius:var(--ui-corner-radius);
   background: var(--surface-deep);
 }
 .ps-web .ps-settings .ps-update-details summary {
@@ -344,6 +576,14 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
   font-size: 13px;
   line-height: 1.5;
 }
+.ps-web .ps-settings .ps-release-notes{margin-top:14px;color:var(--text);font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+.ps-web .ps-settings .ps-release-notes p{margin:0 0 12px}
+.ps-web .ps-settings .ps-release-notes h3,.ps-web .ps-settings .ps-release-notes h4,.ps-web .ps-settings .ps-release-notes h5,.ps-web .ps-settings .ps-release-notes h6{margin:16px 0 8px;font-size:14px;line-height:1.5}
+.ps-web .ps-settings .ps-release-notes ul,.ps-web .ps-settings .ps-release-notes ol{margin:0 0 12px;padding-left:22px}
+.ps-web .ps-settings .ps-release-notes li{margin:5px 0}
+.ps-web .ps-settings .ps-release-notes pre{max-width:100%;overflow-x:auto;margin:12px 0;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--ui-corner-radius);white-space:pre;overflow-wrap:normal}
+.ps-web .ps-settings .ps-release-notes code{font-family:Consolas,monospace;font-size:12px}
+.ps-web .ps-settings .ps-release-notes a{color:inherit;text-decoration:underline;text-underline-offset:3px}
 .ps-web .ps-settings [data-update-ui] > a {
   display: inline-block;
   margin-top: 16px;
@@ -379,8 +619,8 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
   min-height: 64px;
   margin: 0;
   padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 2px solid var(--line);
+  border-radius:var(--ui-corner-radius);
   background: var(--surface-deep);
   font-size: 16px;
   font-weight: 500;
@@ -428,39 +668,47 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
   line-height: 1.4;
   white-space: normal;
 }
-@media (max-width: 760px), (max-height: 680px) {
-  .ps-web .topbar { --brand-size:44px; }
-
-
-}
+/* Keep header controls at their original size while the workspace changes layout. */
 @media (max-width: 640px) {
   .ps-web .ps-desktop-switches, .ps-web .ps-desktop-actions { grid-template-columns: minmax(0, 1fr); }
   .ps-web .ps-settings .ps-desktop-option { min-height: 56px; }
 }
-@media (max-width: 480px) {
-  .ps-web .topbar { --brand-size:40px;flex-basis:auto;height:auto;flex-wrap:wrap;gap:16px; }
 
-
-  .ps-web .brand-name { font-size: 19px; }
+/* Updates use the same label/field grid, including the external-caption wrapper. */
+html body.ps-web #studioSettings #psSoftwareUpdates{
+  display:block;
 }
-
-/* Keep update controls spaced independently from nested status notices. */
-.ps-web .ps-settings #psSoftwareUpdates {
-  display: grid;
-  gap: 14px;
-  min-width: 0;
+html body.ps-web #studioSettings #psSoftwareUpdates .ps-update-version{
+  display:flex;align-items:center;min-height:var(--ui-control-height);
+  font:inherit;font-variant-numeric:tabular-nums;line-height:var(--ui-control-line-height);
 }
-.ps-web .ps-settings #psSoftwareUpdates > .ps-help,
-.ps-web .ps-settings #psSoftwareUpdates > .ps-update-details,
-.ps-web .ps-settings #psSoftwareUpdates > a { margin: 0; }
-.ps-web .ps-settings #psSoftwareUpdates > label {
-  display: block;
-  font-size: 14px;
-  line-height: 1.5;
-  margin-bottom: -6px;
+html body.ps-web #studioSettings #psSoftwareUpdates .ps-update-content{
+  grid-column:2;display:flex;flex-direction:column;min-width:0;gap:12px;
 }
-.ps-web .ps-settings #psSoftwareUpdates > select { width: 100%; min-width: 0; }
-.ps-web .ps-settings #psSoftwareUpdates > [hidden] { display: none !important; }
+html body.ps-web #studioSettings #psSoftwareUpdates .ps-update-content > *{
+  min-width:0;margin:0;
+}
+html body.ps-web #studioSettings #psSoftwareUpdates .ps-update-actions{
+  gap:10px;
+}
+html body.ps-web #studioSettings #psSoftwareUpdates :is(.ps-update-actions button,.ps-update-content > button){
+  min-height:var(--ui-control-height);padding:2px 12px 0;
+  font-family:inherit;font-size:var(--ui-control-font-size);font-weight:inherit;
+  line-height:var(--ui-control-line-height);
+}
+html body.ps-web #studioSettings #psSoftwareUpdates :is(.ps-update-content > a,.ps-update-details summary){
+  font-family:inherit;font-size:var(--ui-control-font-size);font-weight:400;
+  line-height:var(--ui-control-line-height);overflow-wrap:anywhere;
+}
+html body.ps-web #studioSettings #psSoftwareUpdates .ps-update-content > a{
+  align-self:flex-start;text-underline-offset:4px;
+}
+html body.ps-web #studioSettings #psSoftwareUpdates .ps-help{
+  font-size:var(--ui-help-font-size);line-height:20px;color:var(--muted);
+}
+@media(max-width:760px){
+  html body.ps-web #studioSettings #psSoftwareUpdates .ps-update-content{grid-column:1}
+}
 
 /* Web and Electron: remove native steppers and their reserved space. */
 .ps-web input[type="number"] {
@@ -473,32 +721,29 @@ html[lang=en] .ps-web .studio-controls .ps-animation-colors{grid-template-column
   margin: 0;
 }
 
-/* V0.1.10: readable update copy and balanced action rows. */
+/* Readable update copy and balanced action rows. */
 .ps-web .ps-settings [data-update-ui] .ps-help,
 .ps-web .ps-settings[data-update-ui] .ps-help {font-size:15px;line-height:1.7;color:var(--text);}
 .ps-web .ps-settings[data-update-ui] .ps-update-actions {display:flex;flex-wrap:wrap;gap:12px;margin-top:22px;}
 .ps-web .ps-settings[data-update-ui] .ps-update-actions button {min-height:44px;}
 .ps-web .ps-settings .ps-desktop-caption {display:flex;align-items:center;min-height:24px;line-height:1.25;margin:0;padding:0;}
 .ps-web .ps-settings .ps-desktop-option {align-content:center;}
-.ps-web .ps-update-path {font-size:14px;overflow-wrap:anywhere;user-select:text;}
 
 /* Shared shell details: balanced spacing and scroll rails. */
 html .ps-web .studio-stage { padding-bottom:0; }
-html .ps-web .studio-controls { padding-top:8px; padding-bottom:8px; }
-@media (min-width:761px) {
-  html .ps-web .studio-controls { height:112px; min-height:112px; }
-  html .ps-web .studio-controls.ps-thermal-controls { height:auto; min-height:112px; }
-}
-.ps-web #animationGallery,
-.ps-web .ps-desktop-media-grid,
-.ps-web .ps-settings > .ps-settings-body {
-  scrollbar-width:thin;
-  scrollbar-color:var(--line) transparent;
+/* The workspace gap owns section spacing; do not add a second padded inset. */
+html .ps-web .studio-controls { padding:0; border:0; }
+@media (width > 600px) {
+  /* All playback modes reserve two rows and one shared section gap.
+     Outer spacing belongs to the workspace. Thermal must not size itself. */
+  html .ps-web .studio-controls {
+    --controls-block-height:calc(2 * var(--ui-control-height,40px) + var(--ps-layout-gap));
+    box-sizing:border-box;
+    height:var(--controls-block-height);
+    min-height:var(--controls-block-height);
+  }
 }
 @supports selector(::-webkit-scrollbar) {
-  .ps-web #animationGallery,
-  .ps-web .ps-desktop-media-grid,
-  .ps-web .ps-settings > .ps-settings-body { scrollbar-width:auto; }
   .ps-web #animationGallery::-webkit-scrollbar,
   .ps-web .ps-desktop-media-grid::-webkit-scrollbar,
   .ps-web .ps-settings > .ps-settings-body::-webkit-scrollbar {
@@ -514,7 +759,6 @@ html .ps-web .studio-controls { padding-top:8px; padding-bottom:8px; }
   .ps-web .ps-desktop-media-grid::-webkit-scrollbar-thumb,
   .ps-web .ps-settings > .ps-settings-body::-webkit-scrollbar-thumb {
     border-radius:6px;
-    background:var(--line);
   }
   .ps-web #animationGallery::-webkit-scrollbar-thumb:hover,
   .ps-web .ps-desktop-media-grid::-webkit-scrollbar-thumb:hover,
@@ -523,24 +767,39 @@ html .ps-web .studio-controls { padding-top:8px; padding-bottom:8px; }
   }
 }
 .ps-web .ps-settings {
-  border-radius:13px;
+  border-radius:var(--ui-corner-radius);
   background:var(--bg);
-  border-color:rgba(var(--brand-rgb),.2);
+  border-color:var(--line);
   box-shadow:none;
 }
 .ps-web .ps-settings-heading {
   background:transparent;
-  border-bottom-color:rgba(var(--brand-rgb),.16);
+  border-bottom-color:var(--line);
 }
+/* A solid theme surface separates the settings title without a divider line. */
+.ps-web #studioSettings > .ps-settings-heading {
+  background:var(--settings-heading-fill,var(--surface-raised));
+  color:var(--text);
+  border-bottom-color:transparent;
+}
+/* Legends read as section headings inside the filled dialog surfaces. */
+.ps-web .ps-settings .ps-settings-group > legend{
+  float:left;
+  width:100%;
+  margin:0 0 16px;
+  padding:0;
+  font-weight:600;
+}
+.ps-web .ps-settings .ps-settings-group > legend + *{clear:both}
 .ps-web .ps-settings .ps-settings-group {
-  border-radius:13px;
-  border-color:rgba(var(--brand-rgb),.2);
+  border-radius:var(--ui-corner-radius);
+  border-color:var(--line);
   background:var(--surface);
 }
 .ps-web .ps-settings input:not([type=range]):not([type=checkbox]):not([type=color]),
 .ps-web .ps-settings select,
 .ps-web .ps-settings button {
-  border-radius:6px;
+  border-radius:var(--ui-corner-radius);
 }
 
 /* Surface polish only: preserve every layout box and the preview rim. */
@@ -549,7 +808,7 @@ html .ps-web .studio-controls { padding-top:8px; padding-bottom:8px; }
     box-shadow 160ms ease, color 160ms ease, filter 100ms ease;
   touch-action: manipulation;
 }
-.ps-web button:enabled:active {
+.ps-web button:enabled:active:not(:where(.animation-card,.ps-desktop-media-card)) {
   transform: none;
   filter: brightness(.78);
   box-shadow: none;
@@ -619,118 +878,173 @@ html .ps-web .studio-controls { padding-top:8px; padding-bottom:8px; }
     .ps-web dialog.ps-settings[open]::backdrop { opacity:0; }
   }
 }
-/* A scroll edge, not an abrupt cut through the last visible card row. */
-/* Nested corners: 9px outer radius = 7px inset + 2px card radius. */
-@media (min-width:761px) {
+@media (width > 600px) {
   html .ps-web .studio-controls {
     padding-left:0;
     padding-right:0;
   }
-  .ps-web .studio-controls .thermal-sampling .thermal-sample-value {
-    position:relative;
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 14px;
-    gap:8px;
-    width:100%;
-    min-width:0;
-  }
-  .ps-web .studio-controls .thermal-sampling .thermal-sample-value input {
-    display:block;
-    width:100%;
-    max-width:none;
-    text-align:center;
-  }
-  .ps-web .studio-controls .thermal-sampling .thermal-sample-unit {
-    position:static;
-    width:14px;
-    justify-content:flex-end;
+}
+/* Keep the desktop toolbar on one row; the layout controller handles insufficient width. */
+.ps-web .library-toolbar #libraryCategory {
+  flex:0 0 auto;
+  width:auto;
+  max-width:100%;
+  /* 8px text gap + 12px arrow + 12px outer inset. */
+  padding-left:12px;
+  padding-right:32px !important;
+  background-position:right 12px center !important;
+}
+.ps-web .library-toolbar #psLibrarySearch {
+  container:ps-search / inline-size;
+  --ps-search-icon-padding:38px;
+  position:relative;flex:1 1 var(--ps-library-search-min);width:0;
+  min-width:min(100%,var(--ps-library-search-min));height:var(--ui-control-height,40px);
+}
+html body.ps-web .wrap #psLibrarySearch #librarySearch {
+  box-sizing:border-box;display:block;flex:none;width:100%;min-width:0;margin:0;padding-left:var(--ps-search-icon-padding);
+}
+.ps-web #psLibrarySearch .ps-search-glyph {
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:1;
+  display:flex;pointer-events:none;color:var(--muted);
+}
+.ps-web #psLibrarySearch svg {display:block;width:20px;height:20px;flex:none}
+/* Keep the same input box; focus and entered text use the icon's space. */
+.ps-web #psLibrarySearch:focus-within .ps-search-glyph,
+.ps-web #psLibrarySearch:has(#librarySearch:not(:placeholder-shown)) .ps-search-glyph {
+  visibility:hidden;
+}
+html body.ps-web .wrap #psLibrarySearch.is-placeholder-tight #librarySearch,
+html body.ps-web .wrap #psLibrarySearch #librarySearch:focus,
+html body.ps-web .wrap #psLibrarySearch #librarySearch:not(:placeholder-shown) {
+  padding-left:12px;
+}
+/* Hide the placeholder only when its measured text cannot fit the input's content box. */
+html body.ps-web .wrap #psLibrarySearch.is-placeholder-tight #librarySearch::placeholder {
+  color:transparent;opacity:0;
+}
+@container ps-search (max-width:127px) {
+  html body.ps-web .wrap #psLibrarySearch #librarySearch::-webkit-search-cancel-button {
+    display:none;
   }
 }
-.ps-web .topbar { padding:0; }
-.ps-web .wrap { gap:16px; padding:16px; }
-.ps-web .studio-stage { padding:0; }
-.ps-web .library-toolbar {
-  grid-template-columns:max-content minmax(0,1fr) max-content!important;
-}
-.ps-web .library-toolbar #libraryCategory,
-.ps-web .library-toolbar #librarySearch,
 .ps-web .library-toolbar .ps-shuffle-group {
-  grid-column:auto!important;
-  grid-row:auto!important;
-}
-.ps-web .library-toolbar .ps-shuffle-group {
-  flex-wrap:nowrap!important;
+  flex:0 0 auto;
+  margin-left:0;
+  flex-wrap:nowrap;
   white-space:nowrap;
 }
-.ps-web .ps-library-well { padding:1px; border-radius:9px; }
-.ps-web #animationGallery {
-  /* Move 5px of well padding into the scrollport to contain the focus ring.
-     The visible card inset stays 7px, preserving the nested corner centers. */
-  padding:5px 7px 5px 5px;
-  grid-template-columns:repeat(auto-fill,minmax(104px,1fr));
+.ps-web .ps-library-well { position:relative;border-radius:var(--ui-corner-radius); }
+/* Both libraries use the same scrollport geometry inside the shared well. */
+.ps-web #animationGallery,
+.ps-web .ps-desktop-media-grid {
+  box-sizing:border-box;min-width:0;min-height:0;
+  /* Keep normal cards large; reduce columns before shrinking in a narrow library. */
+  grid-template-columns:repeat(auto-fill,minmax(clamp(72px,calc((100% - 14px) / 3),112px),1fr));
+  /* 1px well border + 2px inset + 5px focus-ring gutter. */
+  padding:5px;
   grid-auto-rows:min-content;
-  align-content:start;
+  align-items:start;align-content:start;
   gap:7px;
-  scroll-padding-block:17px;
+  overflow-x:hidden;overflow-y:auto;scrollbar-gutter:auto;
+  scroll-padding-block:17px;overscroll-behavior:contain;
 }
+/* Ordering uses the existing cards; insertion marks do not alter their geometry. */
+.ps-web :is(#animationGallery,.ps-desktop-media-grid)[data-reordering=true] :is(.animation-card,.ps-desktop-media-card,.animation-title){transition:none}
+.ps-web :is(.animation-card,.ps-desktop-media-card)[draggable=true]:enabled{cursor:grab}
+.ps-web :is(.animation-card,.ps-desktop-media-card)[draggable=true]:enabled:active{cursor:grabbing}
+.ps-web .ps-animation-tile.is-dragging{opacity:.45}
+/* Dim only the selection ring while ordering or interacting with the scroll thumb. */
+.ps-web :is(#animationGallery,.ps-desktop-media-grid)[data-reordering=true] :is(.animation-card,.ps-desktop-media-card):is([aria-pressed=true],:focus-visible)::after,
+.ps-web .ps-library-well:has(> .ps-library-scrollbar:is(.is-near,.is-dragging):not([hidden])) :is(.animation-card,.ps-desktop-media-card):is([aria-pressed=true],:focus-visible)::after{opacity:.3}
+.ps-web .ps-animation-tile:is(.ps-drop-before,.ps-drop-after){z-index:6}
+.ps-web .ps-animation-tile:is(.ps-drop-before,.ps-drop-after)::before{
+  content:"";position:absolute;z-index:5;pointer-events:none;
+  top:0;bottom:0;left:-5px;width:3px;border-radius:2px;background:var(--selection,var(--brand));
+}
+.ps-web .ps-animation-tile.ps-drop-after::before{left:auto;right:-5px}
+.ps-web .ps-animation-tile.ps-drop-row::before{left:0;right:0;top:-5px;bottom:auto;width:auto;height:3px}
+.ps-web .ps-animation-tile.ps-drop-row.ps-drop-after::before{top:auto;bottom:-5px}
+.ps-web .ps-order-accessibility{
+  position:absolute;left:0;top:0;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  overflow:hidden;clip-path:inset(50%);white-space:nowrap;
+}
+/* One opaque rim surrounds a shared content clip. The full-size artwork and
+   caption are cropped inside the rim instead of being painted underneath it. */
 .ps-web .ps-animation-tile {
+  --ui-card-radius:2px;
+  --ui-card-rim:1px;
+  --ui-card-inner-radius:calc(var(--ui-card-radius) - var(--ui-card-rim));
+  --ui-card-ring-inner-radius:calc(var(--ui-card-radius) + var(--ui-focus-ring-gap));
+  --ui-card-ring-outer-radius:calc(var(--ui-card-ring-inner-radius) + var(--ui-focus-ring-width));
+  --ui-card-ring-outset:calc(var(--ui-focus-ring-gap) + var(--ui-focus-ring-width));
+  position:relative;
   width:100%;
   height:auto;
-  aspect-ratio:15 / 27;
+  min-width:0;
   min-height:0;
+  aspect-ratio:15 / 27;
   align-self:start;
 }
-.ps-web .animation-card {
+.ps-web :is(.animation-card,.ps-desktop-media-card) {
+  appearance:none;
+  -webkit-appearance:none;
   position:absolute;
   inset:0;
-  border:0;
-  border-radius:2px;
   display:block;
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  margin:0;
   padding:0;
-  gap:0;
-}
-.ps-web .animation-card::after,
-.ps-web .ps-desktop-media-card::after {
-  content:'';
-  position:absolute;
-  inset:0;
-  border:1px solid var(--line);
-  border-radius:inherit;
-  pointer-events:none;
-  z-index:2;
-}
-.ps-web .animation-card:hover::after,
-.ps-web .ps-desktop-media-card:hover::after {
-  border-color:rgba(var(--brand-rgb),.65);
-}
-.ps-web .animation-card[aria-pressed=true]::after,
-.ps-web .ps-desktop-media-card[aria-pressed=true]::after {
-  border-color:var(--brand);
-  box-shadow:none;
-}
-/* Web and desktop: distinguish selection from hover without changing size. */
-html[data-theme=light] .ps-web .ps-desktop-media-card[aria-pressed=true]::after,
-html[data-theme=black] .ps-web .ps-desktop-media-card[aria-pressed=true]::after {
-  border-color:var(--selection);
-}
-html body.ps-web .ps-animation-tile:has(.animation-card[aria-pressed=true])::after,
-html body.ps-web .ps-animation-tile:has(.ps-desktop-media-card[aria-pressed=true])::after {
-  content:'';
-  position:absolute;
-  inset:0;
   border:0;
-  border-radius:2px;
-  outline:2px solid var(--selection,var(--brand));
-  outline-offset:3px;
-  pointer-events:none;
-  z-index:3;
+  border-radius:var(--ui-card-radius);
+  background:var(--ui-control-stroke);
+  color:var(--text);
   box-shadow:none;
+  outline:none;
+  /* Content keeps its inner clip; only the shared outer ring may extend out. */
+  overflow:visible;
+  transition:background-color 140ms ease;
+}
+.ps-web :is(.animation-card,.ps-desktop-media-card):enabled:hover:not([aria-pressed=true]):not(:focus-visible) {
+  background:var(--ui-control-hover-stroke);
+}
+/* Match field focus contrast with an opaque rim; never fade the artwork or caption. */
+.ps-web :is(.animation-card,.ps-desktop-media-card):is([aria-pressed=true],:focus-visible) {
+  background:var(--ui-control-focus-stroke);
+  outline:none;filter:none;
+}
+/* Keep the original full-card layout box. Crop only the painted perimeter,
+   so artwork and caption end at the same inner edge without rescaling either. */
+.ps-web .ps-card-content {
+  position:absolute;
+  inset:0;
+  display:block;
+  margin:0;
+  padding:0;
+  border:0;
+  background:var(--surface);
+  clip-path:inset(var(--ui-card-rim) round var(--ui-card-inner-radius));
+}
+.ps-web :is(.ps-animation-tile,.animation-card,.ps-desktop-media-card)[hidden] {
+  display:none!important;
+}
+.ps-web :is(.animation-thumb,.ps-desktop-media-thumbnail,.ps-desktop-media-placeholder) {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  max-width:none;
+  max-height:none;
+  margin:0;
+  padding:0;
+  border:0;
 }
 .ps-web .animation-thumb {
   position:static;
-  width:100%;
-  height:100%;
-  padding:0;
+  display:block;
+  background:transparent;
   pointer-events:none;
 }
 .ps-web .animation-thumb img {
@@ -740,48 +1054,511 @@ html body.ps-web .ps-animation-tile:has(.ps-desktop-media-card[aria-pressed=true
   max-width:100%;
   max-height:100%;
   object-fit:contain;
+  image-rendering:pixelated;
+}
+/* Keep each corner concentric with the gray rim and the content clip.
+   Content: inset rim, radius R - rim. Ring: outset gap + stroke,
+   outer radius R + gap + stroke, inner radius R + gap.
+   Both ring edges therefore keep their corner center at the gray rim's R. */
+.ps-web :is(.animation-card,.ps-desktop-media-card):is([aria-pressed=true],:focus-visible)::after {
+  content:'';
+  position:absolute;
+  inset:calc(-1 * var(--ui-card-ring-outset));
+  box-sizing:border-box;
+  border:var(--ui-focus-ring-width) solid var(--ui-focus-ring-color);
+  border-radius:var(--ui-card-ring-outer-radius);
+  box-shadow:none;
+  pointer-events:none;
+  z-index:3;
+  transition:opacity 140ms ease;
 }
 .ps-web .animation-title {
+  --ui-caption-fill:rgba(var(--brand-rgb),.2);
   position:absolute;
   left:0;
   right:0;
   bottom:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   min-height:0;
   height:auto;
+  max-height:100%;
+  margin:0;
   padding:10px 7px;
+  font-size:14px;
   line-height:1.35;
+  text-align:center;
   color:#fff;
   text-shadow:0 1px 3px #000;
-  background:transparent;
+  background:var(--ui-caption-fill);
+  /* Filter this element's backdrop directly. An opacity-animated ancestor
+     would otherwise change the sampling root of a child blur layer. */
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   opacity:0;
   transition:opacity 140ms ease;
   pointer-events:none;
-}
-/* Translucent hover caption; no gradient or separator line. */
-html .ps-web .animation-title {
-  background-image:none!important;
-  background-color:rgba(var(--brand-rgb),.2);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-  border-top:0;
   z-index:1;
 }
+html[data-theme=light] .ps-web .animation-title {
+  --ui-caption-fill:rgba(255,255,255,.84);
+  color:var(--text);
+  text-shadow:none;
+}
+/* Selection keeps the caption visible in every playback mode, including Fixed. */
 .ps-web .ps-animation-tile:hover .animation-title,
 .ps-web .ps-animation-tile:focus-within .animation-title,
-.ps-web #animationGallery.is-searching .animation-title {
+.ps-web :is(#animationGallery,.ps-desktop-media-grid).is-searching .animation-title,
+.ps-web :is(.animation-card,.ps-desktop-media-card)[aria-pressed=true] .animation-title {
   opacity:1;
 }
+/* Media uses the same shell; only the content type and long-label handling differ. */
+.ps-web .ps-desktop-media-thumbnail {
+  object-fit:contain;
+  background:#000;
+}
+.ps-web .ps-desktop-media-placeholder {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--surface);
+  color:var(--brand);
+  font-size:20px;
+}
+.ps-web :is(.ps-desktop-media-thumbnail,.ps-desktop-media-placeholder)[hidden] {
+  display:none!important;
+}
+.ps-web .ps-desktop-media-caption {
+  flex-direction:column;
+  align-items:stretch;
+}
+.ps-web .ps-desktop-media-caption > span {
+  display:block;
+  min-height:0;
+  overflow-y:auto;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  font-size:13px;
+  line-height:1.4;
+}
+.ps-web .ps-desktop-media-card:hover .ps-desktop-media-caption,
+.ps-web .ps-desktop-media-card:focus-within .ps-desktop-media-caption {
+  pointer-events:auto;
+}
+.ps-web .ps-desktop-media-badge {
+  position:absolute;
+  top:7px;
+  right:7px;
+  display:grid;
+  place-items:center;
+  width:22px;
+  height:22px;
+  padding:0;
+  border:0;
+  border-radius:var(--ui-corner-radius);
+  background:var(--surface);
+  color:var(--text);
+  pointer-events:none;
+}
+.ps-web .ps-desktop-media-badge::before {
+  content:'';
+  width:7px;
+  height:8px;
+  background:currentColor;
+  clip-path:polygon(0 0,100% 50%,0 100%);
+  transform:translateX(1px);
+}
 .ps-web .library-toolbar input:not([type=checkbox]),
-.ps-web .library-toolbar select { border-radius:9px; }
-@media (min-width:761px) {
-  .ps-web .preview-stage .ps-preview-frame {
+.ps-web .library-toolbar select { border-radius:var(--ui-corner-radius); }
+@media (width > 600px) {
+  .ps-web:not(.ps-compact-navigation) .preview-stage .ps-preview-frame {
     margin-top:auto!important;
     margin-bottom:4px!important;
   }
 }
+.ps-web #studioSettings > .ps-settings-body {
+  scroll-padding-block:16px;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--settings-fade-top,0px), #000 calc(100% - var(--settings-fade-bottom,0px)), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--settings-fade-top,0px), #000 calc(100% - var(--settings-fade-bottom,0px)), transparent 100%);
+}
 .ps-web #animationGallery {
   mask-image: linear-gradient(to bottom, transparent 0, #000 var(--gallery-fade-top,0px), #000 calc(100% - var(--gallery-fade-bottom,0px)), transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--gallery-fade-top,0px), #000 calc(100% - var(--gallery-fade-bottom,0px)), transparent 100%);
+}
+/* Shared filled controls use one subtle contour, never a second raised rim. */
+body.ps-web{
+  --ps-layout-gap:16px;
+  --ui-control-height:40px;
+  --ui-control-font-size:16px;
+  --ui-label-font-size:var(--ui-control-font-size);
+  --ui-help-font-size:13px;
+  --ui-control-line-height:20px;
+  --ui-control-fill:var(--neutral-control-fill,color-mix(in srgb,var(--surface),var(--text) 7%));
+  --ui-action-fill:var(--neutral-action-fill,var(--surface-raised));
+  --ui-control-stroke:color-mix(in srgb,var(--ui-control-fill),var(--text) 22%);
+  --ui-control-hover-stroke:color-mix(in srgb,var(--ui-control-fill),var(--text) 30%);
+  --ui-focus-ring-color:var(--selection,var(--brand));
+  --ui-control-focus-strength:60%;
+  /* Opaque inner contours match on cards and fields, regardless of backdrop. */
+  --ui-control-focus-stroke:color-mix(in srgb,var(--ui-control-stroke) var(--ui-control-focus-strength),var(--ui-control-fill));
+  --ui-group-stroke:color-mix(in srgb,var(--surface),var(--text) 12%);
+  --ui-scroll-thumb:color-mix(in srgb,var(--muted) 65%,transparent);
+  font-family:"Bahnschrift","Microsoft YaHei UI","PingFang SC",sans-serif;
+  font-weight:500;
+}
+.ps-web .brand-name{
+  font-family:"Bahnschrift","Microsoft YaHei UI","PingFang SC",sans-serif;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) :is(input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=color]),select),
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)){
+  appearance:none;
+  -webkit-appearance:none;
+  border:1px solid var(--ui-control-stroke);
+  border-radius:var(--ui-corner-radius);
+  background-clip:border-box;
+  box-shadow:none;
+  color:var(--text);
+  font-family:inherit;
+  font-size:var(--ui-control-font-size);
+  font-weight:inherit;
+  font-optical-sizing:auto;
+  line-height:normal;
+  letter-spacing:normal;
+}
+/* Restore the pre-Windows font stack's native-field padding.
+   Do not carry over the upward correction introduced for Segoe UI. */
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) :is(input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=color]),select:not([multiple]):not([size])){
+  box-sizing:border-box;
+  height:var(--ui-control-height);
+  min-height:var(--ui-control-height);
+  padding-block:2px 0;
+  vertical-align:middle;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)):not(:where(#webSettingsToggle)){
+  box-sizing:border-box;
+  min-height:var(--ui-control-height);
+  padding-block:8px;
+  text-align:center;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)):not(:where(#webSettingsToggle)):not([hidden]){
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+/* Share the same caption alignment across actions, Custom buttons and time units. */
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) :is(.ps-input-action button,.ps-presets button,.ps-about-button,.studio-controls .ps-custom-colors,.ps-animation-colors button,#psShuffleDock .ps-unit,.thermal-sample-unit){
+  padding-block:2px 0;
+  line-height:1.25;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input::placeholder{
+  color:var(--muted);
+  opacity:1;
+}
+/* Settings captions share the main media/adjustment size, not legacy 14px labels. */
+html body.ps-web :is(.ps-settings,#studioSettings){
+  font-family:inherit;
+  font-size:var(--ui-control-font-size);
+  font-weight:inherit;
+}
+html body.ps-web :is(.ps-settings,#studioSettings) :is(.ps-setting-label,.ps-check,.ps-size-pair,.ps-desktop-option){
+  align-self:center;
+  font-family:inherit;
+  font-size:var(--ui-label-font-size);
+  font-weight:inherit;
+  line-height:var(--ui-control-line-height);
+}
+html body.ps-web :is(.ps-settings,#studioSettings) :is(.ps-help,.ps-field-help,.ps-size-notice){
+  font-size:var(--ui-help-font-size);
+  line-height:20px;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) :is(input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=color]),select){
+  background-color:var(--ui-control-fill);
+  transition:background-color 140ms ease,color 140ms ease;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)){
+  background-color:var(--ui-action-fill);
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) :is(:is(input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=color]),select),button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close))):not(:focus-visible){
+  outline:none;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)).primary{
+  background-color:var(--brand);
+  border-color:transparent;
+  color:var(--on-brand,#fff);
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)):is([aria-pressed=true],.is-active){
+  background-color:color-mix(in srgb,var(--ui-action-fill),var(--brand) 18%);
+  border-color:var(--ui-control-stroke);
+}
+html body.ps-web :is(.ps-settings,#studioSettings) .ps-presets button:is([aria-pressed=true],.is-active){
+  background-color:color-mix(in srgb,var(--ui-action-fill),var(--brand) 26%);
+  border-color:var(--brand);
+  color:var(--text);
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) :is(:is(input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=color]),select),button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close))):focus-visible{
+  border-color:var(--ui-control-focus-stroke);
+  outline:var(--ui-focus-ring-width) solid var(--ui-focus-ring-color);
+  outline-offset:var(--ui-focus-ring-gap);
+  box-shadow:none;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) :is(input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=color]),select)[aria-invalid=true]{
+  border-color:var(--input-error,var(--danger,#d65360));
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)):enabled:active{
+  background-color:color-mix(in srgb,var(--ui-action-fill),var(--text) 10%);
+  border-color:var(--ui-control-hover-stroke);
+  filter:none;
+  box-shadow:none;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)).primary:enabled:active{
+  background-color:color-mix(in srgb,var(--brand),#000 15%);
+  border-color:transparent;
+}
+html body.ps-web :is(.ps-settings,#studioSettings){
+  border:0;
+  border-radius:var(--ui-corner-radius);
+  background:var(--bg);
+  box-shadow:var(--settings-dialog-shadow,0 16px 48px rgba(0,0,0,.24));
+}
+html body.ps-web :is(.ps-settings,#studioSettings) > .ps-settings-heading{
+  min-height:64px;
+  border:0;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* Settings and web media share the same title, close control and outer insets. */
+html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog){
+  --settings-content-inset:24px;
+}
+html body.ps-web .ps-import-dialog{
+  --settings-content-bottom:var(--settings-content-inset);
+}
+html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-heading{
+  min-height:72px;
+  padding:var(--settings-content-inset);
+  gap:16px;
+}
+html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-heading h2{
+  margin:0;
+  font-size:22px;
+  font-weight:600;
+  line-height:28px;
+}
+html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-body{
+  padding:8px var(--settings-content-inset) var(--settings-content-bottom,12px);
+  scrollbar-gutter:stable;
+}
+html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-heading .ps-close{
+  flex:0 0 40px;
+  width:40px;
+  height:40px;
+  min-height:40px;
+  border:0;
+  border-radius:var(--ui-corner-radius);
+  background:color-mix(in srgb,var(--bg),var(--text) 5%);
+  color:var(--muted);
+  box-shadow:none;
+  transform:none;
+  filter:none;
+  cursor:pointer;
+}
+html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-heading .ps-close:focus-visible{
+  outline:2px solid var(--selection,var(--brand));
+  outline-offset:2px;
+  color:var(--text);
+}
+@media(hover:hover) and (pointer:fine){
+  html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-heading .ps-close:hover{
+    background:color-mix(in srgb,var(--bg),var(--text) 10%);
+    color:var(--text);
+  }
+}
+html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-heading .ps-close:active{
+  background:color-mix(in srgb,var(--bg),var(--text) 15%);
+  color:var(--text);
+}
+@media(max-width:760px){
+  html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog){
+    --settings-content-inset:16px;
+  }
+  html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-heading h2{
+    font-size:20px;
+  }
+}
+html body.ps-web :is(.ps-settings,#studioSettings) :is(.ps-settings-group,.ps-media-fields){
+  border:1px solid var(--ui-group-stroke);
+  border-radius:var(--ui-corner-radius);
+  background:var(--surface);
+  box-shadow:none;
+}
+html body.ps-web :is(.ps-settings,#studioSettings) :is(.ps-update-details,.ps-desktop-option,.ps-release-notes pre){
+  border:1px solid var(--ui-group-stroke);
+  border-radius:var(--ui-corner-radius);
+  background:var(--ui-control-fill);
+  box-shadow:none;
+}
+html body.ps-web .wrap .ps-library-well{
+  border:1px solid var(--ui-control-stroke);
+  padding:2px;
+  background:var(--ui-control-fill);
+  box-shadow:none;
+}
+.ps-web .wrap .ps-desktop-media-grid{
+  inset:2px;
+  background-color:var(--ui-control-fill);
+}
+/* A 24px hit area with a separate 3px rail, so field padding cannot thicken it. */
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]{
+  --ui-slider-thumb-ring:5px;
+  --ui-slider-thumb-size:24px;
+  --ui-slider-accent:var(--neutral-slider-accent,var(--brand));
+  --ui-slider-track:var(--neutral-slider-track,var(--line));
+  --ui-slider-shell:var(--neutral-slider-shell,var(--ui-action-fill));
+  --ui-slider-stroke:var(--neutral-slider-stroke,var(--ui-control-stroke));
+  --ui-slider-shadow:var(--neutral-slider-shadow,0 1px 3px rgba(0,0,0,.18));
+  appearance:none;
+  -webkit-appearance:none;
+  box-sizing:border-box;
+  height:24px;
+  min-height:24px;
+  max-height:24px;
+  padding:0;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  box-shadow:none;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]::-webkit-slider-runnable-track{
+  height:3px;
+  border:0;
+  border-radius:999px;
+  background:linear-gradient(var(--ui-slider-fill-direction,90deg),var(--ui-slider-accent) 0 var(--ui-slider-fill-position,0%),var(--ui-slider-track) var(--ui-slider-fill-position,0%) 100%);
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]::-moz-range-track{
+  height:3px;
+  border:0;
+  border-radius:999px;
+  background:var(--ui-slider-track);
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]::-moz-range-progress{
+  height:3px;
+  border:0;
+  border-radius:999px;
+  background:var(--ui-slider-accent);
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]::-webkit-slider-thumb{
+  margin-top:calc((3px - var(--ui-slider-thumb-size)) / 2);
+  appearance:none;
+  -webkit-appearance:none;
+  box-sizing:border-box;
+  width:var(--ui-slider-thumb-size);
+  height:var(--ui-slider-thumb-size);
+  border:var(--ui-slider-thumb-ring) solid var(--ui-slider-shell);
+  border-radius:50%;
+  background:var(--ui-slider-accent);
+  box-shadow:0 0 0 1px var(--ui-slider-stroke),var(--ui-slider-shadow);
+  transition:border-width 140ms ease-in-out;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]::-moz-range-thumb{
+  box-sizing:border-box;
+  width:var(--ui-slider-thumb-size);
+  height:var(--ui-slider-thumb-size);
+  border:var(--ui-slider-thumb-ring) solid var(--ui-slider-shell);
+  border-radius:50%;
+  background:var(--ui-slider-accent);
+  box-shadow:0 0 0 1px var(--ui-slider-stroke),var(--ui-slider-shadow);
+  transition:border-width 140ms ease-in-out;
+}
+/* Only a pointer over the thumb activates the larger, fixed-size core.
+   Rest: 14px; hovered: 18px; pressed: 12px. The 24px outer ring stays fixed. */
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]:enabled.ps-thumb-hover{
+  --ui-slider-thumb-ring:3px;
+}
+html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]:enabled:active{
+  --ui-slider-thumb-ring:6px;
+}
+@media (prefers-reduced-motion:reduce){
+  html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]::-webkit-slider-thumb{
+    transition:none;
+  }
+  html body.ps-web :is(.wrap,.ps-settings,#studioSettings) input[type=range]::-moz-range-thumb{
+    transition:none;
+  }
+}
+.ps-web #animationGallery,
+.ps-web .ps-desktop-media-grid,
+.ps-web .ps-settings > .ps-settings-body{
+  scrollbar-width:thin;
+  scrollbar-color:var(--ui-scroll-thumb) transparent;
+}
+.ps-web #animationGallery::-webkit-scrollbar-button,
+.ps-web .ps-desktop-media-grid::-webkit-scrollbar-button,
+.ps-web .ps-settings > .ps-settings-body::-webkit-scrollbar-button{
+  display:none;
+  width:0;
+  height:0;
+}
+.ps-web #animationGallery::-webkit-scrollbar-thumb,
+.ps-web .ps-desktop-media-grid::-webkit-scrollbar-thumb,
+.ps-web .ps-settings > .ps-settings-body::-webkit-scrollbar-thumb{
+  background:var(--ui-scroll-thumb);
+}
+/* Library rails float in the existing edge inset and never change grid geometry.
+   Without initialization, the native scrollbar rules above remain the fallback. */
+html body.ps-web :is(#animationGallery,.ps-desktop-media-grid).ps-library-overlay-scroll{
+  scrollbar-width:none!important;scrollbar-gutter:auto;
+}
+html body.ps-web :is(#animationGallery,.ps-desktop-media-grid).ps-library-overlay-scroll::-webkit-scrollbar{
+  display:none!important;width:0;height:0;
+}
+.ps-web .ps-library-scrollbar{
+  position:absolute;right:0;width:12px;z-index:8;box-sizing:border-box;
+  margin:0;padding:0;border:0;background:transparent;outline:none;box-shadow:none;
+  touch-action:none;user-select:none;cursor:default;
+}
+.ps-web .ps-library-scrollbar[hidden]{display:none!important}
+.ps-web .ps-library-scrollbar-thumb{
+  position:absolute;top:0;right:0;display:block;width:3px;
+  margin:0;padding:0;border:0;border-radius:999px;
+  background:var(--ui-scroll-thumb);pointer-events:none;
+  transition:width 140ms ease,background-color 140ms ease;
+}
+.ps-web .ps-library-scrollbar:is(.is-near,.is-dragging) .ps-library-scrollbar-thumb{
+  width:7px;background:var(--brand);
+}
+/* Keyboard focus highlights only the thumb; it never latches width or dims card rings. */
+.ps-web .ps-library-scrollbar:focus-visible .ps-library-scrollbar-thumb{background:var(--brand)}
+@media(prefers-reduced-motion:reduce){
+  .ps-web .ps-library-scrollbar-thumb,
+  .ps-web :is(.animation-card,.ps-desktop-media-card):is([aria-pressed=true],:focus-visible)::after{transition:none}
+}
+@media(forced-colors:active){
+  .ps-web .ps-library-scrollbar-thumb{background:CanvasText;forced-color-adjust:none}
+  .ps-web .ps-library-scrollbar:is(.is-near,:focus-visible,.is-dragging) .ps-library-scrollbar-thumb{background:Highlight}
+}
+@media(hover:hover) and (pointer:fine){
+  html body.ps-web :is(.wrap,.ps-settings,#studioSettings) :is(input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=color]),select):enabled:hover:not(:focus-visible):not([aria-invalid=true]){
+    background-color:color-mix(in srgb,var(--ui-control-fill),var(--text) 4%);
+    border-color:var(--ui-control-hover-stroke);
+  }
+  html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)):enabled:hover:not(:active):not([aria-pressed=true]):not(.is-active):not(.primary){
+    background-color:color-mix(in srgb,var(--ui-action-fill),var(--text) 6%);
+    border-color:var(--ui-control-hover-stroke);
+    filter:none;
+    box-shadow:none;
+  }
+  html body.ps-web :is(.wrap,.ps-settings,#studioSettings) button:not(:where(.animation-card,.ps-desktop-media-card,.ps-favorite,.ps-play-toggle,.ps-close)).primary:enabled:hover:not(:active){
+    background-color:color-mix(in srgb,var(--brand),#fff 8%);
+    border-color:transparent;
+  }
+  html body.ps-web :is(.ps-settings,#studioSettings) .ps-desktop-option:hover{
+    background-color:color-mix(in srgb,var(--ui-control-fill),var(--text) 4%);
+  }
+}
+html[data-theme=black] .ps-web select:not([multiple]):not([size]){
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4L6 8L10 4' fill='none' stroke='%23bdbdbd' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
 }
 @media (prefers-reduced-motion:reduce) {
   .ps-web button, .ps-web input, .ps-web select, .ps-web .ps-favorite svg,
@@ -793,3 +1570,247 @@ html .ps-web .animation-title {
   .ps-web .ps-settings[open] { animation: none; }
   .ps-web dialog.ps-settings,.ps-web dialog.ps-settings::backdrop { transition:none; }
 }
+
+/* The live shuffle dock stays at the right of the shared playback bar. */
+.ps-web .ps-shuffle-dock{display:block;justify-self:end;align-self:center}
+.ps-web #psShuffleDock .ps-shuffle-group{
+  --ps-shuffle-inner-size:calc(var(--ui-control-height) - 2px);
+  --ps-shuffle-inner-radius:max(0px,calc(var(--ui-corner-radius) - 1px));
+  box-sizing:border-box;display:grid;
+  grid-template-columns:var(--ps-shuffle-inner-size) minmax(64px,max-content);
+  align-items:center;justify-content:start;gap:0;margin:0;padding:0;
+  height:var(--ui-control-height);
+  border:1px solid var(--ui-control-stroke);border-radius:var(--ui-corner-radius);
+  background:var(--ui-control-fill);
+}
+/* Preserve the automatic-switching flag behind the three-mode icon button. */
+.ps-web #psShuffleDock .ps-shuffle{display:none}
+html body.ps-web #psShuffleDock #psShuffleToggle{
+  display:grid;place-items:center;align-self:center;line-height:1;
+  box-sizing:border-box;flex:none;width:var(--ps-shuffle-inner-size);min-width:var(--ps-shuffle-inner-size);
+  max-width:var(--ps-shuffle-inner-size);height:var(--ps-shuffle-inner-size);min-height:var(--ps-shuffle-inner-size);
+  max-height:var(--ps-shuffle-inner-size);aspect-ratio:1;
+  margin:0;padding:0;border:0;border-right:1px solid var(--ui-control-stroke);
+  border-radius:var(--ps-shuffle-inner-radius) 0 0 var(--ps-shuffle-inner-radius);
+  background:var(--ui-action-fill);color:var(--muted);outline-offset:-3px;
+}
+.ps-web #psShuffleDock .ps-time-value{
+  display:flex;align-items:center;justify-content:center;gap:4px;box-sizing:border-box;
+  min-width:0;height:var(--ps-shuffle-inner-size);padding:0 8px;cursor:text;
+  border-radius:0 var(--ps-shuffle-inner-radius) var(--ps-shuffle-inner-radius) 0;
+}
+/* Retain native numeric editing and handlers; only the text-sized field loses its shell. */
+html body.ps-web .wrap #psShuffleDock :is(#psShuffleInterval,input[type=number]),
+html body.ps-web .wrap #psAdjustPane #thermalSampleSecondsNumber{
+  display:block;box-sizing:border-box;appearance:textfield;
+  height:calc(var(--ui-control-height) - 2px)!important;min-height:calc(var(--ui-control-height) - 2px)!important;
+  max-height:calc(var(--ui-control-height) - 2px)!important;align-self:center;margin:0;border:0;border-radius:0;
+  width:var(--ps-time-number-width,2ch);min-width:0;max-width:none;flex:0 0 var(--ps-time-number-width,2ch);
+  padding:2px 0 0;text-align:center;line-height:var(--ui-control-line-height);
+  background:transparent;box-shadow:none;outline:none;
+}
+.ps-web :is(#psShuffleInterval,#thermalSampleSecondsNumber)::-webkit-inner-spin-button,
+.ps-web :is(#psShuffleInterval,#thermalSampleSecondsNumber)::-webkit-outer-spin-button{
+  -webkit-appearance:none;margin:0;
+}
+.ps-web .thermal-sample-value:focus-within{
+  border-color:var(--ui-control-focus-stroke);
+  outline:var(--ui-focus-ring-width) solid var(--selection,var(--brand));outline-offset:var(--ui-focus-ring-gap);
+}
+.ps-web #psShuffleDock .ps-time-value:focus-within{
+  outline:var(--ui-focus-ring-width) solid var(--selection,var(--brand));outline-offset:-3px;
+}
+/* Use the Custom-button caption's padding and line-height, without language offsets. */
+.ps-web #psShuffleDock .ps-unit,
+.ps-web .studio-controls .thermal-sample-unit{
+  display:flex;align-items:center;justify-content:center;align-self:center;flex:none;
+  box-sizing:border-box;height:calc(var(--ui-control-height) - 2px);margin:0;padding-inline:0;
+  color:var(--muted);font-family:inherit;font-size:var(--ui-control-font-size);
+  font-weight:inherit;font-style:normal;font-optical-sizing:auto;letter-spacing:normal;
+  pointer-events:none;
+}
+.ps-web #psShuffleToggle svg{display:block;width:22px;height:22px;flex:none}
+html body.ps-web #psShuffleDock #psShuffleToggle.is-active{
+  color:var(--brand);background:rgba(var(--brand-rgb),.14);
+}
+@media(hover:hover) and (pointer:fine){
+  html body.ps-web #psShuffleDock #psShuffleToggle:enabled:hover:not(.is-active){
+    background:color-mix(in srgb,var(--ui-action-fill),var(--text) 6%);
+  }
+}
+/* Compact navigation reuses the live preview and shared playback controls. */
+.ps-web .ps-compact-nav{display:none}
+/* The compact class is driven by usable width, not only a fixed media query. */
+  html:has(body.ps-compact-navigation){height:100%;overflow:hidden}
+  body.ps-web.ps-compact-navigation{height:100dvh;overflow:hidden}
+  /* The desktop minimum height reserves room for the full Adjust panel. */
+  html body.ps-web.ps-compact-navigation .wrap{
+    --ps-compact-section-gap:var(--ps-layout-gap);
+    --ps-playback-block-height:calc(52px + 2 * var(--ps-layout-gap) + 2px);
+    --ps-navigation-block-height:48px;
+    height:100dvh;min-height:0;gap:var(--ps-layout-gap);
+    padding: max(var(--ps-layout-gap),env(safe-area-inset-top)) max(var(--ps-layout-gap),env(safe-area-inset-right))
+      max(var(--ps-layout-gap),env(safe-area-inset-bottom)) max(var(--ps-layout-gap),env(safe-area-inset-left));
+  }
+  /* Header size, typography and spacing are shared with the wide layout. */
+  html body.ps-web.ps-compact-navigation .workspace{
+    display:grid;flex:1;min-height:0;gap:var(--ps-compact-section-gap);
+    grid-template-areas:"stage" "controls" "playback" "navigation";
+    grid-template-rows:minmax(0,1fr) auto var(--ps-playback-block-height) var(--ps-navigation-block-height);
+  }
+  html body.ps-web.ps-compact-navigation .studio-stage{
+    --ps-preview-layout:compact;
+    grid-area:stage;display:flex;min-height:0;min-width:0;gap:0;overflow:visible;
+  }
+  .ps-web.ps-compact-navigation .preview-card,
+  .ps-web.ps-compact-navigation .library-card{flex:1;min-height:0}
+  .ps-web.ps-compact-navigation .preview-card{overflow:visible}
+  /* The library well clips artwork; ancestors must not clip the toolbar focus rings. */
+  html body.ps-web.ps-compact-navigation[data-compact-view=library] .studio-stage,
+  .ps-web.ps-compact-navigation .library-card{overflow:visible}
+  html body.ps-web.ps-compact-navigation .preview-stage{
+    /* Preview sizing already includes the visible rim; the 16px section gap
+       supplies its outer clearance without an additional padded inset. */
+    flex:1;height:100%;min-height:0;padding:0;align-items:center;justify-content:center;
+  }
+  html body.ps-web.ps-compact-navigation .ps-library-well{
+    flex:1;min-height:0;height:auto;max-height:none;
+  }
+  html body.ps-web.ps-compact-navigation .library-toolbar{flex:none;flex-wrap:nowrap}
+  .ps-web #psShuffleDock{
+    /* Shared with the native number field's higher-specificity control rules. */
+    --ui-control-height:44px;
+    display:block;grid-column:3;grid-row:1;min-width:0;
+  }
+  html body.ps-web #psShuffleDock input[type=number]{
+    width:var(--ps-time-number-width,2ch);min-width:0;max-width:none;flex:0 0 var(--ps-time-number-width,2ch);
+  }
+  html body.ps-web.ps-compact-navigation .studio-controls{
+    /* Only this pane may scroll; controls retain their natural, usable sizes.
+       The inset keeps focus rings visible without changing the outer alignment. */
+    grid-area:controls;min-height:0;height:auto;width:calc(100% + 8px);max-width:none;
+    margin:-4px;padding:4px;overflow-x:hidden;overflow-y:auto;
+    overscroll-behavior:contain;scrollbar-gutter:auto;scroll-padding-block:4px;
+  }
+  .ps-web.ps-compact-navigation[data-compact-view=preview] .library-card,
+  .ps-web.ps-compact-navigation[data-compact-view=adjust] .library-card,
+  .ps-web.ps-compact-navigation[data-compact-view=library] .preview-card,
+  .ps-web.ps-compact-navigation[data-compact-view=library] .studio-controls,
+  .ps-web.ps-compact-navigation[data-compact-view=preview] .studio-controls{display:none!important}
+  html body.ps-web.ps-compact-navigation:is([data-compact-view=preview],[data-compact-view=library]) .workspace{
+    grid-template-areas:"stage" "playback" "navigation";
+    grid-template-rows:minmax(0,1fr) var(--ps-playback-block-height) var(--ps-navigation-block-height);
+  }
+  html body.ps-web.ps-compact-navigation[data-compact-view=adjust] .workspace{
+    /* Shrink the preview first, then scroll Adjust; never borrow the footer's height. */
+    grid-template-rows:minmax(0,1fr) minmax(0,max-content) var(--ps-playback-block-height) var(--ps-navigation-block-height);
+  }
+  html body.ps-web.ps-compact-navigation.ps-adjust-without-preview[data-compact-view=adjust] .studio-stage{
+    display:none;
+  }
+  html body.ps-web.ps-compact-navigation.ps-adjust-without-preview[data-compact-view=adjust] .workspace{
+    /* Remove the empty preview row; keep playback and navigation heights reserved. */
+    grid-template-areas:"controls" "playback" "navigation";
+    grid-template-rows:minmax(0,1fr) var(--ps-playback-block-height) var(--ps-navigation-block-height);
+  }
+  html body.ps-web.ps-compact-navigation.ps-adjust-without-preview[data-compact-view=adjust] .studio-controls{
+    /* Center the whole group; overflow falls back to the top so all controls remain reachable. */
+    display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content;
+    align-content:safe center;
+  }
+  html body.ps-web.ps-compact-navigation .studio-controls .adjustments{
+    grid-template-columns:minmax(0,1fr);row-gap:var(--ps-layout-gap)!important;
+  }
+  html body.ps-web.ps-compact-navigation .studio-controls .adjustments>div:has(>input[type=range]){
+    grid-template-columns:minmax(0,1fr) 76px;grid-template-rows:40px 24px;
+    height:68px!important;min-height:68px!important;row-gap:4px;
+  }
+  .ps-web.ps-compact-navigation .adjustments>div:has(>input[type=range])>label{
+    grid-column:1;grid-row:1;
+  }
+  .ps-web.ps-compact-navigation .adjustments>div:has(>input[type=range])>:is(input[type=number],.thermal-sample-value){
+    grid-column:2;grid-row:1;width:100%;
+  }
+  .ps-web.ps-compact-navigation .adjustments>div>input[type=range]{grid-column:1/-1;grid-row:2}
+  html body.ps-web.ps-compact-navigation .studio-controls :is(#clockStyling,#thermalStyling,.ps-animation-colors){
+    grid-template-columns:minmax(0,1fr);height:auto;gap:12px!important;
+  }
+  html body.ps-web.ps-compact-navigation .studio-controls :is(#clockStyling,#thermalStyling) .ps-setting-row{
+    grid-template-columns:minmax(0,1fr);height:auto;gap:4px;
+  }
+  html body.ps-web.ps-compact-navigation .studio-controls :is(#clockStyling,#thermalStyling) .ps-setting-field{
+    height:auto;flex-wrap:wrap;gap:8px;
+  }
+  html body.ps-web.ps-compact-navigation .studio-controls :is(#clockStyling,#thermalStyling) .ps-setting-field>*{
+    flex:1 1 130px;width:auto;
+  }
+  html body.ps-web.ps-compact-navigation .studio-controls #thermalStyling .thermal-colors{
+    display:flex;flex-wrap:wrap;
+  }
+  html body.ps-web.ps-compact-navigation .studio-controls .ps-animation-colors button{grid-column:auto}
+  /* Playback keeps one structure in both desktop and compact layouts. */
+  html body.ps-web .ps-playback-bar{
+    display:grid;grid-template-columns:52px minmax(0,1fr) max-content;
+    grid-template-rows:auto;column-gap:var(--ps-layout-gap);row-gap:0;min-height:52px;align-items:center;
+  }
+  /* Wide playback uses the same dividers without depending on compact navigation. */
+  html body.ps-web:not(.ps-compact-navigation) .ps-playback-bar{
+    grid-template-columns:96px minmax(0,1fr) max-content;
+    padding:var(--ps-layout-gap) 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  html body.ps-web:not(.ps-compact-navigation) .ps-play-toggle{
+    width:96px;min-width:96px;
+  }
+  html body.ps-web.ps-compact-navigation .ps-playback-bar{
+    grid-area:playback;flex-shrink:0;box-sizing:border-box;
+    height:var(--ps-playback-block-height);min-height:var(--ps-playback-block-height);
+    grid-template-rows:52px;
+    padding:var(--ps-layout-gap) 0;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg);
+  }
+  html body.ps-web .ps-play-toggle{
+    grid-column:1;grid-row:1;width:52px;min-width:52px;height:52px;padding:13px;
+  }
+  .ps-web .ps-playback-messages{
+    grid-column:2;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr);
+    min-width:0;gap:2px;margin:0;padding:0;align-content:center;text-align:left;
+  }
+  html body.ps-web .ps-playback-messages>:is(.ps-current-animation,.ps-playback-feedback,#streamStats){
+    margin:0;padding:0;font-size:12px;line-height:16px;text-align:left;
+    white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis;
+  }
+  html body.ps-web #streamStats{
+    min-width:0;width:100%;max-width:none;grid-column:auto;grid-row:auto;
+  }
+  html body.ps-web.ps-compact-navigation #psCompactNavigation{
+    grid-area:navigation;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-rows:var(--ps-navigation-block-height);flex-shrink:0;
+    height:var(--ps-navigation-block-height);min-height:var(--ps-navigation-block-height);
+    gap:4px;min-width:0;padding:0;border:0;
+  }
+  html body.ps-web #psCompactNavigation .ps-compact-tab{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    min-width:0;height:48px;min-height:48px;max-height:48px;flex-shrink:0;margin:0;padding:4px 6px;
+    border:1px solid transparent;border-radius:var(--ui-corner-radius);
+    background:transparent;color:var(--muted);font-size:12px;line-height:1.2;
+  }
+  .ps-web .ps-compact-tab svg{display:block;width:20px;height:20px;flex:none}
+  html body.ps-web #psCompactNavigation .ps-compact-tab[aria-current=page]{
+    color:var(--brand);background:rgba(var(--brand-rgb),.12);border-color:transparent;
+  }
+
+/* Desktop media layout is centralized here instead of injected after page load. */
+/* The library well owns corner clipping, just as it does for the animation gallery. */
+.ps-desktop-media-grid{position:absolute;inset:2px;z-index:2;display:grid;border-radius:0;background:var(--surface-deep,var(--bg));mask-image:linear-gradient(to bottom,transparent,#000 var(--gallery-fade-top,0px),#000 calc(100% - var(--gallery-fade-bottom,0px)),transparent);}
+.ps-desktop-media-grid[hidden]{display:none!important}
+.ps-desktop-media-grid::-webkit-scrollbar-button{display:none;}
+/* Shared controls own button typography, surfaces and contours. */
+.ps-desktop-media-note{grid-column:1/-1;margin:0;padding:12px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.ps-desktop-media-note.ps-desktop-media-error{color:var(--danger)}
+.ps-desktop-media-actions{display:flex;flex:none;align-items:center;height:var(--ui-control-height,40px);gap:var(--ps-library-control-gap,10px);margin:0;padding:0;white-space:nowrap}
+.ps-web .ps-desktop-media-actions button{height:var(--ui-control-height,40px);padding:0;font:inherit;cursor:pointer;}
+.ps-web .ps-desktop-media-actions button:hover:not(:disabled){border-color:var(--brand);}
+.ps-web .ps-desktop-media-actions button:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
+.ps-web .ps-desktop-media-actions button:disabled{opacity:.5;cursor:default;}
+html body.ps-web :is(.wrap,#studioSettings) .ps-desktop-media-actions button.ps-media-icon-action{box-sizing:border-box;flex:none;width:var(--ui-control-height,40px);min-width:var(--ui-control-height,40px);max-width:var(--ui-control-height,40px);height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);padding:0;gap:0;line-height:1;}
+.ps-desktop-media-actions .ps-media-icon-action svg{display:block;flex:none;width:20px;height:20px;pointer-events:none;}

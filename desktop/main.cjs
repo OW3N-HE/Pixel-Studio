@@ -2,7 +2,7 @@
 const {app,BrowserWindow,Tray,Menu,nativeImage,nativeTheme,ipcMain,shell,dialog,protocol}=require('electron');
 protocol.registerSchemesAsPrivileged([{scheme:'pixel-media',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true,stream:true}}]);
 const fs=require('node:fs'),path=require('node:path'),{pathToFileURL}=require('node:url');
-const {png,themes}=require('./icons.cjs');
+const {png,ico,themes}=require('./icons.cjs');
 app.setAppUserModelId('com.ow3nhe.pixelstudio.desktop');
 app.setPath('userData',path.join(app.getPath('appData'),'Pixel Studio Desktop'));
 let window, tray, quitting=false, preferences, serialRestore=false, pendingSerial=null, keepResumeIntent=false;
@@ -28,19 +28,47 @@ function ownPage(contents){return window && contents===window.webContents && con
 function save(){fs.mkdirSync(path.dirname(settingsPath()),{recursive:true});fs.writeFileSync(settingsPath()+'.tmp',JSON.stringify(preferences));fs.renameSync(settingsPath()+'.tmp',settingsPath());}
 function loginOptions(){return {path:process.execPath,args:['--login-start']};}
 function state(){return {...preferences,launchAtLogin:app.isPackaged ? app.getLoginItemSettings(loginOptions()).openAtLogin : false,canLaunchAtLogin:app.isPackaged};}
-function show(){if(!window || window.isDestroyed())return;if(window.isMinimized())window.restore();window.show();window.focus();}
+function show(){if(quitting || !window || window.isDestroyed())return;if(window.isMinimized())window.restore();window.show();window.focus();}
 const iconCache=new Map();
 function icon(theme,size){const key=theme+size;if(!iconCache.has(key))iconCache.set(key,nativeImage.createFromBuffer(png(theme,size)));return iconCache.get(key);}
 function effectiveTheme(){return preferences.theme==='system'?(nativeTheme.shouldUseDarkColors?'black':'light'):preferences.theme;}
-function refreshTheme(){window?.setIcon(icon('ice',64));tray?.setImage(icon('ice',32));}
+const taskbarIconPaths=new Map();
+function refreshTheme(){
+  if(!preferences)return;
+  const theme=effectiveTheme();
+  if(window&&!window.isDestroyed()){
+    window.setIcon(icon(theme,64));
+    if(process.platform==='win32'){
+      try{
+        let iconPath=taskbarIconPaths.get(theme);
+        if(!iconPath){
+          const directory=path.join(app.getPath('userData'),'icons');
+          fs.mkdirSync(directory,{recursive:true});
+          iconPath=path.join(directory,'pixel-studio-brand10-'+theme+'.ico');
+          fs.writeFileSync(iconPath,ico(theme));
+          taskbarIconPaths.set(theme,iconPath);
+        }
+        // Set the taskbar group/relaunch icon as well as the window icon.
+        // Existing pinned shortcuts are user-owned and are not rewritten.
+        const relaunchCommand=app.isPackaged ? '"'+process.execPath+'"' : '"'+process.execPath+'" "'+app.getAppPath()+'"';
+        window.setAppDetails({appId:'com.ow3nhe.pixelstudio.desktop',appIconPath:iconPath,appIconIndex:0,relaunchCommand,relaunchDisplayName:'Pixel Studio'});
+      }catch(error){console.warn('Taskbar icon update failed:',error.message);}
+    }
+  }
+  if(tray&&!tray.isDestroyed())tray.setImage(icon(theme,32));
+}
 nativeTheme.on('updated',()=>{if(preferences?.theme==='system')refreshTheme();});
 function systemLanguage(){return /^zh(?:-|$)/i.test(app.getPreferredSystemLanguages()[0] || 'en') ? 'zh-CN' : 'en';}
 function effectiveLanguage(){return preferences.language==='auto' ? systemLanguage() : preferences.language;}
+let trayPlaying=false;
 function trayMenu(){
+  if(!tray||tray.isDestroyed()||quitting)return;
   const en=effectiveLanguage()==='en';
   tray.setContextMenu(Menu.buildFromTemplate([
     {label:en?'Open Pixel Studio':'打开 Pixel Studio',click:show},
-    {label:en?'Stop output':'停止发送',click:()=>window?.webContents.send('desktop:stop')},
+    {label:trayPlaying?(en?'Stop output':'停止发送'):(en?'Resume output':'继续发送'),click:()=>{
+      if(window&&!window.isDestroyed()&&!quitting)window.webContents.send(trayPlaying?'desktop:stop':'desktop:start');
+    }},
     {type:'separator'},
     {label:en?'Quit':'退出',click:()=>app.quit()}
   ]));
@@ -48,20 +76,34 @@ function trayMenu(){
 function external(url){try{const u=new URL(url);if(u.protocol==='https:' && u.hostname==='github.com' && u.pathname.startsWith('/OW3N-HE/Pixel-Studio/'))void shell.openExternal(u.href);}catch{}}
 if(!app.requestSingleInstanceLock()){app.quit();}else{
   app.on('second-instance',show);
-  let shutdownStarted=false;
+  let shutdownStarted=false,shutdownFinished=false;
   app.on('before-quit',event=>{
     quitting=true;
+    if(shutdownFinished)return;
+    event.preventDefault();
     if(shutdownStarted)return;
-    event.preventDefault();shutdownStarted=true;
+    shutdownStarted=true;
+    if(window&&!window.isDestroyed())window.hide();
+    tray?.destroy();tray=null;
     void (async()=>{
       try{
         if(window&&!window.isDestroyed()&&ownPage(window.webContents)){
-          const value=await window.webContents.executeJavaScript('window.pixelStudioWebRuntime.captureDesktopPlayback?.() || null');
+          let captureTimer;
+          let value;
+          try {
+            value=await Promise.race([
+              window.webContents.executeJavaScript('window.pixelStudioWebRuntime.captureDesktopPlayback?.() || null'),
+              new Promise(resolve=>{captureTimer=setTimeout(()=>resolve(null),1500);})
+            ]);
+          } finally {clearTimeout(captureTimer);}
           const snapshot=value?.sessionReady===false?null:playbackState(value);
           if(snapshot){snapshot.resumeRequested=snapshot.playing||keepResumeIntent;preferences.playback=snapshot;const content=mediaSession(value.mediaSession);if(content)preferences.mediaSession=content;save();}
         }
       }catch{}
+      // Close the renderer before shutting down its bridge and polling endpoints.
+      if(window&&!window.isDestroyed())window.destroy();
       try{await ddpService.stop();}catch{}
+      shutdownFinished=true;
       app.quit();
     })();
   });
@@ -79,12 +121,12 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
     }});
     app.once('will-quit',()=>mediaLibrary.dispose());
     if(app.isPackaged&&!hasSavedLoginPreference){app.setLoginItemSettings({...loginOptions(),openAtLogin:preferences.launchAtLogin});save();}
-    window=new BrowserWindow({width:1280,height:880,minWidth:640,minHeight:520,show:false,title:'Pixel Studio',icon:icon(effectiveTheme(),64),backgroundColor:'#0c1921',autoHideMenuBar:true,webPreferences:{additionalArguments:['--pixel-studio-system-language='+systemLanguage(),'--pixel-studio-language='+preferences.language],preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false}});
+    window=new BrowserWindow({width:1280,height:880,minWidth:360,minHeight:720,show:false,title:'Pixel Studio',icon:icon(effectiveTheme(),64),backgroundColor:'#0c1921',autoHideMenuBar:true,webPreferences:{additionalArguments:['--pixel-studio-system-language='+systemLanguage(),'--pixel-studio-language='+preferences.language],preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false}});
     window.on('page-title-updated',event=>{event.preventDefault();window.setTitle('Pixel Studio');});
     // Restart Manager must not turn an installer shutdown into close-to-tray.
     window.on('query-session-end',()=>{quitting=true;});
     window.on('session-end',()=>{quitting=true;void ddpService.stop();});
-    tray=new Tray(icon(effectiveTheme(),32));tray.setToolTip('Pixel Studio');tray.on('double-click',show);trayMenu();
+    tray=new Tray(icon(effectiveTheme(),32));tray.setToolTip('Pixel Studio');tray.on('double-click',show);trayMenu();refreshTheme();
     window.on('close',event=>{if(!quitting&&preferences.closeToTray){event.preventDefault();window.hide();}else{quitting=true;tray?.destroy();tray=null;app.quit();}});
     window.webContents.setWindowOpenHandler(({url})=>{external(url);return {action:'deny'};});
     window.webContents.on('will-navigate',(event,url)=>{if(url.split('#')[0]!==entry){event.preventDefault();external(url);}});
@@ -104,7 +146,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
       if(!ownPage(contents)||!ports.length){callback('');return;}
       const matches=ports.filter(port=>sameDevice(port,preferences.serialDevice));
       if(restoring){
-        if(connectionRestoreCanceled){callback('');return;}
+        if(restoring===true&&connectionRestoreCanceled){callback('');return;}
         const selected=matches.length===1?matches[0]:null;
         pendingSerial=selected?deviceId(selected):null;
         callback(selected?.portId||'');return;
@@ -130,7 +172,8 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
     ipcMain.handle('desktop:serial', (event,request)=>{
       if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)throw new Error('Untrusted caller');
       if(request?.action==='prepare'){
-        serialRestore=request.restore===true;pendingSerial=null;
+        serialRestore=request.restore===true?true:(request.reuse===true&&preferences.serialDevice?'remembered':false);pendingSerial=null;
+        return {remembered:serialRestore==='remembered'};
       }else if(request?.action==='connected'&&pendingSerial){
         preferences.serialDevice=pendingSerial;pendingSerial=null;save();
       }else if(request?.action==='cancel-resume'){
@@ -178,6 +221,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
       if(quitting)return;
       if(value?.sessionReady===false)return;
       const next=playbackState(value);
+      if(next&&trayPlaying!==next.playing){trayPlaying=next.playing;trayMenu();}
       if(value?.playing===true)keepResumeIntent=false;
       if(next)next.resumeRequested=next.playing||keepResumeIntent;
       if(next&&JSON.stringify(next)!==JSON.stringify(preferences.playback)){preferences.playback=next;try{save();}catch{}}

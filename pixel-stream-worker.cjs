@@ -8,7 +8,7 @@ const renderer=createRenderer();
 const config=workerData;
 if(!renderer.modes.includes(config.mode))throw new Error('Unknown animation: '+config.mode);
 const transport=config.transport==='usb'?'usb':'ddp';
-const output=createOutputTransport({...config,transport},fatal);
+const output=createOutputTransport({...config,transport},transportError);
 function perceptualLut(brightness){
   const gain=Math.max(0,Math.min(255,Number(brightness)??255))/255;
   return Uint8Array.from({length:256},(_,i)=>Math.round(i*gain));
@@ -21,13 +21,24 @@ animationClock.setSpeed(config.speed);
 animationClock.synchronize(config.animationTime,config.animationWallTime);
 let next=started,timer=null,stopped=false;
 let frames=0,missed=0,bytes=0,sampleAt=started,sampleFrames=0,sampleBytes=0,totalMs=0,sampleCount=0;
+let sendFailureAt=null,pendingSocketError=null,lastSendError=null;
+const transientUdpCodes=new Set(['EAGAIN','EINTR','ENOBUFS','ENETDOWN','ENETUNREACH','EHOSTUNREACH','ETIMEDOUT','ECONNREFUSED']);
+function retryableSend(error){
+  // Only the local DDP bridge opts in; OpenRGB and USB keep their own policies.
+  return transport==='ddp'&&config.retryDdpSendErrors===true&&transientUdpCodes.has(error.code);
+}
+function transportError(error){
+  if(stopped)return;
+  if(retryableSend(error))pendingSocketError=error;
+  else fatal(error);
+}
 
 
 function stop(){
   if(stopped)return;
   stopped=true;clearTimeout(timer);output.stop();parentPort.close();
 }
-function fatal(error){if(stopped)return;parentPort.postMessage({type:'error',message:error.message});stop();}
+function fatal(error){if(stopped)return;parentPort.postMessage({type:'error',message:error.message,code:error.code});stop();}
 parentPort.on('message',message=>{
   if(message.type==='stop'){stop();return;}
   if(message.type==='temperature'){config.temperatureSample=message.sample;return;}
@@ -57,17 +68,30 @@ async function tick(){
   missed+=skipped;next+=(skipped+1)*interval;
   try{
     const rgb=renderer.render(config.mode,config.w,config.h,animationClock.getTime(),config.mapping,config.clockFont,config.clockPalette,config.thermal,config.temperatureSample);
+    if(pendingSocketError){const error=pendingSocketError;pendingSocketError=null;throw error;}
     bytes+=await output.send(rgb,lut);
+    if(stopped)return;
+    sendFailureAt=null;lastSendError=null;
     frames++;totalMs+=performance.now()-now;sampleCount++;
-    const finished=performance.now();
-    if(finished-sampleAt>=1000){
-      const seconds=(finished-sampleAt)/1000;
-      parentPort.postMessage({type:'stats',stats:{targetFps:config.fps,fps:(frames-sampleFrames)/seconds,
-        kbps:(bytes-sampleBytes)/seconds/1024,frameMs:totalMs/Math.max(1,sampleCount),frames,missed,
-        uptime:(finished-started)/1000,mode:config.mode,transport}});
-      sampleAt=finished;sampleFrames=frames;sampleBytes=bytes;totalMs=0;sampleCount=0;
-    }
-  }catch(error){fatal(error);return;}
+  }catch(error){
+    if(stopped)return;
+    if(!retryableSend(error)){fatal(error);return;}
+    const failedAt=performance.now();
+    if(sendFailureAt===null)sendFailureAt=failedAt;
+    if(failedAt-sendFailureAt>=5000){fatal(error);return;}
+    lastSendError=error;missed++;
+    // Drop the failed frame. Resume at current animation time, not a stale queue.
+    next=failedAt+250;
+  }
+  const finished=performance.now();
+  if(finished-sampleAt>=1000){
+    const seconds=(finished-sampleAt)/1000;
+    parentPort.postMessage({type:'stats',stats:{targetFps:config.fps,fps:(frames-sampleFrames)/seconds,
+      kbps:(bytes-sampleBytes)/seconds/1024,frameMs:totalMs/Math.max(1,sampleCount),frames,missed,
+      uptime:(finished-started)/1000,mode:config.mode,transport,recovering:sendFailureAt!==null,
+      errorCode:lastSendError?.code||'',lastError:lastSendError?.message||''}});
+    sampleAt=finished;sampleFrames=frames;sampleBytes=bytes;totalMs=0;sampleCount=0;
+  }
   if(!stopped)timer=setTimeout(tick,Math.max(0,next-performance.now()));
 }
 async function boot(){

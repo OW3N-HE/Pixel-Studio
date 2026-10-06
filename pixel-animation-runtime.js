@@ -6,7 +6,11 @@
   function stopAnimationPreview(...args){return media.stopAnimationPreview(...args);}
   function startAnimationPreview(...args){return media.startAnimationPreview(...args);}
   function buildGeneratedFrame(...args){return media.buildGeneratedFrame(...args);}
-  function showStaticPreview(...args){return media.showStaticPreview(...args);}
+  function showStaticPreview(...args){
+    const result=media.showStaticPreview(...args);
+    restoreContentSpeed('');
+    return result;
+  }
   function updatePreviewByMode(...args){return media.updatePreviewByMode(...args);}
   function getAnimationTime(...args){return player.getAnimationTime(...args);}
   function startLoop(...args){return player.startLoop(...args);}
@@ -47,8 +51,53 @@
     log: document.getElementById('log'),
   };
 
+  // Fresh pages follow catalog order; desktop restores valid saved choices afterward.
+  ui.animationMode.value = window.PixelStudioAnimationCatalog.galleryModes[0];
+
   function getAnimationMode() {
     return ui.animationMode.value;
+  }
+
+  const contentSpeedStorageKey='pixelStudio.contentSpeeds.v1';
+  const contentSpeeds=new Map();
+  let activeContentSpeedKey='',restoringContentSpeed=false;
+  if(window.pixelStudioHeadless!==true){
+    try{
+      const saved=JSON.parse(window.localStorage.getItem(contentSpeedStorageKey)||'{}');
+      if(saved&&typeof saved==='object'&&!Array.isArray(saved)){
+        for(const [key,value] of Object.entries(saved)){
+          if(/^(animation:|desktop-video:|web-video:)/.test(key)&&key.length<=1024
+            &&typeof value==='number'&&Number.isFinite(value)&&value>=0.25&&value<=3&&value!==1){
+            contentSpeeds.set(key,value);
+          }
+        }
+      }
+    }catch{}
+  }
+  function mediaSpeedKey(file){
+    if(!file?.type?.startsWith('video/'))return '';
+    if(typeof file.speedKey==='string'&&/^[a-f0-9]{64}$/.test(file.speedKey)){
+      return 'desktop-video:'+file.speedKey;
+    }
+    // Desktop URLs contain temporary IDs; never use them or a bare filename.
+    if(window.pixelStudioDesktop?.edition)return '';
+    return 'web-video:'+JSON.stringify([file.webkitRelativePath||file.name,file.size,file.lastModified]);
+  }
+  function restoreContentSpeed(key){
+    if(window.pixelStudioHeadless===true)return;
+    activeContentSpeedKey=key;
+    const slider=document.getElementById('animationSpeed');
+    slider.value=String(contentSpeeds.get(key)??1);
+    restoringContentSpeed=true;
+    try{slider.dispatchEvent(new Event('input',{bubbles:true}));}
+    finally{restoringContentSpeed=false;}
+  }
+  function rememberContentSpeed(value){
+    if(window.pixelStudioHeadless===true||restoringContentSpeed||!activeContentSpeedKey)return;
+    if(value===1)contentSpeeds.delete(activeContentSpeedKey);
+    else contentSpeeds.set(activeContentSpeedKey,value);
+    // Preferences stay in app/browser storage, never beside the media files.
+    try{window.localStorage.setItem(contentSpeedStorageKey,JSON.stringify(Object.fromEntries(contentSpeeds)));}catch{}
   }
 
 function nowText() {
@@ -67,6 +116,7 @@ function nowText() {
   function renderStatus() {
     if (statusSource === null) return;
     ui.status.setAttribute('data-update-ui', '');
+    ui.status.dataset.noticeSource = statusSource;
     ui.status.textContent = window.pixelStudioFormatNotice ? window.pixelStudioFormatNotice(statusSource, statusKind) : statusSource;
   }
   window.addEventListener('pixel-studio-language-change', renderStatus);
@@ -76,6 +126,7 @@ function nowText() {
     renderStatus();
     ui.status.classList.remove('ok', 'err');
     if (kind) ui.status.classList.add(kind);
+    window.dispatchEvent(new Event('pixel-studio-playback-status-change'));
   }
 
   function withNum(v, fallback) {
@@ -183,7 +234,12 @@ function nowText() {
   }
 
   const playbackState={get running(){return player.state.running;},get animationElapsed(){return player.state.animationElapsed;},get animationLastTime(){return player.state.animationLastTime;},get animationSpeed(){return player.state.animationSpeed;}};
-  media=window.PixelStudioBrowserMedia.create({window,ui,getFrameConfig,getAnimationMode,getAnimationTime,setStatus});
+  media=window.PixelStudioBrowserMedia.create({
+    window,ui,getFrameConfig,getAnimationMode,getAnimationTime,setStatus,
+    getPlaybackRate:file=>window.pixelStudioHeadless!==true&&file
+      ? (contentSpeeds.get(mediaSpeedKey(file))??1) : (player?.state.animationSpeed??1),
+    onMediaReady:file=>restoreContentSpeed(mediaSpeedKey(file))
+  });
   output=window.PixelStudioBrowserOutput.create({window,playback:playbackState,ui,animationCatalog,getFrameConfig,getAnimationMode,withNum,setStatus,logLine,stopLoop:(...args)=>stopLoop(...args),stopBtn:(...args)=>stopBtn(...args)});
   player=window.PixelStudioBrowserPlayback.create({window,content:media.frameSource,outputSession:output,ui,withNum,clampFpsForCurrentMode,setStatus});
 
@@ -208,11 +264,14 @@ function nowText() {
     if (mode !== 'file') {
       media.state.mediaObj = null;
       media.state.mediaType = mode;
+      restoreContentSpeed('animation:'+mode);
       applyPreviewAspect();
       startAnimationPreview();
-      setStatus(window.pixelStudioDesktop?.edition&&!player.state.running ? '动画预览中' : `已切换到${ui.animationMode.selectedOptions[0].textContent}${player.state.running ? '，持续发送中' : '，正在本地预览'}`);
+      // The shell shows the localized animation name separately from its status.
+      setStatus(player.state.running ? '正在发送' : '正在本地预览');
     } else {
       if(desktopMediaTransition)return;
+      restoreContentSpeed('');
       if (player.state.running) stopLoop(window.pixelStudioDesktop?.edition?'切换到媒体模式':'切换到文件模式');
       setStatus(window.pixelStudioDesktop?.edition?'媒体模式：请选择图片或视频':'已切换到文件模式，请选择图片或视频');
     }
@@ -220,7 +279,9 @@ function nowText() {
   document.getElementById('animationSpeed').addEventListener('input', (e) => {
     getAnimationTime();
     player.state.animationSpeed = Number(e.target.value) || 1;
+    media.syncPlaybackRate();
     document.getElementById('animationSpeedValue').value = player.state.animationSpeed.toFixed(2) + '×';
+    rememberContentSpeed(player.state.animationSpeed);
   });
 
   ui.mediaFile.addEventListener('change', (e) => {
@@ -291,7 +352,9 @@ function nowText() {
   if (window.pixelStudioHeadless !== true) {
     window.pixelStudioWebRuntime = {
       get playing() { return player.state.running; },
+      get previewStatus() { return media.frameSource.previewStatus; },
       get serialConnected() { return !!output.state.writer; },
+      get outputNotice() { return output.state.outputNotice; },
       get outputStatus() {
         const state=output.state;
         if(ui.controlMode.value==='serial')return {transport:'usb',state:!state.writer?'disconnected':state.serialLab.confirmedWriter!==state.writer?'unverified':player.state.running?'sending':'connected'};
@@ -307,6 +370,10 @@ function nowText() {
     };
     if (window.pixelStudioDesktop?.edition) {
       let desktopConnectionGeneration=0;
+      ui.controlMode.addEventListener('change',()=>{
+        if(ui.controlMode.value==='serial'&&!output.state.writer&&document.documentElement.dataset.desktopReady==='true')
+          void connect({reuse:true});
+      });
       window.pixelStudioWebRuntime.restoreDesktopConnection=async()=>{
         if(ui.controlMode.value!=='serial')return false;
         if(output.state.writer)return true;
@@ -352,7 +419,7 @@ function nowText() {
           ui.animationMode.value='file';
           ui.animationMode.dispatchEvent(new Event('change',{bubbles:true}));
         }
-        showStaticPreview({type:file.type,name:file.name},file.url);
+        showStaticPreview(file,file.url);
       };
       for (const id of ['stopBtn','disconnectBtn'])
         document.getElementById(id)?.addEventListener('click', () => {
