@@ -72,8 +72,8 @@ en.SelectEdition=Select at least one edition.
 zh.SelectEdition=请至少选择一个版本。
 en.SharedFiles=Shared animation library and runtime (required for Web / OpenRGB)
 zh.SharedFiles=共用动画库与运行组件（网页版 / OpenRGB 必选）
-en.SensorServiceFailed=The temperature service could not be configured. Animation playback is still available. CPU temperatures may remain unavailable; do not change PawnIO or Fan Control settings. Run the installer again with administrator permission to retry this optional feature.
-zh.SensorServiceFailed=温度采集服务配置失败，动画播放不受影响，CPU 温度可能仍不可用。请勿更改 PawnIO 或 Fan Control 设置；可使用管理员权限重新运行安装程序，重试这一可选功能。
+en.SensorServiceFailed=The temperature service could not be configured or administrator approval was cancelled. Animation playback is still available. CPU temperatures may remain unavailable. Run Setup again, select temperature monitoring and approve its administrator request. Do not change PawnIO or Fan Control settings.
+zh.SensorServiceFailed=温度采集服务配置失败，或管理员授权已取消。动画播放不受影响，CPU 温度可能仍不可用。请重新运行安装程序，勾选温度采集并允许其管理员请求。请勿更改 PawnIO 或 Fan Control 设置。
 en.UpdateCloseAppsHint=Save your work and OpenRGB settings before installing.%nSetup will list applications using the files being updated. If you choose automatic closing, unresponsive applications may be forcibly closed and unsaved changes lost. Alternatively quit them from the tray yourself.%nOnly owners of the affected files are targeted, not unrelated Node.js processes or Fan Control. Do not skip locked files.
 zh.UpdateCloseAppsHint=安装前请保存工作和 OpenRGB 设置。%n安装程序会列出占用待更新文件的应用。选择自动关闭后，无响应的应用可能被强制关闭，未保存的更改会丢失；也可自行从托盘退出。%n仅处理占用目标文件的程序，不会批量结束 Node.js 或关闭 Fan Control。请不要跳过被占用的文件。
 zh.DesktopOnly=桌面版（推荐，支持托盘与开机启动）
@@ -184,7 +184,7 @@ Name: core; Description: "{cm:SharedFiles}"; Flags: fixed
 
 [Tasks]
 Name: desktopicon; Description: "{cm:Desktop}"
-Name: temperatureservice; Description: "{cm:SensorServiceConsent}"; Check: IsAdminInstallMode
+Name: temperatureservice; Description: "{cm:SensorServiceConsent}"
 
 [Files]
 Source: "Migrate-Legacy.ps1"; Flags: dontcopy
@@ -219,6 +219,7 @@ Filename: "{app}\GETTING-STARTED.html"; Description: "{cm:OpenGuide}"; Flags: sh
 
 [UninstallRun]
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Manage-SensorServices.ps1"" -Mode Remove"; Flags: runhidden waituntilterminated; Check: IsAdminInstallMode; RunOnceId: "RemovePixelStudioSensorServices"
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Manage-SensorServices.ps1"" -Mode Remove"; Verb: "runas"; Flags: shellexec waituntilterminated; Check: IsUserSensorServiceOwner; RunOnceId: "RemovePixelStudioUserSensorServices"
 
 [Code]
 var
@@ -234,6 +235,16 @@ var
   PreviousComponentsClick: TNotifyEvent;
 
 #include "PawnIO.iss"
+
+function IsUserSensorServiceOwner: Boolean;
+var
+  Owner: String;
+begin
+  Result := False;
+  if IsAdminInstallMode then Exit;
+  if RegQueryStringValue(HKLM64, 'SOFTWARE\PixelStudio\SensorServices', 'InstallerPath', Owner) then
+    Result := CompareText(Owner, ExpandConstant('{app}')) = 0;
+end;
 
 function CheckUninstallProcesses: Boolean;
 var
@@ -370,16 +381,22 @@ procedure CurStepChanged(CurStep: TSetupStep);
 var
   SensorExit: Integer;
   SensorOK: Boolean;
-  SensorSource: String;
+  SensorSource, SensorParameters: String;
 begin
-  if (CurStep = ssPostInstall) and IsAdminInstallMode and WizardIsTaskSelected('temperatureservice') then begin
+  if (CurStep = ssPostInstall) and WizardIsTaskSelected('temperatureservice') then begin
     if WizardIsComponentSelected('web') or WizardIsComponentSelected('plugin') then
       SensorSource := ExpandConstant('{app}\app\temperature')
     else
       SensorSource := ExpandConstant('{app}\desktop\resources\web\temperature');
-    SensorOK := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
-      '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\Manage-SensorServices.ps1') +
-      '" -Mode Install -SourceDir "' + SensorSource + '"', '', SW_HIDE, ewWaitUntilTerminated, SensorExit);
+    SensorParameters := '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\Manage-SensorServices.ps1') +
+      '" -Mode Install -SourceDir "' + SensorSource + '"';
+    SensorExit := -1;
+    if IsAdminInstallMode then
+      SensorOK := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+        SensorParameters, '', SW_HIDE, ewWaitUntilTerminated, SensorExit)
+    else
+      SensorOK := ShellExec('runas', ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+        SensorParameters, '', SW_HIDE, ewWaitUntilTerminated, SensorExit);
     if (not SensorOK) or (SensorExit <> 0) then
       MsgBox(CustomMessage('SensorServiceFailed'), mbError, MB_OK);
   end;
@@ -397,7 +414,7 @@ function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo,
   MemoTypeInfo, MemoComponentsInfo, MemoGroupInfo, MemoTasksInfo: String): String;
 begin
   Result := CustomMessage('UpdateCloseAppsHint');
-  DetectPawnIO;
+  if not PawnIOHasDetection then DetectPawnIO;
   Result := Result + NewLine + NewLine + CustomMessage('PawnIOTitle') + ':' + NewLine + PawnIODetection;
   if MemoUserInfoInfo <> '' then
     Result := Result + NewLine + NewLine + MemoUserInfoInfo;

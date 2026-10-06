@@ -19,10 +19,14 @@ Desktop is selected by default; Web and the OpenRGB plugin are optional. OpenRGB
 - 恢复记住的 USB 串口；统一主题 Logo、系统图标、帮助页品牌显示与致谢。
 - OpenRGB 保留现有功能，同步主题 Logo；Pixel IO 仅预留入口。
 - 补充卸载前的后台占用检测与确认关闭，支持保留设置或完全清除本账户数据，并移除安装器安装的 OpenRGB 插件。
+- 同日修订：网页／桌面 USB 选择后自动验证 WLED 回复，拔出后更新断开状态；采用主题内弹窗，自动验证响应等待上限约 0.5 秒，超时提示重试，不将超时等同于设备不可用。精简底部 USB/DDP 文案及间距，调整竖版设置字号。
+- 同日修订：PawnIO 改用原生安装信息、库版本和驱动服务检查，减少检测等待；提供官方安装向导入口，修复个人用户安装温度服务时的管理员授权流程，不改动共享驱动或风扇设置。
 - Refined responsive UI, card ordering, playback modes and scrollbars.
 - Improved USB/DDP lifecycle, tray Stop/Resume, shutdown and remembered USB selection.
 - Updated branding and help. OpenRGB retains its platform features; Pixel IO remains unavailable.
 - Added uninstall ownership checks and consent-based shutdown, settings retention or complete account-data cleanup, and removal of the installed OpenRGB plugin.
+- Same-day revision: Web/Desktop USB selection verifies WLED replies, unplugging updates the connection state, and themed dialogs replace browser alerts. Automatic reply waiting is limited to about 0.5 seconds; a timeout asks for a retry rather than declaring the device unusable. Refined USB/DDP labels, spacing and portrait settings typography.
+- Same-day revision: native PawnIO installation, library-version and driver-service checks reduce detection overhead. Setup provides access to the official wizard and fixes elevation for the temperature service in per-user installs, without changing shared drivers or fan settings.
 
 详见 [完整双语更新说明 / Full release notes](installer/RELEASE-0.2.1.md)。构建不代表所有硬件和升级路径测试通过；最终修复仍需设备回归。Compilation does not certify all hardware or upgrade paths.
 

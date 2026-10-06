@@ -22,6 +22,18 @@
 
 ### 下载与升级
 
+### 同日追加修订：USB、安装检测与竖版界面
+
+- 网页／桌面选择 USB 串口后自动查询 WLED；只有有效回复才标记已连接并记住设备，端口打开不再等同于控制器可用。拔出设备时清除连接和验证状态。本轮不更改 OpenRGB 的原生串口握手逻辑。
+- 修复本地预览播放时可能跳过连接验证的问题，接受兼容查询期间迟到的有效回复；自动验证的响应等待上限约 0.5 秒，手动诊断保留较长等待。端口打开／关闭耗时不包含在该上限内，慢响应固件可能需要重试。
+- 无回复时显示“响应超时，请重试”，其他连接／验证失败使用页面内主题弹窗；移除底部重复红色提示。USB/DDP 底部状态和统计去掉重复 WLED 前缀，设置中的 WLED 连接名称保留，DDP 传输逻辑不变。
+- 调整竖版设置字号及播放按钮与状态文字间距，保留点击区域和单行状态布局。
+- PawnIO 检测改用安装信息、库文件版本及实际驱动服务／文件检查，不再为检测启动 PowerShell。保留官方安装向导入口，打开向导前不重复检测，手动刷新和向导关闭后重新检测；残留记录不直接视为安装完整。
+- 个人用户安装温度服务时单独申请管理员授权，保留安装范围选择；驱动安装仍需用户同意，不自动卸载或覆盖共享 PawnIO，不修改风扇设置。
+- 用户反馈最新 TEST 看起来正常；本次重新生成正式安装包、Web 和源码附件。该反馈不代表全部硬件、慢启动控制器或安装升级路径均已验证。
+
+### 下载与升级（续）
+
 Windows x64 三合一安装包：PixelStudio-Setup-0.2.1.exe。默认选择桌面版，网页版和 OpenRGB 插件按需安装；不包含 OpenRGB 主程序。同时提供 Web、对应源码 ZIP 和 SHA256SUMS.txt。
 
 升级前备份设置、保存工作并从托盘退出 Pixel Studio/OpenRGB。安装器可能关闭占用文件的程序。保留用户设置与独立采样器边界；兼容 PawnIO 直接复用，新驱动安装需要明确同意，不自动覆盖未知或更新版本，不操作 Fan Control 或风扇设置。
@@ -63,6 +75,18 @@ Release date: 2026/10/06
 - Uninstall can preserve settings or completely clear the running account's settings, caches, remembered ports and upgrade backups. The plugin installed by Setup is removed with the application; shared PawnIO, other plugins, external media and other accounts are kept. Cleanup failures retain a report rather than claim complete removal. The dedicated uninstall-entry icon is restored.
 
 ### Download and upgrade
+
+### Same-day follow-up: USB, installation detection and portrait UI
+
+- Web/Desktop USB selection now queries WLED automatically. Only a valid reply marks the device connected and remembers it; opening an OS port alone is insufficient. Unplugging clears connection and verification state. This revision does not change OpenRGB's native serial handshake.
+- Fixed connection verification being skipped during local preview playback and accepted delayed valid replies during fallback. Automatic reply waiting is limited to about 0.5 seconds; manual diagnostics retain longer waits. Port opening/closing time is additional, and slower firmware may require a retry.
+- Missing replies show a retryable timeout, while other connection/verification failures use themed in-page dialogs instead of browser alerts. Removed duplicate red feedback. Playback status and statistics use concise USB/DDP labels; WLED names remain in settings and DDP transport behavior is unchanged.
+- Refined portrait settings typography and playback-label spacing without shrinking click targets or changing the single-line status layout.
+- Native PawnIO checks inspect installation records, library versions and actual driver services/files without spawning PowerShell for detection. The official wizard remains accessible without repeating detection before opening; manual refresh and wizard completion recheck status. Leftover records alone do not establish a complete installation.
+- Per-user temperature-service installation requests separate administrator consent while preserving the installation-scope choice. Driver installation still requires consent; shared PawnIO and fan settings are not automatically removed or overwritten.
+- The user reported that the latest TEST looked normal. Formal Setup, Web and source assets are rebuilt for this revision; this feedback does not certify every device, slow-starting controller or upgrade path.
+
+### Download and upgrade (continued)
 
 Use PixelStudio-Setup-0.2.1.exe for Windows x64. Desktop is selected by default; Web and the OpenRGB plugin are optional. OpenRGB itself is not bundled. Web/source ZIP archives and SHA256SUMS.txt are also provided.
 

@@ -353,11 +353,13 @@ function nowText() {
     window.pixelStudioWebRuntime = {
       get playing() { return player.state.running; },
       get previewStatus() { return media.frameSource.previewStatus; },
-      get serialConnected() { return !!output.state.writer; },
+      get serialPortOpen() { return !!output.state.writer; },
+      get serialVerifying() { return output.state.serialLab.verifying; },
+      get serialConnected() { return !!output.state.writer && output.state.serialLab.confirmedWriter===output.state.writer; },
       get outputNotice() { return output.state.outputNotice; },
       get outputStatus() {
         const state=output.state;
-        if(ui.controlMode.value==='serial')return {transport:'usb',state:!state.writer?'disconnected':state.serialLab.confirmedWriter!==state.writer?'unverified':player.state.running?'sending':'connected'};
+        if(ui.controlMode.value==='serial')return {transport:'usb',state:!state.writer?'disconnected':state.serialLab.verifying?'checking':state.serialLab.confirmedWriter!==state.writer?'unverified':player.state.running?'sending':'connected'};
         if(isDdpMode())return {transport:'ddp',state:player.state.running?'sending':state.bridgeToken?'idle':'unavailable'};
         return {transport:'usb',state:'disconnected'};
       },

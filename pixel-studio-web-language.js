@@ -221,6 +221,16 @@
     [/no supported sources|no supported source|media.*(?:not supported|unsupported)|MEDIA_ERR_SRC_NOT_SUPPORTED/i, '不支持此媒体格式，请换一个文件。', 'This media format is not supported. Choose another file.'],
     [/MEDIA_ERR_DECODE|failed to decode|error.*decod/i, '无法解码媒体，请换一个文件。', 'Unable to decode the media. Choose another file.']
   ];
+  friendlyErrors.unshift([
+    /USB 已打开，但尚未收到 WLED 握手响应|USB is open, but WLED has not responded|没有收到 WLED 回包|不是有效 WLED 回包|未收到 WLED 响应|No WLED response/i,
+    '未收到 WLED 响应，此端口当前不可用于输出。请检查串口、波特率和固件后重试。',
+    'No WLED response; this port is not ready for output. Check the port, baud rate and firmware, then retry.'
+  ]);
+  Object.assign(catalog, {
+    'WLED DDP 网络 · 60 FPS':'WLED DDP network · 60 FPS',
+    'WLED USB 有线':'WLED USB wired',
+    '选择 WLED USB':'Select WLED USB'
+  });
   for (const [, zh, en] of friendlyErrors) catalog[zh] = en;
   Object.assign(catalog, {
     '操作失败，请查看错误详情。':'The operation failed. See error details.',
@@ -253,6 +263,7 @@
   }
   // Keep status labels brief; the translated explanation and source remain in detail.
   const shortErrorLabels = [
+    [/未收到 WLED 响应|No WLED response/i, '串口不可用，请更换', 'Port unavailable. Choose another.'],
     [/已取消|操作已中止|selection cancelled|operation was interrupted/i, '已取消', 'Cancelled'],
     [/请点击.*串口|Click Select port/i, '请选择端口', 'Select port'],
     [/权限不足|Access denied/i, '权限不足', 'Access denied'],

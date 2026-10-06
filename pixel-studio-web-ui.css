@@ -1386,6 +1386,22 @@ html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) >
   html body.ps-web :is(#studioSettings,.ps-import-dialog,.ps-diagnostics-dialog) > .ps-settings-heading h2{
     font-size:20px;
   }
+  html body.ps-web #studioSettings{
+    --ui-control-font-size:14px;
+    font-size:14px;
+  }
+  html body.ps-web #studioSettings > .ps-settings-heading h2{
+    font-size:19px;
+  }
+  html body.ps-web #studioSettings .ps-settings-body :is(label,input,select,button){
+    font-size:14px;
+  }
+  html body.ps-web #studioSettings .ps-settings-body h3{
+    font-size:15px;
+  }
+  html body.ps-web #studioSettings .ps-settings-body :is(p,small,.hint){
+    font-size:13px;
+  }
 }
 html body.ps-web :is(.ps-settings,#studioSettings) :is(.ps-settings-group,.ps-media-fields){
   border:1px solid var(--ui-group-stroke);
@@ -1814,3 +1830,14 @@ html body.ps-web #psShuffleDock #psShuffleToggle.is-active{
 .ps-web .ps-desktop-media-actions button:disabled{opacity:.5;cursor:default;}
 html body.ps-web :is(.wrap,#studioSettings) .ps-desktop-media-actions button.ps-media-icon-action{box-sizing:border-box;flex:none;width:var(--ui-control-height,40px);min-width:var(--ui-control-height,40px);max-width:var(--ui-control-height,40px);height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);padding:0;gap:0;line-height:1;}
 .ps-desktop-media-actions .ps-media-icon-action svg{display:block;flex:none;width:20px;height:20px;pointer-events:none;}
+/* USB errors use the same in-page dialog surfaces as settings. */
+html body.ps-web dialog.ps-port-dialog{width:min(420px,calc(100vw - 32px));max-height:calc(100dvh - 32px);font-size:14px;}
+html body.ps-web .ps-port-dialog > .ps-settings-heading{padding:16px 20px;gap:16px;}
+html body.ps-web .ps-port-dialog > .ps-settings-heading h2{margin:0;font-size:19px;line-height:1.4;}
+html body.ps-web .ps-port-dialog > .ps-settings-body{padding:0 20px 20px;}
+html body.ps-web .ps-port-dialog .ps-settings-body p{margin:0 0 20px;line-height:1.6;overflow-wrap:anywhere;}
+html body.ps-web .ps-port-dialog .ps-settings-body > button{display:block;margin-left:auto;min-width:80px;min-height:40px;}
+
+/* Reduce the gap between the play button and playback labels. */
+html body.ps-web .ps-playback-messages{padding-inline-start:0;margin-inline-start:-8px;}
+

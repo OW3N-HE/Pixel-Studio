@@ -1731,13 +1731,15 @@
       if(currentAnimation.title!==fullCaption)currentAnimation.title=fullCaption;
       currentAnimation.hidden=!caption;
       const transports={usb:'USB',ddp:'DDP'};
-      // Connected describes an open port; protocol verification remains internal.
-      const states=english?{disconnected:'Not Connected',unverified:'Connected',connected:'Connected',sending:'Sending',idle:'Idle',unavailable:'Bridge unavailable'}:{disconnected:'未连接',unverified:'已连接',connected:'已连接',sending:'发送中',idle:'待发送',unavailable:'本地服务未启动'};
+      // An open OS port alone is not a verified LED controller connection.
+      const states=english?{disconnected:'Not Connected',checking:'Checking',unverified:'Unverified',connected:'Connected',sending:'Sending',idle:'Idle',unavailable:'Bridge unavailable'}:{disconnected:'未连接',checking:'验证中',unverified:'未验证',connected:'已连接',sending:'发送中',idle:'待发送',unavailable:'本地服务未启动'};
       const connectionText=output.state==='disconnected'?states.disconnected:transports[output.transport]+' · '+states[output.state];
       if (!playing) {
         const stats = $('streamStats');
         if (stats.textContent !== connectionText) stats.textContent = connectionText;
-        stats.title=connectionText;
+        stats.title=output.transport==='usb'&&output.state==='unverified'
+          ? (english?'The serial port is open, but no valid WLED response has been received. Check the selected port, baud rate and controller firmware.':'串口已打开，但未收到有效 WLED 回包。请检查所选串口、波特率和控制器固件。')
+          : connectionText;
       }
       if (lastPlaying !== playing) {
         lastPlaying = playing;
@@ -1752,8 +1754,15 @@
       }
       syncPlaybackFeedback();
       syncInlineShuffle();
-      const status = api.serialConnected ? (english ? 'Connected' : 'USB 已连接') : (english ? 'Not connected' : '尚未连接');
+      const status = api.serialConnected ? (english ? 'Connected' : 'USB 已连接')
+        : api.serialPortOpen ? (api.serialVerifying
+          ? (english ? 'Checking' : '验证中')
+          : (english ? 'Unverified' : '未验证'))
+        : (english ? 'Not connected' : '尚未连接');
       if (portStatus.value !== status) portStatus.value = status;
+      portStatus.title=api.serialPortOpen&&!api.serialConnected&&!api.serialVerifying
+        ? (english?'Port open; no valid WLED response. Check the port, baud rate and firmware.':'串口已打开，但没有有效 WLED 响应。请检查串口、波特率和固件。')
+        : status;
     }
     toggle.addEventListener('click', () => {
       (api.playing ? $('stopBtn') : $('startBtn')).click();

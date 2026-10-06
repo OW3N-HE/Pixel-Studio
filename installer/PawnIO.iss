@@ -6,12 +6,12 @@ Source: "{#PawnIOSetupPath}"; DestName: "PixelStudio-PawnIO-2.2.0-setup.exe"; Fl
 #endif
 
 [CustomMessages]
-en.PawnIOInstall=Install PawnIO...
-zh.PawnIOInstall=安装 PawnIO...
+en.PawnIOInstall=Open official PawnIO installer...
+zh.PawnIOInstall=打开官方 PawnIO 安装向导...
 en.PawnIOUpgrade=Update PawnIO...
 zh.PawnIOUpgrade=更新 PawnIO...
-en.PawnIOInstallConfirm=Open the official PawnIO 2.2.0 installation wizard?%n%nSave your work and close Fan Control, LibreHardwareMonitor and other monitoring tools first. This installs or updates a shared system driver and may require administrator approval or a restart.%n%nThe official wizard will remain visible. When it closes, Pixel Studio will check the driver again. Choose No to return without installing it.
-zh.PawnIOInstallConfirm=打开官方 PawnIO 2.2.0 安装向导吗？%n%n请先保存工作并退出 Fan Control、LibreHardwareMonitor 等监控软件。此操作会安装或更新系统共享驱动，可能需要管理员授权或重启。%n%n官方向导会正常显示，关闭后将自动重新检测驱动。选择“否”可返回本页，不安装驱动。
+en.PawnIOInstallConfirm=Open the official PawnIO 2.2.0 installation wizard?%n%nSave your work and close other monitoring tools yourself first. This is a shared system driver and requires administrator approval.%n%nWhen existing or uncertain records are present, the official wizard may refuse installation. Follow its instructions; Pixel Studio will not bypass its checks, automatically uninstall a driver or force a downgrade. Review the version before approving changes.%n%nThe wizard will remain visible. When it closes, Pixel Studio will check again. Choose No to return without launching it.
+zh.PawnIOInstallConfirm=打开官方 PawnIO 2.2.0 安装向导吗？%n%n请先保存工作并自行退出其他监控软件。这是系统共享驱动，需要管理员授权。%n%n存在已有或不确定记录时，官方向导可能拒绝安装。请按其说明处理；Pixel Studio 不会绕过检查、自动卸载驱动或强制降级。允许更改前请确认版本。%n%n官方向导会正常显示，关闭后将重新检测。选择“否”可返回，不启动向导。
 en.PawnIOInstallFailed=The official installer was cancelled or returned an error (code %1). Check the status on this page and retry if the driver is still missing. Pixel Studio has not removed any shared driver.
 zh.PawnIOInstallFailed=官方安装向导已取消或返回错误（代码 %1）。请查看本页检测结果；若仍缺少驱动，可重新安装。Pixel Studio 没有删除共享驱动。
 en.PawnIOLaunchFailed=The official driver wizard could not be opened. Check administrator permission and security software, then try again. Details: %1
@@ -38,14 +38,18 @@ en.PawnIOHeadingInstalling=Installing PawnIO
 zh.PawnIOHeadingInstalling=正在安装 PawnIO
 en.PawnIOWaiting=Complete the official PawnIO wizard. This page will check the driver again when it closes.
 zh.PawnIOWaiting=请在 PawnIO 官方向导中完成安装。向导关闭后，本页会自动重新检测。
+en.PawnIOHeadingChecking=Checking PawnIO installation...
+zh.PawnIOHeadingChecking=正在检测 PawnIO 安装状态...
+en.PawnIOCheckingHint=Checking installation records and actual files. Please wait; slower computers may take longer.
+zh.PawnIOCheckingHint=正在核对安装记录和实际文件，请稍候；较慢的电脑可能需要更长时间。
 en.PawnIOStillMissing=PawnIO has not been detected yet. Check again or retry installation to continue.
 zh.PawnIOStillMissing=暂未检测到 PawnIO。请重新检测或重试安装，完成后才能继续。
 en.PawnIOSummaryMissing=Temperature monitoring needs this driver. Install it before continuing.
 zh.PawnIOSummaryMissing=温度采集需要此驱动。完成安装后才能继续。
 en.PawnIOSummaryPresent=PawnIO %1 was found. Your existing driver will be kept.
 zh.PawnIOSummaryPresent=已检测到 PawnIO %1。将保留现有驱动，不重复安装。
-en.PawnIOSummaryUnknown=Driver records were found, but the version could not be read. Nothing will be replaced.
-zh.PawnIOSummaryUnknown=检测到驱动记录，但无法读取版本。不会覆盖现有驱动。
+en.PawnIOSummaryUnknown=PawnIO installation could not be confirmed. Complete the official installation or repair, then check again. Unknown or newer drivers will not be overwritten.
+zh.PawnIOSummaryUnknown=无法确认 PawnIO 安装完整。请完成官方安装或修复后重新检测，不会覆盖未知或较新驱动。
 en.PawnIOSummaryConflict=The recorded driver versions do not match. Nothing will be replaced.
 zh.PawnIOSummaryConflict=检测到不一致的驱动版本记录。不会覆盖现有驱动。
 en.PawnIOSummaryOld=PawnIO %1 was found. This build requires version %2 or later.
@@ -56,8 +60,8 @@ en.PawnIOContinueHint=Choose Next to continue installing Pixel Studio.
 zh.PawnIOContinueHint=点击“下一步”继续安装 Pixel Studio。
 en.PawnIOInstallHint=Close other hardware monitoring tools before installing or updating.
 zh.PawnIOInstallHint=安装或更新前，请先退出其他硬件监控软件。
-en.PawnIOReviewHint=Read the details before continuing.
-zh.PawnIOReviewHint=请查看详细信息，确认状态后继续。
+en.PawnIOReviewHint=Resolve incomplete installation through the official tools, then check again. If the official wizard reports an existing installation, follow its instructions and restart Windows if requested.
+zh.PawnIOReviewHint=请通过官方工具完成安装或修复后重新检测。若提示已有安装，请按官方说明处理；要求重启时先重启 Windows。
 en.PawnIOManualHint=Install the signed driver from the official website, then choose Check again.
 zh.PawnIOManualHint=请从官方网站安装签名版驱动，再点击“重新检测”。
 en.PawnIODetailsShow=Show details
@@ -66,6 +70,13 @@ en.PawnIODetailsHide=Hide details
 zh.PawnIODetailsHide=收起详情
 en.PawnIOWebsiteLink=Official website
 zh.PawnIOWebsiteLink=官方网站
+
+en.PawnIOFileDetails=Library version: %1%nDriver path: %2%nDriver file exists: %3%nInstallation checks complete: %4%nFile checks do not guarantee sensor access; monitoring checks that separately.
+zh.PawnIOFileDetails=库文件版本：%1%n驱动路径：%2%n驱动文件存在：%3%n安装检查通过：%4%n文件检查不保证传感器可访问，实际访问在温度采集启动时检查。
+en.PawnIOCheckYes=Yes
+zh.PawnIOCheckYes=是
+en.PawnIOCheckNo=No
+zh.PawnIOCheckNo=否
 
 [Code]
 #ifndef PawnIOMinVersion
@@ -83,7 +94,7 @@ var
   PawnIODetailsMemo: TNewMemo;
   PawnIODetection, PawnIOHeading, PawnIOSummary, PawnIOPageHint: String;
   PawnIOCanInstall, PawnIOMissingDetected, PawnIORestartRequired: Boolean;
-  PawnIOPageActive, PawnIOInstalling, PawnIODetailsExpanded: Boolean;
+  PawnIOPageActive, PawnIOInstalling, PawnIOChecking, PawnIODetailsExpanded, PawnIOHasDetection: Boolean;
 
 procedure LayoutPawnIOPage;
 var
@@ -102,7 +113,7 @@ begin
   Y := PawnIOHintLabel.Top + PawnIOHintLabel.Height + ScaleY(16);
   if PawnIOInstallButton.Visible then begin
     ButtonWidth := WizardForm.CalculateButtonWidth([
-      CustomMessage('PawnIOInstall'), CustomMessage('PawnIOUpgrade')]) + ScaleX(16);
+      CustomMessage('PawnIOInstall')]) + ScaleX(16);
     if ButtonWidth < ScaleX(150) then ButtonWidth := ScaleX(150);
     if ButtonWidth > PawnIOPage.SurfaceWidth then ButtonWidth := PawnIOPage.SurfaceWidth;
     PawnIOInstallButton.SetBounds(0, Y, ButtonWidth, ScaleY(34));
@@ -130,17 +141,19 @@ begin
   PawnIODetailsMemo.Lines.Text := PawnIODetection + #13#10#13#10 + CustomMessage('PawnIOHint');
   PawnIOInstallButton.Visible := False;
 #ifdef PawnIOSetupPath
-  PawnIOInstallButton.Visible := PawnIOCanInstall;
-  if PawnIOMissingDetected then
-    PawnIOInstallButton.Caption := CustomMessage('PawnIOInstall')
-  else
-    PawnIOInstallButton.Caption := CustomMessage('PawnIOUpgrade');
+  { Always provide the official wizard; detection only gates continuation. }
+  PawnIOInstallButton.Visible := True;
+  PawnIOInstallButton.Caption := CustomMessage('PawnIOInstall');
   if PawnIOCanInstall then
     PawnIODetailsMemo.Lines.Text := PawnIODetection + #13#10#13#10 + CustomMessage('PawnIOBundleHint');
 #else
   if PawnIOMissingDetected then PawnIOHintLabel.Caption := CustomMessage('PawnIOManualHint');
 #endif
-  if PawnIOInstalling then begin
+  if PawnIOChecking then begin
+    PawnIOHeadingLabel.Caption := CustomMessage('PawnIOHeadingChecking');
+    PawnIOStatusLabel.Caption := CustomMessage('PawnIOCheckingHint');
+    PawnIOHintLabel.Caption := '';
+  end else if PawnIOInstalling then begin
     PawnIOHeadingLabel.Caption := CustomMessage('PawnIOHeadingInstalling');
     PawnIOStatusLabel.Caption := CustomMessage('PawnIOWaiting');
     PawnIOHintLabel.Caption := '';
@@ -149,10 +162,10 @@ begin
     PawnIOHintLabel.Caption := CustomMessage('PawnIORestart');
     PawnIODetailsMemo.Lines.Text := PawnIODetailsMemo.Lines.Text + #13#10#13#10 + CustomMessage('PawnIORestart');
   end;
-  PawnIOInstallButton.Enabled := PawnIOCanInstall and not PawnIOInstalling;
-  PawnIOActionsLabel.Enabled := not PawnIOInstalling;
+  PawnIOInstallButton.Enabled := not PawnIOInstalling and not PawnIOChecking;
+  PawnIOActionsLabel.Enabled := not PawnIOInstalling and not PawnIOChecking;
   if PawnIOPageActive then
-    WizardForm.NextButton.Enabled := not PawnIOMissingDetected and not PawnIOInstalling;
+    WizardForm.NextButton.Enabled := not PawnIOMissingDetected and not PawnIOInstalling and not PawnIOChecking;
   LayoutPawnIOPage;
 end;
 
@@ -200,82 +213,174 @@ begin
   end;
 end;
 
-procedure DetectPawnIO;
+function PawnIOExpandPath(Value: String): String;
 var
-  Version64, Version32, Version, Minimum, Maximum: String;
-  Present64, Present32, Valid64, Valid32: Boolean;
+  First, Last: Integer;
+  Name, EnvironmentValue: String;
+begin
+  Value := Trim(Value);
+  if (Length(Value) >= 2) and (Value[1] = '"') and (Value[Length(Value)] = '"') then
+    Value := Copy(Value, 2, Length(Value) - 2);
+  Result := '';
+  { Expand environment variables without launching another process. }
+  while Value <> '' do begin
+    First := Pos('%', Value);
+    if First = 0 then begin Result := Result + Value; Break; end;
+    Result := Result + Copy(Value, 1, First - 1);
+    Value := Copy(Value, First + 1, Length(Value));
+    Last := Pos('%', Value);
+    if Last = 0 then begin Result := Result + '%' + Value; Break; end;
+    Name := Copy(Value, 1, Last - 1);
+    EnvironmentValue := GetEnv(Name);
+    if EnvironmentValue = '' then EnvironmentValue := '%' + Name + '%';
+    Result := Result + EnvironmentValue;
+    Value := Copy(Value, Last + 1, Length(Value));
+  end;
+  if CompareText(Copy(Result, 1, 4), '\??\') = 0 then
+    Result := Copy(Result, 5, Length(Result));
+  if CompareText(Copy(Result, 1, 12), '\SystemRoot\') = 0 then
+    Result := AddBackslash(ExpandConstant('{win}')) + Copy(Result, 13, Length(Result))
+  else if CompareText(Copy(Result, 1, 9), 'System32\') = 0 then
+    Result := AddBackslash(ExpandConstant('{win}')) + Result;
+end;
+
+procedure InspectPawnIOLibrary(Location: String; var Version: String;
+  var HasFile, Conflict: Boolean);
+var
+  Filename, Candidate: String;
   Parts: TArrayOfInteger;
 begin
-  Version64 := '';
-  Version32 := '';
-  Present64 := RegKeyExists(HKLM64, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO');
-  Present32 := RegKeyExists(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO');
-  RegQueryStringValue(HKLM64, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO', 'DisplayVersion', Version64);
-  RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO', 'DisplayVersion', Version32);
-  Valid64 := ParsePawnIOVersion(Version64, Parts);
-  Valid32 := ParsePawnIOVersion(Version32, Parts);
-  Minimum := '{#PawnIOMinVersion}';
-  Maximum := '{#PawnIOMaxVersion}';
+  Location := PawnIOExpandPath(Location);
+  if Location = '' then Exit;
+  { Never probe a relative path or a network share from installation records. }
+  if (Length(Location) < 3) or (Copy(Location, 2, 2) <> ':\') then Exit;
+  Filename := AddBackslash(Location) + 'PawnIOLib.dll';
+  if not FileExists(Filename) then Exit;
+  HasFile := True;
+  if not GetVersionNumbersString(Filename, Candidate) then begin
+    Conflict := True;
+    Exit;
+  end;
+  if not ParsePawnIOVersion(Candidate, Parts) then begin
+    Conflict := True;
+    Exit;
+  end;
+  if Version = '' then Version := Candidate
+  else if ComparePawnIOVersions(Version, Candidate) <> 0 then Conflict := True;
+end;
+
+function PawnIOCheckText(Value: Boolean): String;
+begin
+  if Value then Result := CustomMessage('PawnIOCheckYes')
+  else Result := CustomMessage('PawnIOCheckNo');
+end;
+
+procedure DetectPawnIO;
+var
+  RegistrationKey, ServiceKey: String;
+  Location64, Location32, Version64, Version32, Version: String;
+  Driver, Details, Minimum, Maximum, Status: String;
+  Present64, Present32, ServicePresent, HasLibrary, Conflict: Boolean;
+  DriverExists, ServiceValid, Complete, HasLegacyDriver: Boolean;
+  DriverType, DriverStart, DeleteFlag: Cardinal;
+  Parts: TArrayOfInteger;
+begin
+  RegistrationKey := 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO';
+  ServiceKey := 'SYSTEM\CurrentControlSet\Services\PawnIO';
+  PawnIOChecking := True;
+  UpdatePawnIOPage;
+  WizardForm.Repaint;
   PawnIODetection := CustomMessage('PawnIOUnknown');
   PawnIOHeading := CustomMessage('PawnIOHeadingReview');
   PawnIOSummary := CustomMessage('PawnIOSummaryUnknown');
   PawnIOPageHint := CustomMessage('PawnIOReviewHint');
   PawnIOCanInstall := False;
-  PawnIOMissingDetected := False;
-  if not Present64 and not Present32 then begin
-    if not RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\PawnIO') and
-        not FileExists(ExpandConstant('{sys}\drivers\PawnIO.sys')) then begin
-      PawnIODetection := CustomMessage('PawnIOMissing');
-      PawnIOHeading := CustomMessage('PawnIOHeadingMissing');
-      PawnIOSummary := CustomMessage('PawnIOSummaryMissing');
-      PawnIOPageHint := CustomMessage('PawnIOInstallHint');
-      PawnIOCanInstall := True;
-      PawnIOMissingDetected := True;
-    end;
-  end else if ((Present64 and not Valid64) or (Present32 and not Valid32)) then begin
-    { Incomplete registrations are not proof that a driver is missing. }
-  end else if Valid64 and Valid32 and (ComparePawnIOVersions(Version64, Version32) <> 0) then begin
-    PawnIODetection := CustomMessage('PawnIOConflict');
-    PawnIOSummary := CustomMessage('PawnIOSummaryConflict');
-  end else begin
-    if Valid64 then Version := Version64 else Version := Version32;
+  PawnIOMissingDetected := True;
+  Status := 'incomplete';
+  Version := '';
+  Version64 := '';
+  Version32 := '';
+  Location64 := '';
+  Location32 := '';
+  Driver := '';
+  HasLibrary := False;
+  Conflict := False;
+  Present64 := RegKeyExists(HKLM64, RegistrationKey);
+  Present32 := RegKeyExists(HKLM32, RegistrationKey);
+  RegQueryStringValue(HKLM64, RegistrationKey, 'InstallLocation', Location64);
+  RegQueryStringValue(HKLM32, RegistrationKey, 'InstallLocation', Location32);
+  RegQueryStringValue(HKLM64, RegistrationKey, 'DisplayVersion', Version64);
+  RegQueryStringValue(HKLM32, RegistrationKey, 'DisplayVersion', Version32);
+  InspectPawnIOLibrary(Location64, Version, HasLibrary, Conflict);
+  if CompareText(Location64, Location32) <> 0 then
+    InspectPawnIOLibrary(Location32, Version, HasLibrary, Conflict);
+  InspectPawnIOLibrary(ExpandConstant('{commonpf64}\PawnIO'), Version, HasLibrary, Conflict);
+  if ParsePawnIOVersion(Version64, Parts) and (Version <> '') then
+    if ComparePawnIOVersions(Version64, Version) <> 0 then Conflict := True;
+  if ParsePawnIOVersion(Version32, Parts) and (Version <> '') then
+    if ComparePawnIOVersions(Version32, Version) <> 0 then Conflict := True;
+  ServicePresent := RegKeyExists(HKLM64, ServiceKey);
+  DriverType := 0;
+  DriverStart := 4;
+  DeleteFlag := 0;
+  ServiceValid := RegQueryDWordValue(HKLM64, ServiceKey, 'Type', DriverType);
+  ServiceValid := RegQueryDWordValue(HKLM64, ServiceKey, 'Start', DriverStart) and ServiceValid;
+  RegQueryDWordValue(HKLM64, ServiceKey, 'DeleteFlag', DeleteFlag);
+  RegQueryStringValue(HKLM64, ServiceKey, 'ImagePath', Driver);
+  Driver := PawnIOExpandPath(Driver);
+  DriverExists := False;
+  if (Length(Driver) >= 3) and (Copy(Driver, 2, 2) = ':\') then
+    DriverExists := FileExists(Driver);
+  HasLegacyDriver := FileExists(ExpandConstant('{sys}\drivers\PawnIO.sys'));
+  Complete := ServicePresent and ServiceValid and (DriverType = 1) and
+    (DriverStart <= 3) and (DeleteFlag = 0) and DriverExists and HasLibrary and
+    (Version <> '') and not Conflict;
+  if not Present64 and not Present32 and not ServicePresent and not HasLibrary and not HasLegacyDriver then begin
+    Status := 'missing';
+    PawnIODetection := CustomMessage('PawnIOMissing');
+    PawnIOHeading := CustomMessage('PawnIOHeadingMissing');
+    PawnIOSummary := CustomMessage('PawnIOSummaryMissing');
+    PawnIOPageHint := CustomMessage('PawnIOInstallHint');
+    PawnIOCanInstall := True;
+  end else if Complete then begin
+    Status := 'confirmed';
+    PawnIOMissingDetected := False;
     PawnIOHeading := CustomMessage('PawnIOHeadingPresent');
     PawnIOSummary := FmtMessage(CustomMessage('PawnIOSummaryPresent'), [Version]);
     PawnIOPageHint := CustomMessage('PawnIOContinueHint');
-    if ParsePawnIOVersion(Minimum, Parts) and ParsePawnIOVersion(Maximum, Parts) then begin
+    PawnIODetection := FmtMessage(CustomMessage('PawnIODetected'), [Version]);
+    Minimum := '{#PawnIOMinVersion}';
+    Maximum := '{#PawnIOMaxVersion}';
+    if ParsePawnIOVersion(Minimum, Parts) then begin
       if ComparePawnIOVersions(Version, Minimum) < 0 then begin
-        PawnIODetection := FmtMessage(CustomMessage('PawnIOOld'), [Version, Minimum]);
+        PawnIOMissingDetected := True;
         PawnIOSummary := FmtMessage(CustomMessage('PawnIOSummaryOld'), [Version, Minimum]);
-        PawnIOCanInstall := (ComparePawnIOVersions(Version, '2.2.0.0') < 0) and
-          (ComparePawnIOVersions('2.2.0.0', Minimum) >= 0) and
-          (ComparePawnIOVersions('2.2.0.0', Maximum) < 0);
-        PawnIOHeading := CustomMessage('PawnIOHeadingReview');
         PawnIOPageHint := CustomMessage('PawnIOReviewHint');
-        if PawnIOCanInstall then begin
-          PawnIOHeading := CustomMessage('PawnIOHeadingUpgrade');
-          PawnIOPageHint := CustomMessage('PawnIOInstallHint');
-        end;
-      end
-      else if ComparePawnIOVersions(Version, Maximum) >= 0 then begin
-        PawnIODetection := FmtMessage(CustomMessage('PawnIONewer'), [Version]);
+        PawnIOHeading := CustomMessage('PawnIOHeadingReview');
+      end;
+    end;
+    if ParsePawnIOVersion(Maximum, Parts) then begin
+      if ComparePawnIOVersions(Version, Maximum) >= 0 then begin
         PawnIOHeading := CustomMessage('PawnIOHeadingReview');
         PawnIOSummary := FmtMessage(CustomMessage('PawnIOSummaryNewer'), [Version]);
-        PawnIOPageHint := CustomMessage('PawnIOReviewHint');
-      end
-      else begin
-        PawnIODetection := FmtMessage(CustomMessage('PawnIOReuse'), [Version]);
-        PawnIOHeading := CustomMessage('PawnIOHeadingReady');
       end;
-    end else
-      PawnIODetection := FmtMessage(CustomMessage('PawnIODetected'), [Version]);
+    end;
+  end else if Conflict then begin
+    Status := 'conflict';
+    PawnIODetection := CustomMessage('PawnIOConflict');
+    PawnIOSummary := CustomMessage('PawnIOSummaryConflict');
   end;
+  Details := FmtMessage(CustomMessage('PawnIOFileDetails'), [Version, Driver,
+    PawnIOCheckText(DriverExists), PawnIOCheckText(Complete)]);
+  PawnIODetection := PawnIODetection + #13#10#13#10 + Details;
+  PawnIOChecking := False;
+  PawnIOHasDetection := True;
   UpdatePawnIOPage;
-  Log('PawnIO registration detection: ' + PawnIODetection);
+  Log('PawnIO native installation inspection: ' + Status + ' ' + PawnIODetection);
 end;
-
 procedure PawnIORefreshClick(Sender: TObject);
 begin
-  if PawnIOInstalling then Exit;
+  if PawnIOInstalling or PawnIOChecking then Exit;
   DetectPawnIO;
 end;
 
@@ -286,14 +391,11 @@ var
   Installer: String;
   BackEnabled, CancelEnabled: Boolean;
 begin
-  if PawnIOInstalling then Exit;
-  DetectPawnIO;
-  if PawnIOCanInstall then begin
+  if PawnIOInstalling or PawnIOChecking then Exit;
+  begin
     if MsgBox(CustomMessage('PawnIOInstallConfirm'), mbConfirmation,
         MB_YESNO or MB_DEFBUTTON2) <> IDYES then Exit;
-    { Recheck immediately before launching; do not replace a new installation. }
-    DetectPawnIO;
-    if not PawnIOCanInstall then Exit;
+    { Launch directly after consent. Recheck only after the wizard closes. }
     try
       ExtractTemporaryFile('PixelStudio-PawnIO-2.2.0-setup.exe');
       Installer := ExpandConstant('{tmp}\PixelStudio-PawnIO-2.2.0-setup.exe');
@@ -361,11 +463,11 @@ end;
 function ConfirmPawnIOPageNext: Boolean;
 begin
   Result := True;
-  DetectPawnIO;
+  if not PawnIOHasDetection then DetectPawnIO;
   if not PawnIOMissingDetected then Exit;
   { Silent setup cannot give informed consent for a shared driver install. }
   if WizardSilent then begin
-    Log('PawnIO is missing; interactive driver consent is required.');
+    Log('PawnIO installation is unconfirmed; interactive review is required.');
     Result := False;
     Exit;
   end;
@@ -414,14 +516,18 @@ begin
   PawnIODetailsMemo.TabOrder := 2;
   PawnIODetailsMemo.Visible := False;
   PawnIODetailsExpanded := False;
-  DetectPawnIO;
+  { Defer inspection until this page is visible so the wait state can paint. }
+  PawnIOHeading := CustomMessage('PawnIOHeadingChecking');
+  PawnIOSummary := CustomMessage('PawnIOCheckingHint');
+  PawnIOPageHint := '';
+  UpdatePawnIOPage;
 end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = PawnIOPage.ID then begin
     PawnIOPageActive := True;
-    DetectPawnIO;
+    if not PawnIOHasDetection then DetectPawnIO else UpdatePawnIOPage;
   end else if PawnIOPageActive then begin
     PawnIOPageActive := False;
     WizardForm.NextButton.Enabled := True;

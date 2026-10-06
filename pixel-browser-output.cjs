@@ -12,7 +12,7 @@
   let serialConnectionGeneration=0,serialClosing=Promise.resolve();
   ui.controlMode.addEventListener('change',()=>{serialConnectionGeneration++;});
  let serialColorProfile=null,serialColorLut=null,serialColorUiKey='';
-  const serialLab = { confirmedWriter:null, pending:null, readTask:null, bytes:0, nativeUsb:false, activeBaud:115200, frames:0, sampleAt:0, busy:false, heldFrame:null, holdTimer:null, lastWrite:0 };
+  const serialLab = { confirmedWriter:null, verifying:false, pending:null, readTask:null, bytes:0, nativeUsb:false, activeBaud:115200, frames:0, sampleAt:0, busy:false, heldFrame:null, holdTimer:null, lastWrite:0 };
 
   let serialNotice = null;
   window.addEventListener('pixel-studio-language-change', () => {
@@ -78,6 +78,7 @@
     serialColorLut = null;
     serialColorUiKey = '';
     serialLab.confirmedWriter=null;
+    serialLab.verifying=false;
     serialLab.bytes=0;serialLab.frames=0;serialLab.sampleAt=0;
     serialStopHold();
     if(serialLab.pending)serialLab.pending.finish(null);
@@ -87,19 +88,20 @@
     const pending=serialLab.pending;
     if(!pending || pending.writer!==sourceWriter)return;
     const trimmed=line.trim();
-    if(pending.type==='version' && /^WLED\s+\S+/i.test(trimmed))pending.finish(trimmed.slice(0,100));
-    if(pending.type==='json'){
+    // Accept either valid reply, including a delayed version reply during fallback.
+    if(/^WLED\s+\S+/i.test(trimmed))pending.finish(trimmed.slice(0,100));
+    if(pending.type==='json' || pending.type==='version'){
       try {const value=JSON.parse(trimmed);if(value.info && typeof value.info.ver==='string' && value.state)pending.finish('WLED '+value.info.ver);}catch(_){}
     }
   }
 
-  async function serialQuery(type, payload) {
+  async function serialQuery(type, payload, timeout=1800) {
     const sourceWriter=writer;
     return new Promise((resolve,reject)=>{
       const pending={type,writer:sourceWriter,timer:null,finish:null};
       pending.finish=value=>{clearTimeout(pending.timer);if(serialLab.pending===pending)serialLab.pending=null;resolve(value);};
       serialLab.pending=pending;
-      pending.timer=setTimeout(()=>pending.finish(null),1800);
+      pending.timer=setTimeout(()=>pending.finish(null),timeout);
       sourceWriter.write(encoder.encode(payload)).catch(error=>{
         clearTimeout(pending.timer);
         if(serialLab.pending===pending)serialLab.pending=null;
@@ -331,6 +333,58 @@
     return serialClosing;
   }
 
+  function serialConnectionLost(sourcePort) {
+    if(!sourcePort || port!==sourcePort)return;
+    serialConnectionGeneration++;
+    stopSerialOutput();
+    // Detach immediately; releasing stream locks may finish later.
+    void releaseSerialConnection().catch(error=>logLine(error.message));
+    setStatus(document.documentElement.lang==='en'?'USB device disconnected. Reconnect the controller.':'USB 设备已断开，请重新连接控制器。','err');
+    serialNote(document.documentElement.lang==='en'?'USB device disconnected.':'USB 设备已断开。','error');
+  }
+
+  navigator.serial?.addEventListener?.('disconnect',event=>{
+    const removed=event.port||event.target;
+    if(removed===port)serialConnectionLost(port);
+  });
+
+  function showSerialUnavailable(timedOut=false) {
+    const english=document.documentElement.lang==='en';
+    const dialog=document.createElement('dialog');
+    dialog.className='ps-settings ps-port-dialog';
+    dialog.setAttribute('aria-labelledby','psPortUnavailableTitle');
+    dialog.setAttribute('aria-describedby','psPortUnavailableMessage');
+    const heading=document.createElement('header');
+    heading.className='ps-settings-heading';
+    const title=document.createElement('h2');
+    title.id='psPortUnavailableTitle';
+    title.textContent=timedOut
+      ? (english?'Response timed out':'响应超时')
+      : (english?'Port unavailable':'串口不可用');
+    const close=document.createElement('button');
+    close.type='button';close.className='ps-close';
+    close.setAttribute('aria-label',english?'Close':'关闭');
+    close.addEventListener('click',()=>dialog.close());
+    heading.append(title,close);
+    const body=document.createElement('div');
+    body.className='ps-settings-body';
+    const message=document.createElement('p');
+    message.id='psPortUnavailableMessage';
+    message.textContent=timedOut
+      ? (english?'No WLED response yet. Please retry.':'暂未收到 WLED 响应，请重试。')
+      : (english?'Choose another WLED USB port. Check the firmware and baud rate.'
+        : '请更换串口，并确认 WLED 固件和波特率正确。');
+    const confirm=document.createElement('button');
+    confirm.type='button';confirm.autofocus=true;
+    confirm.textContent=english?'OK':'确定';
+    confirm.addEventListener('click',()=>dialog.close());
+    body.append(message,confirm);
+    dialog.append(heading,body);
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+    document.body.append(dialog);
+    dialog.showModal();
+  }
+
   async function connect(options = {}) {
     if (selectingSerial) return;
     if (ui.controlMode.value !== 'serial') {
@@ -373,12 +427,23 @@
       serialLab.nativeUsb=serialUsbInfo.usbVendorId===0x303a && serialUsbInfo.usbProductId===0x1001;
       serialNote((serialLab.nativeUsb?"已连接 Espressif 原生 USB。":"串口已打开。")+" 请点击串口诊断；打开端口不等于 WLED 已响应。");
       if(reader)serialLab.readTask=readLoop();
-      setStatus(`已连接（baud ${baudRate}）`, 'ok');
-      logLine('串口已连接');
-      await window.pixelStudioDesktop?.confirmSerialConnection();
+      setStatus('串口已打开。');
+      logLine('串口已打开。');
+      const verification=await testSerial({connecting:true});
+      if(!current() || writer!==selectedWriter)return;
+      if(serialLab.confirmedWriter!==selectedWriter){
+        const error=new Error('未收到 WLED 响应。此端口当前无法用于 USB 输出，请检查串口、波特率和固件后重试。');
+        if(verification==='timeout')error.name='WLEDResponseTimeout';
+        throw error;
+      }
     } catch (err) {
       if(committed&&port===selected){stopSerialOutput();await releaseSerialConnection();}
       if(!current())return;
+      if(selected && err.name!=='AbortError'){
+        showSerialUnavailable(err.name==='WLEDResponseTimeout');
+        setStatus('');
+        return;
+      }
       // NotFoundError after choosing a port means the device disappeared, not cancel.
       if (err.name === 'NotFoundError' && !selected) {
         if(remembered){
@@ -415,7 +480,7 @@
   }
 
   async function readLoop() {
-    const sourceReader=reader,sourceWriter=writer;
+    const sourceReader=reader,sourceWriter=writer,sourcePort=port;
     const decoder=new TextDecoder();
     let buffer='';
     try {
@@ -435,33 +500,44 @@
       if(serialLab.pending && serialLab.pending.writer===sourceWriter)serialLab.pending.finish(null);
       if(serialLab.confirmedWriter===sourceWriter)serialLab.confirmedWriter=null;
       try{sourceReader.releaseLock();}catch(_){}
+      if(reader===sourceReader && writer===sourceWriter){
+        // Do not await this read task from its own cleanup queue.
+        reader=null;serialLab.readTask=null;
+        serialConnectionLost(sourcePort);
+      }
     }
   }
 
-  async function testSerial() {
+  async function testSerial(options = {}) {
     if(ui.controlMode.value!=='serial') {serialNote('先把控制方式切换到串口。IP / DDP 无需此诊断。');return;}
     if(!writer || !reader){serialNote('请先连接 ESP32 的串口。');return;}
-    if(playback.running || serialLab.busy || serialLab.heldFrame){serialNote('请先停止播放，再运行只读诊断，避免查询和像素数据混在一起。');return;}
+    if((playback.running && !options.connecting) || serialLab.busy || serialLab.heldFrame){serialNote('请先停止播放，再运行只读诊断，避免查询和像素数据混在一起。');return;}
     if(serialLab.pending)return;
     const sourceWriter=writer,startBytes=serialLab.bytes;
     serialLab.confirmedWriter=null;
+    serialLab.verifying=true;
     const button=document.getElementById('testSerialBtn');
     if(button)button.disabled=true;
     serialNote('只读诊断中：先查询 WLED 版本，必要时再查询 JSON 状态。不会改灯光、波特率或固件。');
     try {
-      let version=await serialQuery('version','v');
-      if(!version && writer===sourceWriter)version=await serialQuery('json',JSON.stringify({v:true})+'\n');
+      let version=await serialQuery('version','v',options.connecting?150:1800);
+      if(!version && writer===sourceWriter)version=await serialQuery('json',JSON.stringify({v:true})+'\n',options.connecting?350:1800);
       if(writer!==sourceWriter)return;
       if(version){
         serialLab.confirmedWriter=sourceWriter;
+        setStatus(`已连接（baud ${serialLab.activeBaud}）`, 'ok');
+        // Remember only a controller that answered the protocol handshake.
+        await window.pixelStudioDesktop?.confirmSerialConnection();
+        if(writer!==sourceWriter)return;
         const config=getFrameConfig();
         serialNote('已收到 '+version+' 回包，串口命令通道可用。'+(serialLab.nativeUsb?'检测到 Espressif 原生 USB CDC；吞吐仍需实测。':'UART 安全帧率上限约 '+serialUartFps(config.w*config.h*3)+' FPS。')+' 选择 Adalight 后可开始发送；回包不代表像素输出已验证。','ok');
       }else{
         const received=serialLab.bytes-startBytes;
         serialNote((received?'收到 '+received+' 字节，但不是有效 WLED 回包。':'查询超时，没有收到 WLED 回包。')+' 尚不能确认串口控制可用。请核对端口、固件的 USB CDC / UART 编译选项及串口引脚占用；提高波特率不能解决接口未启用。','error');
+        return received?'invalid':'timeout';
       }
     }catch(error){serialNote('诊断失败：'+error.message,'error');}
-    finally{if(button)button.disabled=false;}
+    finally{if(writer===sourceWriter)serialLab.verifying=false;if(button)button.disabled=false;}
   }
 
   function isDdpMode() { return ui.controlMode.value === 'ddp'; }
