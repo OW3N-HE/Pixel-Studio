@@ -182,7 +182,10 @@ const server = http.createServer(async (req, res) => {
     if (req.headers['x-pixel-token'] !== TOKEN || (req.headers.origin && req.headers.origin !== ORIGIN)) fail('Open the local DDP page first', 403);
     if (url.pathname === '/api/temperature' && req.method === 'GET') {
       webIdleAt = performance.now();
-      json(res, await temperatureService.sample()); return;
+      json(res, await temperatureService.sample({
+        intervalMs:Number(url.searchParams.get('intervalMs')) || 1000,
+        clientId:url.searchParams.get('clientId') || 'preview'
+      })); return;
     }
     if (url.pathname === '/api/web-client' && req.method === 'POST') {
       const input=JSON.parse((await body(req,1024)).toString());
@@ -312,7 +315,9 @@ const reaper = setInterval(() => {
   const now=performance.now();
   for(const [id,client]of webClients)if(client.expires<now)webClients.delete(id);
   for(const session of sessions.values())if(session.webClient&&!webClients.has(session.webClient)&&!session.preparing)void release(session);
-  if(webClients.size||sessions.size||temperatureService.active)webIdleAt=now;
+  // Sampling runs for this backend's lifetime, but must not keep an abandoned
+  // Web/OpenRGB bridge alive beyond its existing application shutdown grace.
+  if(webClients.size||sessions.size)webIdleAt=now;
   else if(webAutoExit&&!closing&&now-webIdleAt>45000){closing=true;void shutdown();}
 
   for (const session of sessions.values()) if (session.active && !session.preparing && !session.busy &&
@@ -325,7 +330,8 @@ const temperaturePump = setInterval(async () => {
   if (!targets.length) return;
   temperaturePumpBusy = true;
   try {
-    const sample = await temperatureService.sample();
+    const activeIntervals = [...sessions.values()].filter(session => session.active && session.worker).map(session => session.thermalInterval || 1000);
+    const sample = await temperatureService.sample({intervalMs:Math.min(...activeIntervals),clientId:'output'});
     for (const session of targets) {
       if (session.active && session.worker) {
         session.thermalNextAt = performance.now() + (session.thermalInterval || 1000);

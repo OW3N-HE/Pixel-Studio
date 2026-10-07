@@ -63,11 +63,11 @@ async function sessionTests(){
 async function mediaTests(){
   const timers=new Map();let timerId=0;
   const window={};vm.runInNewContext(sources['media-playback.js'],{window,setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),Date,Promise});
-  const calls=[];let busy=false,active=true,request=0,stop=0,selected='first.mp4',suspended=false,hidden=false;
+  const calls=[];let busy=false,active=true,request=0,stop=0,selected='first.mp4',suspended=false,hidden=false,dragging=false;
   const document={get hidden(){return hidden;},querySelectorAll:()=>suspended?[{getClientRects:()=>[{}]}]:[]};
   const suspensionRule=sources['media-library-ui.js'].match(/^\s*isSuspended:(.+)$/m);
   assert(suspensionRule,'Desktop media suspension policy must exist');
-  const isSuspended=vm.runInNewContext('('+suspensionRule[1]+')',{document});
+  const isSuspended=vm.runInNewContext('('+suspensionRule[1]+')',{document,mediaSorter:{get dragging(){return dragging;}}});
   let decodeGate=null;
   const runtime={playing:true,replaceDesktopMedia:async(source,current)=>{calls.push('replace:'+source.name);if(decodeGate)await decodeGate.promise;return current();},loadDesktopMedia:source=>calls.push('load:'+source.name),desktopMediaReady:()=>true,startDesktopMedia:async()=>{calls.push('start');runtime.playing=true;}};
   const files=[{id:'a',name:'first.mp4'},{id:'b',name:'next.mp4'}];let readGate=deferred(),delayRead=false;
@@ -81,6 +81,7 @@ async function mediaTests(){
   runtime.playing=true;suspended=true;await [...timers.values()].at(-1)();assert.equal(calls.length,1);
   hidden=true;suspended=false;await [...timers.values()].at(-1)();assert.equal(calls.at(-1),'replace:first.mp4','Hidden window must continue media shuffle');
   const afterHiddenShuffle=calls.length;
+  dragging=true;await [...timers.values()].at(-1)();assert.equal(calls.length,afterHiddenShuffle,'Dragging cards must suspend shuffle');dragging=false;
   suspended=true;await [...timers.values()].at(-1)();assert.equal(calls.length,afterHiddenShuffle,'Open dialog must still suspend shuffle');
   suspended=false;runtime.playing=false;await [...timers.values()].at(-1)();
   assert.equal(calls.length,afterHiddenShuffle,'Hidden window must not restart stopped output');assert.equal(runtime.playing,false);
@@ -110,7 +111,7 @@ function librarySwitchTests(){
     matchingFiles:()=>[other],load:(file,continuing,start)=>{calls.push({name:file.name,continuing,start});return Promise.resolve(true);},
     window:{pixelStudioWebRuntime:{playing:false}},mode:{value:'wave',options:[{value:'wave'}],dispatchEvent(){}},
     gallery:{style:{}},grid:{},category:{},actions:{},originalShuffle,mediaShuffle,toolbar:{style:{setProperty(){}}},search:{},
-    mediaPlayback:{stopShuffle(){}},en:()=>true,render(){},scheduleShuffle(){},rememberMediaSession(){},Event:class{},
+    sharedShuffle:{dataset:{},dispatchEvent(){}},mediaPlayback:{stopShuffle(){}},en:()=>true,render(){},scheduleShuffle(){},rememberMediaSession(){},Event:class{},
     document:{getElementById:()=>({addEventListener:(_name,fn)=>{stopHandler=fn;}})}
   };
   const stopLine=source.split('\n').find(line=>line.includes("document.getElementById('stopBtn').addEventListener"));assert(stopLine);

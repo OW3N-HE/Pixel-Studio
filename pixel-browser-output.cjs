@@ -55,12 +55,26 @@
     const node=document.getElementById('streamStats'),s=statsDisplay;
     if(!node||!s)return;
     node.setAttribute('data-update-ui','');
-    node.textContent=s.name+' · '+(s.fps===null?'--':s.fps.toFixed(1))+' / '+s.target+' FPS';
+    const notice=outputNotice();
+    const pending=s.stale||notice?.phase==='recovering'||notice?.phase==='uncertain';
+    const dot=document.createElement('span');
+    dot.className='ps-connection-dot';
+    dot.dataset.state=pending?'pending':'ready';
+    dot.setAttribute('aria-hidden','true');
+    node.replaceChildren(document.createTextNode(s.name+' '),dot,document.createTextNode(' '+(s.fps===null?'--':s.fps.toFixed(1))+' / '+s.target+' FPS'));
+    delete node.dataset.connectionKey;
     const en=document.documentElement.lang==='en';
     node.title=(en?'Computer send rate, not confirmed screen FPS.':'电脑发送速率，不代表屏幕实测帧率。')+
       (s.stale?(en?' Statistics temporarily unavailable.':'统计暂不可用。'):'')+
       (s.ms===undefined?'':(en?'\nFrame: ':'\n发帧耗时：')+s.ms.toFixed(1)+' ms')+
       (s.missed===undefined?'':(en?'\nSkipped: ':'\n跳帧：')+s.missed);
+    if(notice){
+      const description=window.pixelStudioDescribeNotice?.(notice.message,'err');
+      const context=window.pixelStudioMergeNoticeDetails?.(description?.detail||description?.message||notice.message,notice.detail)
+        || [description?.detail||description?.message||notice.message,notice.detail].filter(Boolean).join('\n');
+      node.title+='\n'+context;
+    }
+    node.setAttribute('aria-label',node.title);
   }
 
   function serialNote(message, kind) {
@@ -339,7 +353,9 @@
     stopSerialOutput();
     // Detach immediately; releasing stream locks may finish later.
     void releaseSerialConnection().catch(error=>logLine(error.message));
-    setStatus(document.documentElement.lang==='en'?'USB device disconnected. Reconnect the controller.':'USB 设备已断开，请重新连接控制器。','err');
+    // A retained USB port is independent of the currently selected DDP route.
+    if(ui.controlMode.value==='serial')
+      setStatus(document.documentElement.lang==='en'?'USB device disconnected. Reconnect the controller.':'USB 设备已断开，请重新连接控制器。','err');
     serialNote(document.documentElement.lang==='en'?'USB device disconnected.':'USB 设备已断开。','error');
   }
 
@@ -348,7 +364,7 @@
     if(removed===port)serialConnectionLost(port);
   });
 
-  function showSerialUnavailable(timedOut=false) {
+  function showOutputError(titleText,messageText) {
     const english=document.documentElement.lang==='en';
     const dialog=document.createElement('dialog');
     dialog.className='ps-settings ps-port-dialog';
@@ -358,9 +374,7 @@
     heading.className='ps-settings-heading';
     const title=document.createElement('h2');
     title.id='psPortUnavailableTitle';
-    title.textContent=timedOut
-      ? (english?'Response timed out':'响应超时')
-      : (english?'Port unavailable':'串口不可用');
+    title.textContent=titleText;
     const close=document.createElement('button');
     close.type='button';close.className='ps-close';
     close.setAttribute('aria-label',english?'Close':'关闭');
@@ -370,10 +384,7 @@
     body.className='ps-settings-body';
     const message=document.createElement('p');
     message.id='psPortUnavailableMessage';
-    message.textContent=timedOut
-      ? (english?'No WLED response yet. Please retry.':'暂未收到 WLED 响应，请重试。')
-      : (english?'Choose another WLED USB port. Check the firmware and baud rate.'
-        : '请更换串口，并确认 WLED 固件和波特率正确。');
+    message.textContent=messageText;
     const confirm=document.createElement('button');
     confirm.type='button';confirm.autofocus=true;
     confirm.textContent=english?'OK':'确定';
@@ -383,6 +394,15 @@
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
     document.body.append(dialog);
     dialog.showModal();
+  }
+
+  function showSerialUnavailable(timedOut=false){
+    const english=document.documentElement.lang==='en';
+    showOutputError(
+      timedOut?(english?'Response timed out':'响应超时'):(english?'Port unavailable':'串口不可用'),
+      timedOut?(english?'No WLED response yet. Please retry.':'暂未收到 WLED 响应，请重试。')
+        :(english?'Choose another WLED USB port. Check the firmware and baud rate.':'请更换串口，并确认 WLED 固件和波特率正确。')
+    );
   }
 
   async function connect(options = {}) {
@@ -722,5 +742,5 @@
       renderStreamStats();
     }
   }
- return {prepareOutput,resetStats,stopOutput,serialNote,serialUartFps,serialStopHold,sendFrameAdalight,deviceBase,readDeviceProfile,resetFrameCache,showStreamStats,sendOutputFrame,connect,disconnect,testSerial,isDdpMode,ddpTargetFps,bridgeRequest,stopDdpPlayback,ensureDdpSession,sendFrameDdp,updateBackgroundStats,state:{get port(){return port;},set port(value){port=value;},get writer(){return writer;},set writer(value){writer=value;},get reader(){return reader;},set reader(value){reader=value;},get deviceProfile(){return deviceProfile;},set deviceProfile(value){deviceProfile=value;},get statsWindow(){return statsWindow;},set statsWindow(value){statsWindow=value;},get serialLab(){return serialLab;},get bridgeToken(){return bridgeToken;},get outputNotice(){return outputNotice();}}};
+ return {showOutputError,prepareOutput,resetStats,stopOutput,serialNote,serialUartFps,serialStopHold,sendFrameAdalight,deviceBase,readDeviceProfile,resetFrameCache,showStreamStats,sendOutputFrame,connect,disconnect,testSerial,isDdpMode,ddpTargetFps,bridgeRequest,stopDdpPlayback,ensureDdpSession,sendFrameDdp,updateBackgroundStats,state:{get port(){return port;},set port(value){port=value;},get writer(){return writer;},set writer(value){writer=value;},get reader(){return reader;},set reader(value){reader=value;},get deviceProfile(){return deviceProfile;},set deviceProfile(value){deviceProfile=value;},get statsWindow(){return statsWindow;},set statsWindow(value){statsWindow=value;},get serialLab(){return serialLab;},get bridgeToken(){return bridgeToken;},get outputNotice(){return outputNotice();}}};
 });

@@ -1,7 +1,14 @@
 'use strict';
 const {ipcRenderer,contextBridge}=require('electron');
 const startupArgument=(name,fallback)=>process.argv.find(value=>value.startsWith(name+'='))?.slice(name.length+1)||fallback;
+let nativePresentationVisible=false,presentationRevision=0,presentationDisposed=false;
+function updatePresentation(value){
+  if(presentationDisposed||typeof value!=='boolean'||nativePresentationVisible===value)return;
+  nativePresentationVisible=value;
+  window.dispatchEvent(new Event('pixel-studio-presentation-change'));
+}
 contextBridge.exposeInMainWorld('pixelStudioDesktop',Object.freeze({edition:true,
+  isPresentationVisible:()=>nativePresentationVisible,
   mediaLibrary:action=>ipcRenderer.invoke('desktop:media',{action}),
   mediaFile:id=>ipcRenderer.invoke('desktop:media',{action:'read',id}),
   getMediaSession:()=>ipcRenderer.invoke('desktop:media-session'),
@@ -25,6 +32,16 @@ contextBridge.exposeInMainWorld('pixelStudioDesktop',Object.freeze({edition:true
   ddpRequest:(route,options)=>ipcRenderer.invoke('desktop:ddp',{action:'request',route,options}),
   savePlayback:value=>ipcRenderer.send('desktop:playback',value)}));
 // No Node or generic IPC API is exposed to the web page.
+const presentationListener=(_event,value)=>{presentationRevision++;updatePresentation(value);};
+ipcRenderer.on('desktop:presentation',presentationListener);
+ipcRenderer.invoke('desktop:presentation').then(value=>{
+  // A startup reply must not overwrite a newer native show/hide event.
+  if(presentationRevision===0)updatePresentation(value);
+}).catch(()=>{});
+window.addEventListener('pagehide',()=>{
+  presentationDisposed=true;
+  ipcRenderer.removeListener('desktop:presentation',presentationListener);
+},{once:true});
 ipcRenderer.on('desktop:stop',()=>document.getElementById('stopBtn')?.click());
 ipcRenderer.on('desktop:start',()=>document.getElementById('startBtn')?.click());
 ipcRenderer.on('desktop:update-progress',(_event,value)=>window.dispatchEvent(new CustomEvent('pixel-studio-update-progress',{detail:{received:Number(value.received),total:Number(value.total)}})));

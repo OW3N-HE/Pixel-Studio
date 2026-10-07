@@ -32,7 +32,7 @@ async function run(language,legacy=false,playback={values:{brightness:'137'}}){
   const context=vm.createContext({require:()=>({ipcRenderer,contextBridge:{exposeInMainWorld:(key,value)=>{window[key]=value;}}}),process:{argv:[]},window,document,MutationObserver:class{observe(){}disconnect(){}},Event,CustomEvent:Event,console});
   const code=legacy?source.replace("body.insertBefore(group,updates);","body.insertBefore(group,body.querySelector('[data-update-ui]')); "):source;
   vm.runInContext(code,context);
-  if(legacy){assert.throws(()=>listeners.DOMContentLoaded(),/NotFoundError/);assert.equal(calls.length,0);return;}
+  if(legacy){assert.throws(()=>listeners.DOMContentLoaded(),/NotFoundError/);assert.deepEqual(calls.map(([channel])=>channel),['desktop:presentation'],'Only the independent native-window state query may precede settings insertion');return;}
   listeners.DOMContentLoaded();await new Promise(resolve=>setImmediate(resolve));
   const group=body.children.find(node=>node.className?.includes('ps-desktop-settings'));
   assert.ok(group);assert.equal(body.children.indexOf(group)+1,body.children.indexOf(updates));
@@ -56,7 +56,7 @@ async function run(language,legacy=false,playback={values:{brightness:'137'}}){
   const ui=fs.readFileSync(path.join(root,'pixel-studio-web-ui.js'),'utf8');
   const css=fs.readFileSync(path.join(root,'pixel-studio-web-ui.css'),'utf8');
   assert.ok(ui.includes("updateArea.id = 'psSoftwareUpdates'"));
-  assert.match(css,/#psSoftwareUpdates\s*\{[^}]*gap:\s*14px/);
+  assert.match(css,/#psSoftwareUpdates \.ps-update-content\s*\{[^}]*gap:\s*12px/);
   assert.match(css,/\.ps-desktop-switches\s*\{[^}]*grid-template-columns:\s*repeat\(2,/);
   console.log('PASS stable update group anchor and two-column desktop layout rules');
   console.log('No application launched, personal settings changed, or device output sent. DOM/IPC are mocked; visual and real-device behavior are not tested.');

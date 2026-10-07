@@ -23,5 +23,7 @@ assert(!bridge.includes("'/pixel-output-transports.cjs'"),'Do not serve Node tra
 const project=load('temperature/PixelStudio.Sensors.csproj'),icon=/<ApplicationIcon>([^<]+)<\/ApplicationIcon>/.exec(project);
 assert(icon);const bytes=fs.readFileSync(path.resolve(root,'temperature',icon[1]));
 assert.equal(bytes.readUInt16LE(0),0);assert.equal(bytes.readUInt16LE(2),1);assert(bytes.readUInt16LE(4)>0);
-assert(load('desktop/package.json').includes('"version": "0.2.0"'));
+const version=JSON.parse(load('package.json')).version;
+assert.equal(JSON.parse(load('desktop/package.json')).version,version,'Root and desktop versions must match');
+assert(project.includes('<Version>'+version+'</Version>'),'Sensor component version must match');
 console.log('PASS: fifteen module source/package manifests, browser dependency order, every page script route, sensor ICO reference and unchanged version. No binaries built.');

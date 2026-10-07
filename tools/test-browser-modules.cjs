@@ -10,6 +10,10 @@ function environment(){
     addEventListener(name,fn){const list=this.listeners.get(name)||[];list.push(fn);this.listeners.set(name,list);}
     dispatchEvent(event){for(const fn of this.listeners.get(event.type)||[])fn({...event,target:this});return true;}
     append(...children){this.children.push(...children);}
+    replaceChildren(...children){this.children=children;this.textContent=children.map(child=>child.textContent||'').join('');}
+    showModal(){this.open=true;}
+    close(){this.open=false;this.dispatchEvent({type:'close'});}
+    remove(){this.removed=true;}
     setAttribute(name,value){this.attributes[name]=value;}
     setCustomValidity(value){this.validationMessage=value;}
     removeAttribute(name){delete this.attributes[name];if(name==='src')this.src='';}
@@ -38,13 +42,14 @@ function environment(){
     addEventListener(name,fn){const list=documentEvents.get(name)||[];list.push(fn);documentEvents.set(name,list);},
     removeEventListener(name,fn){documentEvents.set(name,(documentEvents.get(name)||[]).filter(item=>item!==fn));},
     dispatchEvent(event){for(const fn of [...documentEvents.get(event.type)||[]])fn(event);},
-    createElement:tag=>{if(tag!=='canvas')return new Element(tag);const canvas=createCanvas(),ctx=canvas.getContext('2d');
+    body:new Element('body'),createTextNode:text=>({textContent:text}),createElement:tag=>{if(tag!=='canvas')return new Element(tag);const canvas=createCanvas(),ctx=canvas.getContext('2d');
       canvas.toDataURL=()=>{dataUrlCalls++;return 'data:image/png;base64,mock';};ctx.putImageData=()=>{};ctx.drawImage=()=>{};return canvas;}};
   const window={document,navigator:{},performance:{now:()=>now},innerWidth:1200,innerHeight:900,console,
     TextEncoder,TextDecoder,URL,AbortController,Response,Uint8Array,Uint8ClampedArray,Date,Math,
     Image:class extends Element{constructor(){super('img');this.complete=false;this.naturalWidth=15;this.naturalHeight=27;}},MutationObserver:class{observe(){}},Event:class{constructor(type){this.type=type;}},
     crypto:{randomUUID:()=> 'mock-client-000000000000000'},
     addEventListener:(name,fn)=>{const list=events.get(name)||[];list.push(fn);events.set(name,list);},
+    removeEventListener:(name,fn)=>events.set(name,(events.get(name)||[]).filter(item=>item!==fn)),
     dispatchEvent:event=>{for(const fn of [...events.get(event.type)||[]])fn(event);},
     setTimeout:(fn,ms)=>{timers.set(++id,{fn,ms});return id;},clearTimeout:key=>timers.delete(key),
     setInterval:(fn,ms)=>{timers.set(++id,{fn,ms,interval:true});return id;},clearInterval:key=>timers.delete(key),
@@ -93,7 +98,7 @@ async function run(){
   const hiddenTick=env.timers.entries().next().value;
   env.timers.delete(hiddenTick[0]);hiddenTick[1].fn();
   assert.equal(env.dataUrlCalls,beforeHidden,'Hidden preview must not encode PNG frames');
-  assert.equal([...env.timers.values()][0].ms,250,'Hidden preview uses a low-frequency wakeup');
+  assert.equal(env.timers.size,0,'Hidden preview has no recurring wakeups');
   env.window.document.hidden=false;env.window.document.dispatchEvent({type:'visibilitychange'});
   assert(env.dataUrlCalls>beforeHidden,'Visible preview resumes immediately');
   assert.equal(env.timers.size,1,'Visibility changes must not duplicate the preview timer');
@@ -104,7 +109,8 @@ async function run(){
 
   // Exercise the actual desktop runtime and media decoder adapter with fake media.
   const desktop=environment(),dw=desktop.window;
-  dw.pixelStudioDesktop={edition:true,cancelResume:async()=>{},savePlayback(){}};
+  let nativeVisible=true;
+  dw.pixelStudioDesktop={edition:true,isPresentationVisible:()=>nativeVisible,cancelResume:async()=>{},savePlayback(){}};
   const desktopContext=vm.createContext(dw);
   for(const name of modules)vm.runInContext(load(name),desktopContext,{filename:name});
   vm.runInContext(load('pixel-animation-runtime.js'),desktopContext,{filename:'pixel-animation-runtime.js'});
@@ -112,6 +118,14 @@ async function run(){
   assert.equal(mode.value,dw.PixelStudioAnimationCatalog.galleryModes[0],'Fresh desktop installs share the catalog default');
   assert.equal(runtime.playing,false,'Choosing an initial animation does not start device output');
   assert.equal(desktop.ids.get('status').textContent,'正在本地预览');
+  const beforeNativeHide=desktop.dataUrlCalls;
+  nativeVisible=false;dw.dispatchEvent({type:'pixel-studio-presentation-change'});
+  assert.equal(dw.document.hidden,false,'Native window state must work when Electron still reports a visible page');
+  assert.equal(desktop.timers.size,0,'Native-hidden desktop previews suspend their timer');
+  assert.equal(desktop.dataUrlCalls,beforeNativeHide);
+  nativeVisible=true;dw.dispatchEvent({type:'pixel-studio-presentation-change'});
+  assert(desktop.dataUrlCalls>beforeNativeHide,'Native restore immediately paints the current desktop content');
+  assert.equal(desktop.timers.size,1,'Native restore starts only one preview timer');
   const tickPreview=()=>{
     const entry=[...desktop.timers.entries()].find(([,timer])=>timer.ms===16);
     assert(entry,'An independent preview timer must exist');desktop.timers.delete(entry[0]);entry[1].fn();
@@ -276,10 +290,10 @@ async function run(){
 }
 
 async function connectionLifecycleTests(){
-  function makePort({openGate,closeGate,withReader=false,failReader=false}={}){
+  function makePort({openGate,closeGate,withReader=true,failReader=false,reply='WLED mock\n'}={}){
     const state={opened:false,opens:0,closes:0,writerLocks:0,writerReleases:0,readerCancels:0,writes:0};
     let waiting;
-    const writer={write:async()=>{state.writes++;},releaseLock(){state.writerReleases++;}};
+    const writer={write:async()=>{state.writes++;if(reply!==null)waiting?.({value:new TextEncoder().encode(reply),done:false});},releaseLock(){state.writerReleases++;}};
     const reader={read:()=>new Promise(resolve=>{waiting=resolve;}),cancel:async()=>{state.readerCancels++;waiting?.({done:true});},releaseLock(){}};
     const port={
       async open(){state.opens++;if(openGate)await openGate.promise;state.opened=true;},
@@ -294,14 +308,15 @@ async function connectionLifecycleTests(){
     const env=environment(),window=env.window,notices=[],state={running:false,animationSpeed:1};
     let requested=0,confirmed=0,stopped=0;
     const choice={select:async()=>{throw new Error('No fake port selected');}};
-    window.navigator.serial={requestPort:()=>{requested++;return choice.select();}};
+    const serialEvents=new Map();
+    window.navigator.serial={requestPort:()=>{requested++;return choice.select();},addEventListener:(name,fn)=>serialEvents.set(name,fn)};
     window.pixelStudioDesktop={prepareSerialSelection:async()=>{if(prepareGate)await prepareGate.promise;},confirmSerialConnection:async()=>{confirmed++;}};
     for(const [id,value]of Object.entries({controlMode:'serial',protocol:'adalight',wledHost:'http://192.168.1.100',baudRate:'115200'}))env.ids.get(id).value=value;
     const ui=Object.fromEntries(['controlMode','protocol','wledHost','baudRate','fps','mapping'].map(id=>[id,env.ids.get(id)]));
     const output=require('../pixel-browser-output.cjs')({window,ui,playback:state,animationCatalog:{wave:['classic',false]},
       getFrameConfig:()=>({w:15,h:27,d:255}),getAnimationMode:()=> 'wave',withNum:(v,f)=>parseInt(v,10)||f,
       setStatus:(...args)=>notices.push(args),logLine(){},stopLoop(){stopped++;state.running=false;},stopBtn(){stopped++;state.running=false;}});
-    return {env,ui,state,choice,output,notices,get requested(){return requested;},get confirmed(){return confirmed;},get stopped(){return stopped;}};
+    return {env,ui,state,choice,output,notices,remove:port=>serialEvents.get('disconnect')?.({port}),get requested(){return requested;},get confirmed(){return confirmed;},get stopped(){return stopped;}};
   }
 
   {
@@ -327,7 +342,7 @@ async function connectionLifecycleTests(){
     const pending=f.output.connect();await flush();f.output.stopOutput();gate.resolve();await pending;
     assert.equal(f.output.state.writer,p.writer,'Stopping output must not cancel a pending connection');
     f.output.stopOutput();assert.equal(f.output.state.writer,p.writer,'Stopping output must retain an established connection');
-    assert.equal(f.confirmed,1);assert.equal(p.state.writes,0);await f.output.disconnect();assert.equal(p.state.closes,1);
+    assert.equal(f.confirmed,1);assert.equal(p.state.writes,1,'Only a read-only handshake is written');await f.output.disconnect();assert.equal(p.state.closes,1);
   }
   {
     const f=fixture(),first=makePort({withReader:true}),second=makePort(),choiceGate=deferred();
@@ -336,7 +351,7 @@ async function connectionLifecycleTests(){
     const replacement=f.output.connect();await flush();assert.equal(f.output.state.writer,first.writer,'Keep the old connection while the chooser is open');
     choiceGate.resolve();await replacement;
     assert.equal(first.state.closes,1);assert.equal(first.state.readerCancels,1);assert.equal(first.state.writerReleases,1);
-    assert.equal(f.output.state.writer,second.writer);assert.equal(f.state.running,false);assert.equal(second.state.writes,0);
+    assert.equal(f.output.state.writer,second.writer);assert.equal(f.state.running,false);assert.equal(second.state.writes,1,'Replacement must be verified before it is remembered');
     assert.equal(f.confirmed,2);await f.output.disconnect();assert.equal(second.state.closes,1);
   }
   {
@@ -375,9 +390,33 @@ async function connectionLifecycleTests(){
   {
     const f=fixture(),p=makePort({failReader:true});f.choice.select=async()=>p.port;await f.output.connect();
     assert.equal(f.output.state.writer,null);assert.equal(p.state.writerReleases,1);assert.equal(p.state.closes,1);assert.equal(f.confirmed,0);
-    assert.match(f.notices.at(-1)[0],/Mock reader lock failure/);
+    assert.equal(f.notices.at(-1)[0],'');
+    assert(f.env.nodes.some(node=>node.tag==='dialog'&&node.open),'Setup failure must open the in-page error dialog');
   }
-  console.log('PASS 10 serial lifecycle scenarios: stale chooser/open/preparation, output-stop independence, replacement, reconnect, concurrent release, route changes and partial setup cleanup. All ports are fake.');
+  for(const reply of [null,'Not a WLED controller\n']){
+    const f=fixture(),p=makePort({reply});f.choice.select=async()=>p.port;
+    const connecting=f.output.connect();await flush();
+    for(const ms of [150,350]){
+      const entry=[...f.env.timers].find(([,timer])=>timer.ms===ms);
+      assert(entry,'Expected read-only handshake deadline '+ms);
+      f.env.timers.delete(entry[0]);entry[1].fn();await flush();
+    }
+    await connecting;
+    assert.equal(f.output.state.writer,null);assert.equal(f.confirmed,0);assert.equal(p.state.closes,1);
+    assert(f.env.nodes.some(node=>node.tag==='dialog'&&node.open));
+    const title=f.env.nodes.find(node=>node.id==='psPortUnavailableTitle');
+    assert.equal(title.textContent,reply===null?'Response timed out':'Port unavailable');
+  }
+  for(const route of ['serial','ddp']){
+    const f=fixture(),p=makePort();f.choice.select=async()=>p.port;await f.output.connect();
+    f.ui.controlMode.value=route;f.state.running=true;const previous=f.notices.length;
+    f.remove(p.port);await flush();
+    assert.equal(f.output.state.writer,null);assert.equal(f.output.state.serialLab.confirmedWriter,null);
+    assert.equal(p.state.closes,1);assert.equal(f.state.running,route==='ddp');
+    if(route==='serial')assert.equal(f.notices.at(-1)[1],'err');
+    else assert.equal(f.notices.length,previous,'An unrelated USB removal must not mark active DDP output as failed');
+  }
+  console.log('PASS 14 serial lifecycle scenarios: cancellation, read-only handshake, replacement, timeout/invalid controller dialogs, USB removal and independent DDP output. All ports are fake.');
 }
 const deadline=setTimeout(()=>{console.error('Browser module tests timed out');process.exitCode=1;},15000);
 run().then(connectionLifecycleTests).catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>clearTimeout(deadline));

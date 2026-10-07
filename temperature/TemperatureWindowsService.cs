@@ -56,14 +56,13 @@ internal sealed class TemperatureWindowsService : ServiceBase
                 try
                 {
                     string snapshot = await ReadSnapshot(cancellation);
-                    using var write = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
-                    write.CancelAfter(TimeSpan.FromSeconds(2));
-                    await pipe.WriteAsync(Encoding.UTF8.GetBytes(snapshot + "\n"), write.Token);
-                    await pipe.FlushAsync(write.Token);
+                    await SendSnapshotAsync(pipe, snapshot, cancellation);
                 }
                 catch (IOException) { }
                 catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { }
-                finally { if (pipe.IsConnected) pipe.Disconnect(); }
+                // ReadAsync marks a client-closed pipe as broken. It still
+                // needs Disconnect to reset this instance before the next client.
+                finally { pipe.Disconnect(); }
             }
         }
         catch (OperationCanceledException) { }
@@ -73,6 +72,19 @@ internal sealed class TemperatureWindowsService : ServiceBase
             await CloseSampler();
             Stop();
         }
+    }
+
+    private static async Task SendSnapshotAsync(PipeStream pipe, string snapshot, CancellationToken cancellation)
+    {
+        using var delivery = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        delivery.CancelAfter(TimeSpan.FromSeconds(2));
+        await pipe.WriteAsync(Encoding.UTF8.GetBytes(snapshot + "\n"), delivery.Token);
+        // PipeStream.FlushAsync does not wait for the reader. The existing
+        // client closes only after consuming its complete JSON line; wait for
+        // that close before Disconnect can discard unread bytes. This also
+        // works with older clients and has a bounded, cancellable wait.
+        int input = await pipe.ReadAsync(new byte[1], delivery.Token);
+        if (input != 0) throw new IOException("Temperature clients must close after reading.");
     }
 
     private async Task<string> ReadSnapshot(CancellationToken cancellation)
@@ -97,10 +109,17 @@ internal sealed class TemperatureWindowsService : ServiceBase
             if (line == null || line.Length > 131072) throw new IOException("Invalid sampler response.");
             return line;
         }
-        catch
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
+        catch (Exception error)
         {
             await CloseSampler();
-            return JsonSerializer.Serialize(new { status = "unavailable", sampledAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), cpu = (object?)null, gpu = (object?)null });
+            string code = error is OperationCanceledException ? "SAMPLER_TIMEOUT"
+                : error is IOException ? "SAMPLER_RESPONSE_FAILED" : "SAMPLER_FAILED";
+            return JsonSerializer.Serialize(new {
+                status = "unavailable", sampledAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                cpu = (object?)null, gpu = (object?)null,
+                diagnostics = new { samplingErrors = new[] { code + ": " + error.GetType().Name } }
+            });
         }
     }
 

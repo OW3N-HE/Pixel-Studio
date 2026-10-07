@@ -34,12 +34,15 @@ class QDialog;
 class QSettings;
 
 class PixelBoard final : public QWidget {
+    Q_OBJECT
 public:
     explicit PixelBoard(QWidget* parent = nullptr);
     void setFrame(int width, int height, const QByteArray& rgb);
     void setCadAppearance(bool enabled);
     void setPlaying(bool playing);
     void setThemeColors(const QColor& accent, const QColor& idle);
+signals:
+    void presentationChanged(bool visible);
 protected:
     void paintEvent(QPaintEvent*) override;
     void showEvent(QShowEvent*) override;
@@ -118,6 +121,7 @@ private:
     };
     LibraryParts createLibrary(QWidget* workspace);
     void initializeHelper();
+    void syncPresentation(bool visible);
     void initializePlayback();
     void arrangeSettingsAndLiveControls(QSettings& settings, const OutputParts& output,
         const PreviewParts& preview, const HeaderParts& header,
@@ -214,6 +218,8 @@ private:
     int sequence_ = 0;
     int previewSequence_ = 0;
     bool ready_ = false;
+    bool presentationKnown_ = false;
+    bool presentationVisible_ = false;
     bool busy_ = false;
     bool streaming_ = false;
     bool playbackIntent_ = false;

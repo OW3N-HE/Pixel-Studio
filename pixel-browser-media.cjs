@@ -7,7 +7,8 @@
  const window=options.window||globalThis;
  const {document,setTimeout,clearTimeout,URL,Image}=window;
  const {ui,getFrameConfig,getAnimationMode,getAnimationTime,setStatus,getPlaybackRate=()=>1,onMediaReady=()=>{}}=options;
- let mediaObj=null,mediaType=null,animationPreviewTimer=null;
+ let mediaObj=null,mediaType=null,animationPreviewTimer=null,previewRequested=false;
+ const presentationVisible=()=>!document.hidden&&window.pixelStudioDesktop?.isPresentationVisible?.()!==false;
  let pendingMedia=null,mediaUrl=null,mediaGeneration=0,mediaDisposed=false;
  let replacementCancel=null,previewFailed=false;
  function applyPlaybackRate(video,file){
@@ -81,7 +82,7 @@
       const sourceW = mediaObj.videoWidth || mediaObj.naturalWidth || mediaObj.width || 0;
       const sourceH = mediaObj.videoHeight || mediaObj.naturalHeight || mediaObj.height || 0;
       drawToDisplayCanvas(w, h, sourceW, sourceH);
-      if (!document.hidden) ui.preview.src = offscreen.toDataURL('image/png');
+      if (presentationVisible()) ui.preview.src = offscreen.toDataURL('image/png');
       previewFailed=false;
     } catch (e) {
       previewFailed=true;
@@ -180,21 +181,20 @@
   }
 
   function stopAnimationPreview() {
+    previewRequested = false;
     if (animationPreviewTimer !== null) clearTimeout(animationPreviewTimer);
     animationPreviewTimer = null;
   }
 
   function startAnimationPreview() {
-    if (mediaDisposed || window.pixelStudioHeadless === true || animationPreviewTimer !== null) return;
+    if (mediaDisposed || window.pixelStudioHeadless === true) return;
+    previewRequested = true;
+    if (!presentationVisible() || animationPreviewTimer !== null) return;
     const tick = () => {
       animationPreviewTimer = null;
-      if (mediaDisposed) return;
+      if (mediaDisposed || !previewRequested || !presentationVisible()) return;
       // Output has its own scheduler. Hidden windows do not need PNGs or
       // preview sampling, but video decoding and content time stay running.
-      if (document.hidden) {
-        animationPreviewTimer = setTimeout(tick, 250);
-        return;
-      }
       try {
         if (getAnimationMode() !== 'file') buildGeneratedFrame(getAnimationMode());
         else if (mediaType === 'video' && mediaObj?.readyState >= 2) extractFrame();
@@ -209,13 +209,19 @@
   }
 
   const resumeVisiblePreview = () => {
-    if (!document.hidden && animationPreviewTimer !== null && !mediaDisposed) {
-      stopAnimationPreview();
-      startAnimationPreview();
-    }
+    if (mediaDisposed || window.pixelStudioHeadless === true) return;
+    if (animationPreviewTimer !== null) clearTimeout(animationPreviewTimer);
+    animationPreviewTimer = null;
+    if (!presentationVisible() || !previewRequested) return;
+    if (getAnimationMode() === 'file' && mediaType === 'image') updatePreviewByMode();
+    startAnimationPreview();
   };
   document.addEventListener('visibilitychange', resumeVisiblePreview);
-  window.addEventListener('pagehide', () => document.removeEventListener('visibilitychange', resumeVisiblePreview), {once:true});
+  window.addEventListener('pixel-studio-presentation-change', resumeVisiblePreview);
+  window.addEventListener('pagehide', () => {
+    document.removeEventListener('visibilitychange', resumeVisiblePreview);
+    window.removeEventListener('pixel-studio-presentation-change', resumeVisiblePreview);
+  }, {once:true});
 
   function buildGeneratedFrame(mode) {
     const { w, h } = getFrameConfig();
@@ -229,7 +235,7 @@
       window.PixelStudioFramePipeline.recolorRgba(image.data,mode,window.pixelStudioAnimationPaletteKey||'original',window.pixelStudioRecolor);
       offCtx.putImageData(image,0,0);
     }
-    if (!document.hidden) ui.preview.src = offscreen.toDataURL('image/png');
+    if (presentationVisible()) ui.preview.src = offscreen.toDataURL('image/png');
     const frame=sampleFrameFromCanvas();
     previewFailed=false;
     return frame;
@@ -345,7 +351,7 @@
     });
   }
   function updatePreviewByMode() {
-    if (!mediaObj || mediaType !== 'image') return;
+    if (!mediaObj || mediaType !== 'image' || !presentationVisible()) return;
     previewFailed=true;
     const { w, h } = getFrameConfig();
     offscreen.width = w;

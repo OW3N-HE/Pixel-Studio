@@ -54,12 +54,12 @@ function scenario(saved, desktop, systemLanguage = 'zh-CN') {
   const state = { document, language: select, VERSION: '0.1.11', updateState: 'idle', remoteVersion: '', releaseNotes: '', installerUrl: '',
     packageSelect: { value: 'installer', options: [{}, {}, {}] }, packages: {}, nativeUpdateState: 'idle', downloadOpened: false,
     renderNativeUpdate() {}, renderReleaseNotes(node,text) { node.textContent=text; } };
-  for (const key of ['packageLabel', 'updateLegend', 'updateSummary', 'updateButton', 'updateStatus', 'updateNotes', 'updateDetails', 'releaseLink', 'installerButton', 'installerStatus']) state[key] = { style: {} };
+  for (const key of ['updateVersionLabel', 'packageLabel', 'updateLegend', 'updateSummary', 'updateButton', 'updateStatus', 'updateNotes', 'updateDetails', 'releaseLink', 'installerButton', 'installerStatus']) state[key] = { style: {} };
   const updateContext = vm.createContext(state);
   vm.runInContext(functions.get('renderUpdate'), updateContext);
   const render = () => vm.runInContext('renderUpdate()', updateContext);
   render(); // Models the UI microtask before the language initializer.
-  assert.equal(state.updateLegend.textContent, expected === 'en' ? 'Software updates' : '软件更新');
+  assert.equal(state.updateLegend.textContent, expected === 'en' ? 'Updates' : '软件更新');
   let notifications = 0;
   window.addEventListener('pixel-studio-language-change', () => { notifications++; render(); });
   document.dispatchEvent({ type: 'DOMContentLoaded' });
@@ -69,7 +69,7 @@ function scenario(saved, desktop, systemLanguage = 'zh-CN') {
   change('en');
   assert.equal(regular.getAttribute('title'), 'Open settings');
   assert.equal(window.pixelStudioFormatNotice('已切换到草莓小盆栽，持续发送中'), 'Selected: Strawberry Planter. Sending');
-  assert.equal(window.pixelStudioFormatNotice('已切换到草莓小盆栽，正在本地预览'), 'Selected: Strawberry Planter. Previewing locally');
+  assert.equal(window.pixelStudioFormatNotice('已切换到草莓小盆栽，正在本地预览'), 'Selected: Strawberry Planter. Preview');
   assert.ok(nodes[0].nodeValue.includes('Strawberry Planter'));
   state.updateState = 'checking'; render();
   assert.equal(state.updateStatus.textContent, 'Checking GitHub...');

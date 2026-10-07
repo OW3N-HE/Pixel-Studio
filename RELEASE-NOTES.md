@@ -1,107 +1,61 @@
-# Pixel Studio V0.2.1
+# Pixel Studio V0.2.2
 
 ## 简体中文
 
-发布日期：2026/10/06
+发布日期：2026/10/07
+
+用户反馈本轮 0.2.2 TEST 看起来正常，随后准备版本匹配的正式安装器与附件；不将旧 TEST 二进制改名。
 
 ### 更新内容
 
-- 修缮网页与桌面界面，统一控件、文字、设置分组和软件更新布局；改善窄窗口与竖向布局，保持底部播放及导航区域的可用空间。这不是 iOS/Android 原生版。
-- 优化动画与桌面媒体卡片拖动排序、固定／顺序／随机播放模式、选中标题、滚动条和拖动时的选中框对比。
-- USB/DDP 状态简化为连接状态或发送帧率，改善启动闪烁及失败原因提示；发送帧率不代表灯屏实测帧率。
-- 修正 DDP 重复停止请求的释放等待，重新开始前等待正在停止的旧会话。
-- 桌面托盘根据播放状态提供停止／继续发送；退出时先收起界面、保存状态，再清理服务，避免退出前闪出服务不可用。
-- 桌面切回 USB 或重新开始时可恢复记住的串口；不可用时不自动改用其他设备，仍可手动选择或清除记忆。
-- 统一主题 Logo 与预览高光比例；浅色强调蓝为 #0078D4，灰黑主题保留灰白像素。固定系统图标采用冰蓝色且无外泛光；任务栏固定图标可能受 Windows 缓存影响。
-- 帮助页同步 Logo，并统一品牌文字字号及视觉居中。更新特别感谢名单。
-- OpenRGB 同步主题 Logo、版本和双语致谢，保留现有 Qt 界面、温度与 USB/DDP 功能。
-- 清理已确认的废弃样式、重复引用和冗余控件初始化；保留兼容设置、迁移、驱动保护及共享动画库。
-- Pixel IO 仅预留入口，当前不可用。后续主要功能迭代以桌面版为主，兼容的共享动画更新继续服务三端。
-- 同日修订卸载流程：使用 Windows Restart Manager 检测后台文件占用，经确认关闭相关程序后重新检查；无法关闭或完成检查时停止卸载，不批量结束无关进程。
-- 卸载可选择保留设置或完全清除当前卸载账户的设置、缓存、串口记录及升级备份。安装器安装的 OpenRGB 插件随程序移除；共享 PawnIO、其他插件、外部媒体和其他账户的数据保留。清理失败保留日志，不误报完全成功；恢复卸载入口的专用图标。
+- 优化后台界面刷新：桌面最小化或收进托盘、网页隐藏、OpenRGB 面板隐藏时暂停不必要的预览、缩略图与界面刷新，恢复可见时同步当前内容；仍在输出时不因界面隐藏而停止发送或温度采样。
+- 温度采用持续后台采样和缓存读取，减少重复请求与等待，移除统一的五秒期限自动清空读数规则。读取失败仍保留诊断信息，不将历史值伪装为新采样，也不承诺硬件或驱动永不失败。
+- 梳理底部状态：第一行显示选中内容；第二行只显示本地预览、输出或操作失败；第三行显示 USB／DDP、连接状态圆点与发送 FPS。错误详情通过悬停和诊断日志查看，减少重复文案。
+- 读取尺寸成功和失败使用主题内弹窗，改善英文长度和竖版设置布局。发送 FPS 是软件发送统计，不是屏幕实测刷新率。
+- 保留网页／桌面 USB 选择后的 WLED 回复验证和拔出状态更新。自动回复等待上限约 0.5 秒，系统开关端口及慢启动固件可能需额外时间或重试；OpenRGB 原生串口握手未按网页逻辑重新设计。
+- 所有 Logo 保持原有几何与尺寸，去除外泛光、保留高光边框，中间方块恢复带主题色的灰色，帮助页同步。
+- 清理确认冗余的共享样式、旧启动回退布局与无用解析助手，修正启动初始化顺序；补齐源码归档所需的模拟回归文件，保留使用中的素材、动态主题、兼容设置与许可证。
+- 延续原生 PawnIO 检测、官方安装向导及个人用户温度服务单独管理员授权。兼容驱动复用，新驱动安装需同意，不自动覆盖未知或更新版本，不卸载共享 PawnIO，不操作 Fan Control 或风扇设置。
+- 四种温度设计保持独立卡片；桌面拥有独立采样器，Web/OpenRGB 共用另一采样器。Pixel IO 当前仍不可用。
 
-### 下载与升级
+### 安装与测试
 
-### 同日追加修订：USB、安装检测与竖版界面
+Windows x64 三合一安装包为 `PixelStudio-Setup-0.2.2.exe`，使用本轮新编译的版本匹配组件重新生成正式安装器。同时提供 `PixelStudio-Web-0.2.2.zip`、`PixelStudio-Source-0.2.2.zip` 和 `SHA256SUMS.txt`。默认桌面版，网页和 OpenRGB 插件可选，不捆绑 OpenRGB 主程序，不自动刷写固件。
 
-- 网页／桌面选择 USB 串口后自动查询 WLED；只有有效回复才标记已连接并记住设备，端口打开不再等同于控制器可用。拔出设备时清除连接和验证状态。本轮不更改 OpenRGB 的原生串口握手逻辑。
-- 修复本地预览播放时可能跳过连接验证的问题，接受兼容查询期间迟到的有效回复；自动验证的响应等待上限约 0.5 秒，手动诊断保留较长等待。端口打开／关闭耗时不包含在该上限内，慢响应固件可能需要重试。
-- 无回复时显示“响应超时，请重试”，其他连接／验证失败使用页面内主题弹窗；移除底部重复红色提示。USB/DDP 底部状态和统计去掉重复 WLED 前缀，设置中的 WLED 连接名称保留，DDP 传输逻辑不变。
-- 调整竖版设置字号及播放按钮与状态文字间距，保留点击区域和单行状态布局。
-- PawnIO 检测改用安装信息、库文件版本及实际驱动服务／文件检查，不再为检测启动 PowerShell。保留官方安装向导入口，打开向导前不重复检测，手动刷新和向导关闭后重新检测；残留记录不直接视为安装完整。
-- 个人用户安装温度服务时单独申请管理员授权，保留安装范围选择；驱动安装仍需用户同意，不自动卸载或覆盖共享 PawnIO，不修改风扇设置。
-- 用户反馈最新 TEST 看起来正常；本次重新生成正式安装包、Web 和源码附件。该反馈不代表全部硬件、慢启动控制器或安装升级路径均已验证。
+升级前保存工作、备份设置，从托盘退出 Pixel Studio／OpenRGB 后手动安装。安装包未签名，Windows 可能提示安全警告。网页需要完整资源与启动脚本，单个 HTML 不是独立发行文件。
 
-### 下载与升级（续）
+本轮 19 项源码／模拟回归通过，温度组件、OpenRGB 插件与串口助手、桌面程序重新编译，用户反馈 TEST 看起来正常。升级后仍建议确认持续温度、托盘输出与恢复、USB 拔插及个人用户安装。源码模拟回归、编译、包检查与真实硬件验收是不同步骤；不宣称所有权限、长期运行或设备场景均已验证。
 
-Windows x64 三合一安装包：PixelStudio-Setup-0.2.1.exe。默认选择桌面版，网页版和 OpenRGB 插件按需安装；不包含 OpenRGB 主程序。同时提供 Web、对应源码 ZIP 和 SHA256SUMS.txt。
+### 素材权利
 
-升级前备份设置、保存工作并从托盘退出 Pixel Studio/OpenRGB。安装器可能关闭占用文件的程序。保留用户设置与独立采样器边界；兼容 PawnIO 直接复用，新驱动安装需要明确同意，不自动覆盖未知或更新版本，不操作 Fan Control 或风扇设置。
-
-安装包未签名，Windows 可能提示安全警告。Web ZIP 应完整解压后使用启动脚本，直接打开 HTML 不会启动本地服务。
-
-### 验证边界
-
-本版依据用户对 TEST 界面和功能的反馈整理，并从当前源码重新构建。编译和打包不代表全部设备、DPI、安装升级及 USB/DDP 场景已实测通过。最后的串口恢复、托盘和停止重启调整仍需要实际设备回归；不宣称这些问题已在所有环境复现并验证解决。构建中的 NuGet 漏洞数据查询不可用，不等于依赖安全审计通过。
-
-特别感谢：David Wang · Mango Akuma · Mark Peng · SSSSWILK · &amp;#xff1f · 3FC
-
-### 素材权利与联系
-
-如有素材权利问题，请通过 [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues) 联系维护者，说明涉及的素材与权利依据，不要公开私人证明文件。经核实后，将采取移除或替换等适当措施。本项目不代表 WLED、OpenRGB 或相关社区的官方产品；致谢不替代许可。
-
-### ESP32-C3 可选固件
-
-本次另附 `PixelStudio-C3-USB-60` 应用固件、定制源码及 `WLED-C3-USB-60-README.md`，仅适用于对应 GPIO3 原生 USB CDC 硬件。安装器不会自动刷写固件。刷写前请备份设备并阅读附带说明；60 FPS 不是所有设备的性能保证。本次卸载修订不改变固件附件。
+如有素材权利问题，请通过 [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues) 提供素材标识与权利依据，不公开私人证明。确认后采取移除或替换等措施。本项目不是 WLED、OpenRGB 或相关社区的官方产品。
 
 ## English
 
-Release date: 2026/10/06
+Release date: 2026/10/07
 
-### What's new
+The user reported that this 0.2.2 TEST looked normal. Matching stable Setup and distribution assets are prepared without relabeling old TEST binaries.
 
-- Refined shared Web/Desktop controls, typography, settings and updater layout, with improved narrow/portrait layouts and preserved playback/navigation space. This is not a native iOS/Android release.
-- Improved animation/Desktop media card ordering, fixed/sequential/random playback modes, selection titles and scrollbar/drag feedback.
-- Simplified USB/DDP status and host sending FPS; improved startup flicker and failure details. Host FPS is not measured display FPS.
-- Repeated DDP stop requests now share release completion; new sessions wait for stopping sessions.
-- Desktop tray offers Stop/Resume output. Exit hides the UI, saves state and then shuts down services without displaying shutdown-related service errors.
-- Desktop can reuse the remembered USB device after switching outputs or restarting sending. Missing devices are not replaced automatically; manual selection and forgetting remain available.
-- Updated theme branding, #0078D4 light accent and grayscale black-theme pixels. Fixed system icons use ice blue without outer glow. Pinned taskbar icons may retain Windows-cached artwork.
-- Synchronized help-page branding, heading size and optical alignment; updated special thanks.
-- OpenRGB receives theme Logo, version and bilingual credits updates while retaining its Qt UI, temperature and USB/DDP features.
-- Removed confirmed redundant styles, includes and widget initialization while preserving migration, compatibility, driver protections and shared animations.
-- Pixel IO remains a reserved, unavailable entry. Desktop is the primary future feature focus; compatible animation-library updates remain shared across editions.
-- Same-day uninstall revision: Windows Restart Manager detects background file owners and, with consent, closes them before checking again. Uninstall is blocked if shutdown or detection fails; unrelated processes are not killed in bulk.
-- Uninstall can preserve settings or completely clear the running account's settings, caches, remembered ports and upgrade backups. The plugin installed by Setup is removed with the application; shared PawnIO, other plugins, external media and other accounts are kept. Cleanup failures retain a report rather than claim complete removal. The dedicated uninstall-entry icon is restored.
+### Changes
 
-### Download and upgrade
+- Reduced unnecessary previews, thumbnails and presentation refresh when Desktop is minimized/in the tray, Web is hidden, or the OpenRGB panel is hidden. Visible UI resynchronizes on return; active output and temperature sampling do not stop just because the UI is hidden.
+- Continuous backend sampling and cache reads reduce duplicate requests and waiting. Removed the blanket five-second reading expiry. Failures retain diagnostic information; historical values are not presented as new samples, and hardware/driver failures remain possible.
+- Clarified the three playback lines: selected content; Preview, Output or Operation failed; then USB/DDP, an independent connection dot and sending FPS. Hover details and diagnostic logs explain failures without repeating complete errors.
+- Successful size reads and failures use themed dialogs; refined English labels and portrait settings. Sending FPS is a host statistic, not measured display refresh.
+- Retained Web/Desktop WLED USB reply verification and unplug state updates. Automatic reply waiting is about 0.5 seconds; OS port opening/closing and slow firmware startup can add time or require retries. OpenRGB's native serial handshake has not been redesigned around the Web implementation.
+- Preserved Logo geometry and size across editions and the guide: removed outer glow, kept highlight borders and restored the theme-tinted gray center tile.
+- Removed confirmed redundant shared styles, obsolete startup fallback presentation and unused parsing helpers; corrected startup initialization order and included required mock regressions in source archives. Used artwork, dynamic themes, compatibility settings and licenses remain intact.
+- Retained native PawnIO checks, official wizard access and separate administrator consent for per-user temperature services. Compatible drivers are reused, new installation requires consent, unknown/newer versions are not overwritten, and shared PawnIO, Fan Control and fan settings are untouched.
+- The four temperature designs remain separate cards. Desktop owns its sampler; Web/OpenRGB share another sampler. Pixel IO is still unavailable.
 
-### Same-day follow-up: USB, installation detection and portrait UI
+### Installation and testing
 
-- Web/Desktop USB selection now queries WLED automatically. Only a valid reply marks the device connected and remembers it; opening an OS port alone is insufficient. Unplugging clears connection and verification state. This revision does not change OpenRGB's native serial handshake.
-- Fixed connection verification being skipped during local preview playback and accepted delayed valid replies during fallback. Automatic reply waiting is limited to about 0.5 seconds; manual diagnostics retain longer waits. Port opening/closing time is additional, and slower firmware may require a retry.
-- Missing replies show a retryable timeout, while other connection/verification failures use themed in-page dialogs instead of browser alerts. Removed duplicate red feedback. Playback status and statistics use concise USB/DDP labels; WLED names remain in settings and DDP transport behavior is unchanged.
-- Refined portrait settings typography and playback-label spacing without shrinking click targets or changing the single-line status layout.
-- Native PawnIO checks inspect installation records, library versions and actual driver services/files without spawning PowerShell for detection. The official wizard remains accessible without repeating detection before opening; manual refresh and wizard completion recheck status. Leftover records alone do not establish a complete installation.
-- Per-user temperature-service installation requests separate administrator consent while preserving the installation-scope choice. Driver installation still requires consent; shared PawnIO and fan settings are not automatically removed or overwritten.
-- The user reported that the latest TEST looked normal. Formal Setup, Web and source assets are rebuilt for this revision; this feedback does not certify every device, slow-starting controller or upgrade path.
+Use the Windows x64 three-in-one `PixelStudio-Setup-0.2.2.exe`, compiled as a stable installer with this batch's freshly built, version-matched components. `PixelStudio-Web-0.2.2.zip`, `PixelStudio-Source-0.2.2.zip` and `SHA256SUMS.txt` are provided. Desktop is selected by default; Web and the OpenRGB plugin are optional. OpenRGB itself is not bundled; firmware is not flashed automatically.
 
-### Download and upgrade (continued)
+Save work, back up settings and exit Pixel Studio/OpenRGB from the tray before manual installation. The installer is unsigned and Windows may warn. Web requires complete resources and launch scripts; a lone HTML file is not a standalone distribution.
 
-Use PixelStudio-Setup-0.2.1.exe for Windows x64. Desktop is selected by default; Web and the OpenRGB plugin are optional. OpenRGB itself is not bundled. Web/source ZIP archives and SHA256SUMS.txt are also provided.
+All 19 source/mock regressions passed, and the sampler, OpenRGB plugin/serial writer and Desktop were rebuilt. The user reported that this TEST looked normal. After upgrading, check continuous temperatures, tray output/restoration, USB unplugging and per-user installation. Source/mock regressions, compilation, package checks and hardware acceptance are distinct; not all permissions, long-running conditions or devices are certified.
 
-Back up settings, save work and fully exit Pixel Studio/OpenRGB before upgrading. Setup may close programs holding files. Compatible PawnIO is reused; driver installation requires separate consent. Unknown/newer drivers are not automatically overwritten; Fan Control and fan settings are untouched. The installer is unsigned. Extract the complete Web ZIP and use its launch scripts.
+### Artwork rights
 
-### Validation boundaries
-
-Prepared from current sources following user feedback on TEST builds. Compilation/packaging is not proof of all hardware, DPI, installation or upgrade scenarios. Final USB restore, tray and stop/restart changes still need device regression testing. NuGet vulnerability metadata was unavailable during builds; no completed security audit is claimed.
-
-Special thanks: David Wang · Mango Akuma · Mark Peng · SSSSWILK · &amp;#xff1f · 3FC
-
-### Artwork rights and contact
-
-For artwork rights concerns, contact the maintainer through [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues), identifying the artwork and the basis of your claim. Do not publish private documents. Confirmed issues will be addressed through removal, replacement or other appropriate action. This project is not an official product of WLED, OpenRGB or their communities; credits do not replace permission.
-
-### Optional ESP32-C3 firmware
-
-The release separately includes the `PixelStudio-C3-USB-60` application firmware, custom source and `WLED-C3-USB-60-README.md` for the matching ESP32-C3 hardware using GPIO3 and native USB CDC. Setup does not flash firmware automatically. Back up the device and read the included instructions before flashing; 60 FPS is not a performance guarantee for every device. These firmware assets are unchanged by the uninstall revision.
+For artwork rights concerns, contact the maintainer through [GitHub Issues](https://github.com/OW3N-HE/Pixel-Studio/issues) with the artwork identifier and basis of the claim. Do not publish private evidence. Confirmed issues will be addressed through removal or replacement. This project is not an official product of WLED, OpenRGB or their communities.

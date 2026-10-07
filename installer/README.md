@@ -1,5 +1,13 @@
 # Windows installer / Windows 安装程序
 
+## 0.2.2 正式发布准备（2026-10-07）
+
+本轮 0.2.2 TEST 已获用户反馈“看起来没问题”，19 项源码／模拟回归通过，桌面、温度组件、OpenRGB 插件与串口助手从当前源码重新编译。正式安装器使用同批版本匹配载荷重新编译，不将 TEST 改名。用户允许检查待发布文件、生成校验文件并上传 GitHub；这不是对全部硬件、权限、升级或长期运行场景的保证。
+
+以下 0.2.1、0.1.11 路径和验收记录保留为历史追溯，不作为 0.2.2 构建输入。当前入口为 Build-Unified-Test.ps1 新建源快照及载荷，再经独立审核调用 Build-Installer.ps1 编译正式包；对应更新说明为 RELEASE-0.2.2.md。
+
+The 0.2.2 TEST received user feedback that it looked normal. All 19 source/mock regressions passed and matching components were rebuilt. Stable Setup is compiled from this batch, not a renamed TEST. The user authorized publication checks, checksum generation and GitHub upload; this is not certification of all hardware, permission or upgrade scenarios. Older paths below are historical, not current build inputs.
+
 ## V0.2.1 卸载修订（2026-10-06）/ Uninstall revision
 
 此节为当前卸载行为，下方旧版记录仅用于历史追溯。卸载前以 Windows Restart Manager 检测本安装的程序、桥接进程和插件文件占用，经用户确认后关闭，并重新检查。关闭或检查失败时不开始删除文件；静默卸载保留数据，遇到占用则停止，不擅自强制关闭。

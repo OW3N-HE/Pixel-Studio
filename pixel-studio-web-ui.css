@@ -1,63 +1,24 @@
 /* Shared web/desktop surfaces; OpenRGB keeps its own styling. */
+/* Theme tokens and SVG fills are owned here; HTML retains only the boot guard. */
+:root,[data-theme="ice"]{--bg:#0c1921;--panel:#172a35;--surface:#10212b;--surface-deep:#0b1720;--surface-raised:#203844;--line:#3b6477;--text:#effaff;--muted:#9ebbc8;--brand:#83d5f2;--brand-rgb:131,213,242;--logo-center:#12212c;--ok:#91e4cc;--danger:#ff9c9c;--amber:#ffe1ad}
+[data-theme="mint"]{--bg:#101917;--panel:#172b23;--surface:#11231b;--surface-deep:#0b1711;--surface-raised:#244331;--line:#3b6650;--text:#effff6;--muted:#a2c4b0;--brand:#8ee6ba;--brand-rgb:142,230,186;--logo-center:#112018;--ok:#8ee6ba;--danger:#ff9c9c;--amber:#ffe1ad}
+[data-theme="amber"]{--bg:#1b1713;--panel:#30251b;--surface:#241b15;--surface-deep:#17110d;--surface-raised:#493322;--line:#7b5940;--text:#fff8ec;--muted:#d1b69f;--brand:#ffbd75;--brand-rgb:255,189,117;--logo-center:#261d14;--ok:#a8e4b7;--danger:#ffa6a0;--amber:#ffcf8d}
+[data-theme="rose"]{--bg:#1b151b;--panel:#32232c;--surface:#261a23;--surface-deep:#181017;--surface-raised:#493044;--line:#79536b;--text:#fff4fa;--muted:#d5afc5;--brand:#efabc6;--brand-rgb:239,171,198;--logo-center:#291a24;--ok:#a9e3c4;--danger:#ffaaa7;--amber:#f7d6aa}
+[data-theme="ocean"]{--bg:#111b36;--panel:#182744;--surface:#14213d;--surface-deep:#0b1328;--surface-raised:#203654;--line:#416b91;--text:#e7f1ff;--muted:#9ab5d6;--brand:#549dc5;--brand-rgb:84,157,197;--logo-center:#12243e;--ok:#a6d9dc;--danger:#ffaaa7;--amber:#f7d6aa}
+[data-theme="dark"]{--bg:#111111;--panel:#1e1e1e;--surface:#191919;--surface-deep:#0d0d0d;--surface-raised:#2c2c2c;--line:#565656;--text:#f3f3f3;--muted:#b5b5b5;--ok:#a9dfc6;--danger:#ffaaa7;--amber:#f7d6aa;--brand:#c4c4c4;--brand-rgb:196,196,196;--logo-center:#303030;--preview-core:#c4c4c4;--preview-glow:#c4c4c4}
+.ps-web label{display:block}
+.ps-web .mono{font-family:"Cascadia Code","Consolas",monospace}
+.ps-web button:disabled{opacity:.45;cursor:not-allowed}
+.ps-web .status.err{color:var(--danger)}.ps-web .status.ok{color:var(--ok)}
+.ps-web .brand-mark .logo-halo{fill:none;stroke:var(--brand)}
+.ps-web .brand-mark .logo-halo>rect:last-child{fill:var(--logo-bg)}
+.ps-web .brand-mark .logo-tile{fill:var(--logo-tile,var(--brand))}
+.ps-web .brand-mark .logo-center{fill:var(--logo-center)}
+.ps-web .brand-mark .logo-white{fill:#fff}
+
 /* Neutral light/dark surfaces reserve blue for active states. */
-html[data-theme=light]{
-  --bg:#ededed;
-  --panel:#f7f7f7;
-  --surface:#f5f5f5;
-  --surface-deep:#fff;
-  --surface-raised:#e8e8e8;
-  --text:#1c1c1c;
-  --muted:#555555;
-  --brand:#0078d4;
-  --brand-rgb:0,120,212;
-  --on-brand:#fff;
-  --logo-tile:#0078d4;
-  --line:#919191;
-  --selection:#0078d4;
-  --preview-idle:var(--line);
-  --preview-core:var(--brand);
-  --preview-glow:var(--brand);
-  --neutral-control-fill:#fff;
-  --neutral-action-fill:#fff;
-  --neutral-slider-accent:var(--brand);
-  --neutral-slider-track:#8a8a8a;
-  --neutral-slider-shell:#fff;
-  --neutral-slider-stroke:#dedede;
-  --neutral-slider-shadow:0 1px 2px rgba(0,0,0,.12);
-  --settings-heading-fill:var(--bg);
-  --settings-dialog-shadow:0 16px 48px rgba(0,0,0,.18);
-  --idle-border-base:#919191;
-  --idle-border-lift:0%;
-}
-html[data-theme=black]{
-  --bg:#202020;
-  --panel:#2b2b2b;
-  --surface:#2b2b2b;
-  --surface-deep:#323232;
-  --surface-raised:#3b3b3b;
-  --text:#f2f2f2;
-  --muted:#c6c6c6;
-  --brand:#4cc2ff;
-  --brand-rgb:76,194,255;
-  --on-brand:#202020;
-  --logo-tile:#4cc2ff;
-  --line:#707070;
-  --selection:#4cc2ff;
-  --preview-idle:var(--line);
-  --preview-core:var(--brand);
-  --preview-glow:var(--brand);
-  --neutral-control-fill:#3a3a3a;
-  --neutral-action-fill:#404040;
-  --neutral-slider-accent:var(--brand);
-  --neutral-slider-track:#9b9b9b;
-  --neutral-slider-shell:#454545;
-  --neutral-slider-stroke:#505050;
-  --neutral-slider-shadow:0 1px 2px rgba(0,0,0,.24);
-  --settings-heading-fill:var(--bg);
-  --settings-dialog-shadow:0 18px 56px rgba(0,0,0,.36);
-  --idle-border-base:#707070;
-  --idle-border-lift:0%;
-}
+html[data-theme=light]{color-scheme:light;--logo-center:#26282c;--ok:#248a3d;--danger:#c92828;--amber:#906000;--bg:#ededed;--panel:#f7f7f7;--surface:#f5f5f5;--surface-deep:#fff;--surface-raised:#e8e8e8;--text:#1c1c1c;--muted:#555555;--brand:#0078d4;--brand-rgb:0,120,212;--on-brand:#fff;--logo-tile:#0078d4;--line:#919191;--selection:#0078d4;--preview-core:var(--brand);--preview-glow:var(--brand);--neutral-control-fill:#fff;--neutral-action-fill:#fff;--neutral-slider-accent:var(--brand);--neutral-slider-track:#8a8a8a;--neutral-slider-shell:#fff;--neutral-slider-stroke:#dedede;--neutral-slider-shadow:0 1px 2px rgba(0,0,0,.12);--settings-heading-fill:var(--bg);--settings-dialog-shadow:0 16px 48px rgba(0,0,0,.18);--idle-border-base:#919191;--idle-border-lift:0%}
+html[data-theme=black]{--logo-center:#101010;--ok:#a9dfc6;--danger:#ffaaa7;--amber:#f7d6aa;--bg:#202020;--panel:#2b2b2b;--surface:#2b2b2b;--surface-deep:#323232;--surface-raised:#3b3b3b;--text:#f2f2f2;--muted:#c6c6c6;--brand:#4cc2ff;--brand-rgb:76,194,255;--on-brand:#202020;--logo-tile:#4cc2ff;--line:#707070;--selection:#4cc2ff;--preview-core:var(--brand);--preview-glow:var(--brand);--neutral-control-fill:#3a3a3a;--neutral-action-fill:#404040;--neutral-slider-accent:var(--brand);--neutral-slider-track:#9b9b9b;--neutral-slider-shell:#454545;--neutral-slider-stroke:#505050;--neutral-slider-shadow:0 1px 2px rgba(0,0,0,.24);--settings-heading-fill:var(--bg);--settings-dialog-shadow:0 18px 56px rgba(0,0,0,.36);--idle-border-base:#707070;--idle-border-lift:0%}
 /* Shared geometry and the resting-border palette for all themes. */
 :root{--ui-corner-radius:10px;--ui-focus-ring-width:2px;--ui-focus-ring-gap:2px;--idle-border-lift:15%;--idle-border-base:#3b6477}
 html[data-theme=mint]{--idle-border-base:#3b6650}
@@ -67,21 +28,11 @@ html[data-theme=ocean]{--idle-border-base:#416b91}
 html[data-theme=dark]{--idle-border-base:#565656}
 html[data-theme]{--line:color-mix(in srgb,var(--idle-border-base),var(--brand) var(--idle-border-lift))}
 html[data-theme=black] .ps-web button:focus-visible,html[data-theme=black] .ps-web input:focus-visible,html[data-theme=black] .ps-web select:focus-visible,html[data-theme=black] .ps-settings :focus-visible{outline-color:var(--selection)}
-/* Theme-matched pixels; the SVG shares the preview frame's layered rim and glow. */
-html[data-theme] .ps-web .brand-mark{
-  --logo-bg:#151515;
-  --logo-center:#2b2b2b;
-  --logo-tile:var(--brand);
-  filter:none;
-}
+/* Theme-matched pixels with a solid highlight; logo glow is intentionally absent. */
+html[data-theme] .ps-web .brand-mark{--logo-bg:#151515;--logo-tile:var(--brand)}
 /* Preserve the neutral pixel palette without a separate shadow effect. */
-html[data-theme=dark] .ps-web .brand-mark{
-  --logo-center:#303030;
-  --logo-tile:#686868;
-}
-html[data-theme] .ps-web .brand-mark .logo-halo{
-  stroke:var(--brand);
-}
+html[data-theme=dark] .ps-web .brand-mark{--logo-tile:#686868}
+
 html:is([data-theme=light],[data-theme=black]) .ps-web .ps-play-toggle:not(.is-playing){
   background:var(--brand);
   color:var(--on-brand,#fff);
@@ -93,7 +44,7 @@ html[data-theme=light] .ps-web .ps-library-well,html[data-theme=black] .ps-web .
 html[data-theme=light] .ps-web button:focus-visible,html[data-theme=light] .ps-web input:focus-visible,html[data-theme=light] .ps-web select:focus-visible,html[data-theme=light] .ps-settings :focus-visible{outline-color:var(--selection)}
 html[data-theme=light] .ps-web input:not([type=range]):not([type=checkbox]):not([type=color]):focus-visible,html[data-theme=light] .ps-web select:focus-visible{border-color:var(--selection);box-shadow:0 0 0 3px rgba(var(--brand-rgb),.1)}
 html[data-theme=light] .ps-web input[type=checkbox]{accent-color:var(--selection)}
-html[data-theme=light] .ps-web .brand-name{text-shadow:none}
+
 html[data-theme=light] .ps-web .ps-favorite[aria-pressed=true]{color:#a82f57}
 html[data-theme=light] .ps-settings::backdrop{background:#0005}
 html[data-theme=light] .ps-web select:not([multiple]):not([size]){background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4L6 8L10 4' fill='none' stroke='%23616161' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important}
@@ -110,7 +61,6 @@ html[data-theme=light] .ps-web select:not([multiple]):not([size]){background-ima
 .ps-web #thermalStyling select,.ps-web #thermalStyling button{width:100%;min-width:0;height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);margin:0;font:inherit;box-sizing:border-box}
 .ps-web #thermalStyling button{display:flex;align-items:center;justify-content:center;padding:0 6px;border-radius:var(--ui-corner-radius);white-space:nowrap;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
 /* All custom-color buttons inherit the shared themed fills, contours and states. */
-.ps-web .thermal-status{display:block;margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
 .ps-web #thermalColorsDialog{width:min(600px,calc(100vw - 32px));background:var(--panel);color:var(--text)}
 .ps-web #thermalColorsDialog .thermal-enable{white-space:normal}
 .ps-web #thermalColorsDialog .ps-help{margin:12px 0 22px;font-size:14px}
@@ -118,19 +68,19 @@ html[data-theme=light] .ps-web select:not([multiple]):not([size]){background-ima
 .ps-web #thermalColorsDialog .thermal-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}
 .ps-web #thermalColorsDialog .thermal-actions button{display:flex;align-items:center;justify-content:center;white-space:normal;line-height:1.3;min-height:var(--ui-control-height,40px)}
 @media(max-width:600px){.ps-web .studio-controls.ps-thermal-controls .adjustments,.ps-web .studio-controls #thermalStyling{grid-template-columns:1fr;row-gap:16px}}
-body.ps-web{margin:0;padding:0;background:var(--bg);background-image:none!important;color:var(--text)}
+body.ps-web{margin:0;padding:0;background:var(--bg);color:var(--text)}
 .ps-web *,.ps-settings *{box-sizing:border-box}
-.ps-web .wrap,.ps-web .wrap *,.ps-settings,.ps-settings *{background-image:none!important}
+
 .ps-web .wrap{width:100%;max-width:none;height:100dvh;min-height:520px;margin:0 auto;padding:var(--ps-layout-gap);display:flex;flex-direction:column;gap:var(--ps-layout-gap);background:var(--bg)}
-.ps-web .topbar{--brand-size:52px;flex:0 0 var(--brand-size);min-height:var(--brand-size);height:var(--brand-size);margin:0;padding:0;border:0;background:transparent;align-items:center;flex-wrap:nowrap;gap:16px}
-.ps-web .brand{display:flex;flex:1;align-items:center;gap:var(--brand-ink-gap,16px);min-width:0}.ps-web .brand-mark{display:block;flex:none;width:var(--brand-size);height:var(--brand-size);padding:0;margin:0;box-sizing:border-box}.ps-web .brand-name{font-size:24px;letter-spacing:1px}
+.ps-web .topbar{display:flex;justify-content:space-between;--brand-size:52px;flex:0 0 var(--brand-size);min-height:var(--brand-size);height:var(--brand-size);margin:0;padding:0;border:0;background:transparent;align-items:center;flex-wrap:nowrap;gap:16px}
+.ps-web .brand{display:flex;flex:1;align-items:center;gap:var(--brand-ink-gap,16px);min-width:0}.ps-web .brand-mark{display:block;flex:none;width:var(--brand-size);height:var(--brand-size);padding:0;margin:0;box-sizing:border-box;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;filter:none}.ps-web .brand-name{font-size:24px;letter-spacing:1px;font-weight:800;color:var(--text)}
 .ps-web .workspace{display:flex;flex:1;flex-direction:column;align-items:stretch;width:100%;max-width:none;min-width:0;min-height:0;gap:var(--ps-layout-gap);margin:0}
 .ps-web .studio-stage{--ps-preview-layout:side-by-side;display:grid;grid-template-columns:var(--preview-column,minmax(180px,36%)) minmax(0,1fr);gap:16px;flex:1;width:100%;max-width:none;align-self:stretch;min-height:0;padding:0;background:transparent;border:0;border-radius:var(--ui-corner-radius)}
 .ps-web .preview-card,.ps-web .library-card{width:100%;max-width:none;align-self:stretch;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent}
 .ps-web .preview-card{display:flex;flex-direction:column}
 .ps-web #animationHint{display:none}
 .ps-web .preview-stage{display:flex;flex:1;align-items:center;justify-content:center;min-height:0;height:100%;padding:12px;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
-.ps-web .preview-stage::before,.ps-web .preview-stage::after{content:none}
+
  .ps-web .ps-preview-frame{position:relative;flex:none;padding:var(--board-inset,1px);border:0;border-radius:0;background:transparent;overflow:visible;isolation:isolate}
 .ps-web .ps-preview-board{--preview-core-opacity:1;--preview-glow-opacity:.085;position:absolute;left:-10px;top:-10px;display:block;pointer-events:none;z-index:0}
 .ps-web .ps-preview-frame #preview{position:relative;z-index:2}
@@ -138,10 +88,7 @@ body.ps-web{margin:0;padding:0;background:var(--bg);background-image:none!import
 .ps-web .library-card{--ps-library-control-gap:10px;display:flex;flex-direction:column;gap:var(--ps-library-control-gap)}
 .ps-web .library-toolbar{--ps-library-search-min:var(--ui-control-height,40px);box-sizing:border-box;display:flex;flex:0 0 var(--ui-control-height,40px);height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);flex-wrap:nowrap;align-items:center;gap:var(--ps-library-control-gap);margin:0;padding:0}
 .ps-web .library-toolbar input,.ps-web .library-toolbar select{box-sizing:border-box;height:var(--ui-control-height,40px);min-width:0;margin:0}
-.ps-web .ps-shuffle-group{display:flex;align-items:center;gap:0;white-space:nowrap}
-.ps-web .ps-shuffle{display:flex;align-items:center;gap:7px;margin:0;color:var(--text);font-size:14px}
-.ps-web .ps-shuffle input{width:17px;height:17px;margin:0}
-.ps-web .ps-unit{font-size:12px;color:var(--muted)}
+
 .ps-web .ps-library-well{display:flex;flex:1;min-height:0;flex-direction:column;border:2px solid var(--line);background:var(--surface-deep);overflow:hidden}
 .ps-web #animationGallery{display:grid;flex:1;min-height:0;max-height:none;height:auto;margin:0;border:0;border-radius:0;background:transparent;overflow-y:auto;scrollbar-gutter:auto}
 .ps-web .ps-favorite{position:absolute;top:7px;right:7px;z-index:1;display:grid;place-items:center;width:31px;min-width:0;height:31px;padding:6px;border:0;border-radius:50%;background:rgba(var(--brand-rgb),.16);color:var(--brand)}
@@ -162,18 +109,17 @@ body.ps-web{margin:0;padding:0;background:var(--bg);background-image:none!import
 .ps-web #clockStyling select{flex:1 1 0;min-width:0;width:0;margin:0;min-height:var(--ui-control-height,40px);height:var(--ui-control-height,40px);font-size:14px}
 .ps-web #clockStyling .ps-custom-colors{flex:1 1 0;min-width:0;height:var(--ui-control-height,40px);padding:7px;border-radius:var(--ui-corner-radius);font-size:13px;white-space:nowrap}
 .ps-web .ps-settings input[type=color]{height:44px;padding:4px;cursor:pointer}
-.ps-web .ps-playback-bar{display:flex;flex:none;width:100%;max-width:none;align-self:stretch;align-items:center;gap:14px;min-height:52px;padding:0 2px}
-.ps-web .ps-playback-messages{display:grid;align-content:center;gap:2px}
+.ps-web .ps-playback-bar{flex:none;width:100%;max-width:none;align-self:stretch}
+
 .ps-web .ps-playback-messages>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ps-web .ps-playback-messages .ps-playback-source{display:none!important}
 .ps-web .ps-playback-feedback .ps-playback-state{color:var(--text)}
-.ps-web .ps-playback-feedback :is(.ps-playback-note,.ps-playback-separator){color:var(--muted)}
 .ps-web .ps-playback-feedback .ps-playback-error{color:var(--danger)}
-.ps-web .ps-play-toggle{display:grid;place-items:center;flex:none;width:96px;min-width:96px;height:52px;padding:13px;border:0;border-radius:var(--ui-corner-radius);background:var(--brand);color:var(--surface-deep)}
+.ps-web .ps-play-toggle{display:grid;place-items:center;flex:none;border:0;border-radius:var(--ui-corner-radius);background:var(--brand);color:var(--surface-deep)}
 .ps-web .ps-play-toggle svg{width:26px;height:26px;fill:currentColor}.ps-web .ps-play-toggle.is-playing{background:#d65360;color:white}
-.ps-web .ps-playback-messages{min-width:0;flex:1}.ps-web .ps-playback-messages .status{margin:0;min-height:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
-.ps-web .ps-current-animation{color:var(--text);font-size:12px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ps-web #streamStats{min-width:0;max-width:36%;margin:0;padding:0;border:0;color:var(--muted);font-size:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+
+.ps-web .ps-current-animation{color:var(--text)}
+.ps-web #streamStats{border:0;color:var(--muted);font-variant-numeric:tabular-nums}
 .ps-web button,.ps-web input,.ps-web select,.ps-settings button,.ps-settings input,.ps-settings select{font:inherit}
 .ps-web button,.ps-settings button{cursor:pointer}
 .ps-web input:not([type=range]):not([type=checkbox]),.ps-web select,.ps-settings input:not([type=range]):not([type=checkbox]),.ps-settings select{min-width:0;width:100%;padding:9px 11px;border:2px solid var(--line);border-radius:var(--ui-corner-radius);background:var(--surface-deep);color:var(--text)}
@@ -247,7 +193,7 @@ html[data-theme=light] .ps-web .ps-settings{--input-error:#a51d35}
 .ps-media-dialog .ps-settings-group{margin-bottom:0}
 @media(max-width:480px){.ps-web .ps-settings .ps-size-fields,.ps-web .ps-settings .ps-size-pair{gap:6px}.ps-web .ps-settings .ps-size-fields input[type=number]{flex-basis:52px;width:52px}}
 @media(width > 600px) and (max-height:680px){.ps-web .studio-stage{gap:var(--ps-layout-gap)}}
-@media(max-width:1000px){.ps-web .ps-shuffle-group{justify-content:flex-end}.ps-web .adjustments{gap:18px}.ps-web .adjustments>div{grid-template-columns:42px minmax(0,1fr) 72px;gap:8px}}
+@media(max-width:1000px){.ps-web .adjustments{gap:18px}.ps-web .adjustments>div{grid-template-columns:42px minmax(0,1fr) 72px;gap:8px}}
 /* Stack only when the available CSS width cannot fit a usable preview and library. */
 @media(max-width:600px){
   .ps-web .wrap{min-height:100dvh;height:auto}
@@ -259,11 +205,7 @@ html[data-theme=light] .ps-web .ps-settings{--input-error:#a51d35}
   .ps-web .adjustments{grid-template-columns:1fr;gap:16px}
   .ps-web .adjustments>div{grid-template-columns:48px minmax(0,1fr) 76px}
   .ps-web #clockStyling{grid-template-columns:1fr;gap:12px}
-  .ps-web .ps-playback-bar{position:static;flex-wrap:wrap;row-gap:4px;padding:0;background:var(--bg)}
-  .ps-web .ps-play-toggle{width:64px;min-width:64px}
-  .ps-web .ps-playback-messages{flex:1 1 140px}
-  /* Wrap the status as a whole item rather than splitting connection words. */
-  .ps-web #streamStats{flex:0 1 auto;min-width:0;max-width:100%;margin-left:auto;font-size:12px;white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis}
+
 }
 @media(max-width:760px){
   .ps-settings{width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}
@@ -275,7 +217,7 @@ html[data-theme=light] .ps-web .ps-settings{--input-error:#a51d35}
 @media(max-width:1000px){.ps-web .ps-clock-controls .adjustments,.ps-web #clockStyling{column-gap:18px}.ps-web #clockStyling .ps-setting-row{grid-template-columns:42px minmax(0,1fr);gap:8px}}
 @media(max-width:600px){.ps-web .ps-clock-controls .adjustments{grid-template-columns:1fr;gap:16px}.ps-web #clockStyling .ps-setting-row{grid-template-columns:48px minmax(0,1fr)}}
 /* Shared control geometry keeps the two-row panel stable across animation types. */
-.ps-web [hidden]{display:none!important}
+
 /* Narrow layouts follow their visible controls; wide layouts reserve two rows below. */
 .ps-web .studio-controls{min-height:0}
 .ps-web .adjustments>div,.ps-web #clockStyling .ps-setting-row{height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px)}
@@ -557,10 +499,7 @@ html body.ps-web #studioSettings .ps-settings-group-body{
   background: var(--surface-raised);
   box-shadow: none;
 }
-.ps-web .ps-settings button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
-}
+
 .ps-web .ps-settings button:disabled:hover { border-color: var(--line); }
 .ps-web .ps-settings [data-update-ui] .ps-help { overflow-wrap: anywhere; }
 .ps-web .ps-settings .ps-update-details {
@@ -927,12 +866,7 @@ html body.ps-web .wrap #psLibrarySearch.is-placeholder-tight #librarySearch::pla
     display:none;
   }
 }
-.ps-web .library-toolbar .ps-shuffle-group {
-  flex:0 0 auto;
-  margin-left:0;
-  flex-wrap:nowrap;
-  white-space:nowrap;
-}
+
 .ps-web .ps-library-well { position:relative;border-radius:var(--ui-corner-radius); }
 /* Both libraries use the same scrollport geometry inside the shared well. */
 .ps-web #animationGallery,
@@ -1027,9 +961,7 @@ html body.ps-web .wrap #psLibrarySearch.is-placeholder-tight #librarySearch::pla
   background:var(--surface);
   clip-path:inset(var(--ui-card-rim) round var(--ui-card-inner-radius));
 }
-.ps-web :is(.ps-animation-tile,.animation-card,.ps-desktop-media-card)[hidden] {
-  display:none!important;
-}
+
 .ps-web :is(.animation-thumb,.ps-desktop-media-thumbnail,.ps-desktop-media-placeholder) {
   position:absolute;
   inset:0;
@@ -1126,9 +1058,7 @@ html[data-theme=light] .ps-web .animation-title {
   color:var(--brand);
   font-size:20px;
 }
-.ps-web :is(.ps-desktop-media-thumbnail,.ps-desktop-media-placeholder)[hidden] {
-  display:none!important;
-}
+
 .ps-web .ps-desktop-media-caption {
   flex-direction:column;
   align-items:stretch;
@@ -1534,7 +1464,7 @@ html body.ps-web :is(#animationGallery,.ps-desktop-media-grid).ps-library-overla
   margin:0;padding:0;border:0;background:transparent;outline:none;box-shadow:none;
   touch-action:none;user-select:none;cursor:default;
 }
-.ps-web .ps-library-scrollbar[hidden]{display:none!important}
+
 .ps-web .ps-library-scrollbar-thumb{
   position:absolute;top:0;right:0;display:block;width:3px;
   margin:0;padding:0;border:0;border-radius:999px;
@@ -1598,7 +1528,8 @@ html[data-theme=black] .ps-web select:not([multiple]):not([size]){
   height:var(--ui-control-height);
   border:1px solid var(--ui-control-stroke);border-radius:var(--ui-corner-radius);
   background:var(--ui-control-fill);
-}
+
+  white-space:nowrap;}
 /* Preserve the automatic-switching flag behind the three-mode icon button. */
 .ps-web #psShuffleDock .ps-shuffle{display:none}
 html body.ps-web #psShuffleDock #psShuffleToggle{
@@ -1625,10 +1556,7 @@ html body.ps-web .wrap #psAdjustPane #thermalSampleSecondsNumber{
   padding:2px 0 0;text-align:center;line-height:var(--ui-control-line-height);
   background:transparent;box-shadow:none;outline:none;
 }
-.ps-web :is(#psShuffleInterval,#thermalSampleSecondsNumber)::-webkit-inner-spin-button,
-.ps-web :is(#psShuffleInterval,#thermalSampleSecondsNumber)::-webkit-outer-spin-button{
-  -webkit-appearance:none;margin:0;
-}
+
 .ps-web .thermal-sample-value:focus-within{
   border-color:var(--ui-control-focus-stroke);
   outline:var(--ui-focus-ring-width) solid var(--selection,var(--brand));outline-offset:var(--ui-focus-ring-gap);
@@ -1787,10 +1715,11 @@ html body.ps-web #psShuffleDock #psShuffleToggle.is-active{
   html body.ps-web .ps-play-toggle{
     grid-column:1;grid-row:1;width:52px;min-width:52px;height:52px;padding:13px;
   }
-  .ps-web .ps-playback-messages{
+  html body.ps-web .ps-playback-messages{
     grid-column:2;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr);
     min-width:0;gap:2px;margin:0;padding:0;align-content:center;text-align:left;
-  }
+  
+    padding-inline-start:0;margin-inline-start:-8px;}
   html body.ps-web .ps-playback-messages>:is(.ps-current-animation,.ps-playback-feedback,#streamStats){
     margin:0;padding:0;font-size:12px;line-height:16px;text-align:left;
     white-space:nowrap;overflow-wrap:normal;overflow:hidden;text-overflow:ellipsis;
@@ -1818,15 +1747,14 @@ html body.ps-web #psShuffleDock #psShuffleToggle.is-active{
 /* Desktop media layout is centralized here instead of injected after page load. */
 /* The library well owns corner clipping, just as it does for the animation gallery. */
 .ps-desktop-media-grid{position:absolute;inset:2px;z-index:2;display:grid;border-radius:0;background:var(--surface-deep,var(--bg));mask-image:linear-gradient(to bottom,transparent,#000 var(--gallery-fade-top,0px),#000 calc(100% - var(--gallery-fade-bottom,0px)),transparent);}
-.ps-desktop-media-grid[hidden]{display:none!important}
+
 .ps-desktop-media-grid::-webkit-scrollbar-button{display:none;}
 /* Shared controls own button typography, surfaces and contours. */
 .ps-desktop-media-note{grid-column:1/-1;margin:0;padding:12px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
 .ps-desktop-media-note.ps-desktop-media-error{color:var(--danger)}
 .ps-desktop-media-actions{display:flex;flex:none;align-items:center;height:var(--ui-control-height,40px);gap:var(--ps-library-control-gap,10px);margin:0;padding:0;white-space:nowrap}
 .ps-web .ps-desktop-media-actions button{height:var(--ui-control-height,40px);padding:0;font:inherit;cursor:pointer;}
-.ps-web .ps-desktop-media-actions button:hover:not(:disabled){border-color:var(--brand);}
-.ps-web .ps-desktop-media-actions button:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
+
 .ps-web .ps-desktop-media-actions button:disabled{opacity:.5;cursor:default;}
 html body.ps-web :is(.wrap,#studioSettings) .ps-desktop-media-actions button.ps-media-icon-action{box-sizing:border-box;flex:none;width:var(--ui-control-height,40px);min-width:var(--ui-control-height,40px);max-width:var(--ui-control-height,40px);height:var(--ui-control-height,40px);min-height:var(--ui-control-height,40px);padding:0;gap:0;line-height:1;}
 .ps-desktop-media-actions .ps-media-icon-action svg{display:block;flex:none;width:20px;height:20px;pointer-events:none;}
@@ -1838,6 +1766,9 @@ html body.ps-web .ps-port-dialog > .ps-settings-body{padding:0 20px 20px;}
 html body.ps-web .ps-port-dialog .ps-settings-body p{margin:0 0 20px;line-height:1.6;overflow-wrap:anywhere;}
 html body.ps-web .ps-port-dialog .ps-settings-body > button{display:block;margin-left:auto;min-width:80px;min-height:40px;}
 
-/* Reduce the gap between the play button and playback labels. */
-html body.ps-web .ps-playback-messages{padding-inline-start:0;margin-inline-start:-8px;}
+/* Geometric connection indicators avoid symbol-font baseline differences. */
+.ps-web .ps-connection-dot{display:inline-block;width:.70em;height:.70em;border-radius:50%;vertical-align:middle;position:relative;top:-.10em;background:#777;box-shadow:0 0 0 1px currentColor}
+.ps-web .ps-connection-dot[data-state="ready"]{background:#249447;color:#249447}
+.ps-web .ps-connection-dot[data-state="pending"]{background:#b98116;color:#b98116}
+.ps-web .ps-connection-dot[data-state="error"]{background:#e53935;color:#e53935}
 

@@ -1,7 +1,6 @@
 'use strict';
 
 // Local stdio adapter. The existing web app remains the animation source.
-const fs = require('node:fs');
 const path = require('node:path');
 const readline = require('node:readline');
 const { spawn, execFile } = require('node:child_process');
@@ -26,6 +25,8 @@ let exiting = false;
 let lastPing = Date.now();
 const parentPid = process.ppid;
 let previewTimer;
+// Older plugin DLLs do not send presentation events; preserve their preview.
+let presentationVisible = true;
 let statsTimer;
 let watchdog;
 let statsBusy = false;
@@ -64,17 +65,6 @@ process.stdout.on('drain', () => {
 });
 process.stdout.on('error', () => { void shutdown('OpenRGB output pipe closed'); });
 
-function decode(text) {
-    return text.replace(/<[^>]*>/g, '').replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
-        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
-}
-function options(html, id) {
-    const select = html.match(new RegExp('<select\\b[^>]*\\bid=["\\x27]' + id + '["\\x27][^>]*>([\\s\\S]*?)<\\/select>', 'i'));
-    if (!select) throw new Error('Missing shared animation control: ' + id);
-    return [...select[1].matchAll(/<option\b[^>]*\bvalue=["']([^"']+)["'][^>]*>([\s\S]*?)<\/option>/gi)]
-        .map(match => ({ value: decode(match[1]), title: decode(match[2]) }));
-}
 function number(value, min, max, integer = false) {
     const n = Number(value);
     if (!Number.isFinite(n) || n < min || n > max || (integer && !Number.isInteger(n))) {
@@ -393,8 +383,19 @@ async function pollStats() {
         output({ type: 'warning', message: 'Playback status: ' + describeError(error) }, true);
     } finally { statsBusy = false; }
 }
+function setPresentation(visible) {
+    if (typeof visible !== 'boolean') throw new Error('Invalid preview visibility.');
+    if (presentationVisible === visible) return;
+    presentationVisible = visible;
+    clearInterval(previewTimer);
+    previewTimer = null;
+    if (!visible || exiting) return;
+    // Resume at the current animation time without touching output ownership.
+    preview();
+    previewTimer = setInterval(preview, 1000 / 12);
+}
 function preview() {
-    if (exiting || outputBlocked || !renderer) return;
+    if (exiting || !presentationVisible || outputBlocked || !renderer) return;
     try {
         const animationTime=animationClock.getTime();
         const rgb = renderer.render(config.mode, config.w, config.h,
@@ -427,12 +428,13 @@ async function pollTemperature() {
     temperatureAbort = controller;
     try {
         await ensureBridge(controller.signal);
-        const sample = await request('/api/temperature', {timeout:18000, signal:controller.signal});
+        const sample = await request('/api/temperature?intervalMs=' + Math.round((config.thermal?.sampleSeconds || 1) * 1000) + '&clientId=openrgb-' + process.pid, {timeout:18000, signal:controller.signal});
         if (exiting) return;
         temperatureSample = sample;
         if (usbWorker) usbWorker.postMessage({type:'temperature', sample});
         output({type:'temperature', status:sample.status}, true);
     } catch {
+        // An actual bridge failure invalidates the snapshot; merely waiting does not.
         temperatureSample = null;
         if (!exiting && usbWorker) usbWorker.postMessage({type:'temperature', sample:null});
     } finally {
@@ -570,6 +572,16 @@ try {
         try { message = JSON.parse(line); } catch { output({ type: 'error', message: 'Invalid local command.' }); return; }
         if (!message || typeof message !== 'object') return;
         if (message.op === 'ping') { lastPing = Date.now(); return; }
+        if (message.op === 'presentation') {
+            // UI visibility must not wait behind a slow device-open request.
+            try {
+                setPresentation(message.data?.visible);
+                output({ type: 'result', id: message.id, op: message.op });
+            } catch (error) {
+                output({ type: 'error', id: message.id, op: message.op, message: describeError(error) });
+            }
+            return;
+        }
         if (message.op === 'stop' || message.op === 'shutdown') {
             if (startAbort) startAbort.abort();
         }

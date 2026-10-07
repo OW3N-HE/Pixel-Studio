@@ -41,7 +41,7 @@ function downloaded(dir){return fs.readdirSync(path.join(dir,'updates'),{withFil
  function element(){return {textContent:'',style:{},hidden:false,disabled:false,setAttribute(){}};}
  for(const language of ['en','zh-CN'])await test('update UI states and language '+language,async()=>{
   const state={document:{documentElement:{lang:language}},window:{pixelStudioDesktop:{installUpdate(){}}},VERSION:'0.1.7',updateState:'idle',remoteVersion:'0.1.8',releaseNotes:'',packages:{installer:{url:base,name:'PixelStudio-Setup-0.1.8.exe',size:bytes.length}},packageSelect:{value:'installer',options:[{},{},{}]},installerUrl:'',downloadOpened:false,nativeUpdateState:'idle',nativeUpdateVersion:'',nativePercent:42};
-  for(const name of ['updateLegend','updateSummary','updateButton','packageLabel','updateStatus','updateNotes','updateDetails','releaseLink','installerButton','installerStatus','nativeUpdateStatus','nativeInstall'])state[name]=element();
+  for(const name of ['updateVersionLabel','updateLegend','updateSummary','updateButton','packageLabel','updateStatus','updateNotes','updateDetails','releaseLink','installerButton','installerStatus','nativeUpdateStatus','nativeInstall'])state[name]=element();
   // Markdown rendering is covered separately by test-release-notes.cjs.
   state.renderReleaseNotes=(node,text)=>{node.textContent=text;};
   const context=vm.createContext(state);vm.runInContext(functions.get('renderNativeUpdate')+'\n'+functions.get('renderUpdate'),context);

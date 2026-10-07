@@ -4,11 +4,23 @@
 #include <QImage>
 #include <QPainter>
 
-// Match the runtime brand-mark: 2px core at 52px, with 4.5px of outer glow.
-// Header artwork explicitly enables glow; plugin/tab icons keep only the core.
+// Match the runtime brand-mark with a solid highlight and no glow.
+// Crop to the highlight, keeping the artwork's visible size within its original slot.
 inline QImage pixelStudioLogo(int size, QColor accent = QColor("#4cc2ff"),
-    QColor background = QColor("#151515"), bool withGlow = false,
-    QColor pixels = QColor(), QColor center = QColor("#2b2b2b")) {
+    QColor background = QColor("#151515"), bool = false,
+    QColor pixels = QColor(), QColor center = QColor()) {
+    if (!center.isValid()) {
+        // Keep all Qt logo sizes consistent with the shared web theme colors.
+        const auto color = accent.name();
+        if (color == QStringLiteral("#83d5f2")) center = QColor("#12212c");
+        else if (color == QStringLiteral("#8ee6ba")) center = QColor("#112018");
+        else if (color == QStringLiteral("#ffbd75")) center = QColor("#261d14");
+        else if (color == QStringLiteral("#efabc6")) center = QColor("#291a24");
+        else if (color == QStringLiteral("#549dc5")) center = QColor("#12243e");
+        else if (color == QStringLiteral("#c4c4c4")) center = QColor("#303030");
+        else if (color == QStringLiteral("#4cc2ff")) center = QColor("#101010");
+        else center = QColor("#26282c");
+    }
     QImage image(size, size, QImage::Format_ARGB32_Premultiplied);
     image.fill(Qt::transparent);
     QPainter painter(&image);
@@ -16,26 +28,17 @@ inline QImage pixelStudioLogo(int size, QColor accent = QColor("#4cc2ff"),
 
     const double unit = 32.0 / 52.0;
     const double coreStroke = 2 * unit;
-    const double outerStroke = (withGlow ? 11 : 2) * unit;
     const QRectF backplate(3.8, 3.8, 24.4, 24.4);
     const double backRadius = 1.6938;
     const QRectF rim = backplate.adjusted(-coreStroke / 2, -coreStroke / 2,
         coreStroke / 2, coreStroke / 2);
     const double rimRadius = backRadius + coreStroke / 2;
-    const double viewStart = rim.left() - outerStroke / 2 - 0.5;
-    const double viewSize = rim.width() + outerStroke + 1;
+    const double viewStart = rim.left() - coreStroke / 2 - 0.5;
+    const double viewSize = rim.width() + coreStroke + 1;
     painter.scale(size / viewSize, size / viewSize);
     painter.translate(-viewStart, -viewStart);
 
     painter.setBrush(Qt::NoBrush);
-    if (withGlow) {
-        for (int stroke = 11; stroke >= 3; --stroke) {
-            QColor halo = accent;
-            halo.setAlphaF(0.085);
-            painter.setPen(QPen(halo, stroke * unit));
-            painter.drawRoundedRect(rim, rimRadius, rimRadius);
-        }
-    }
     // The filled core prevents a transparent seam; its inner edge meets black.
     painter.setPen(QPen(accent, coreStroke));
     painter.setBrush(background);

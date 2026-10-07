@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '0.2.1';
+  const VERSION = '0.2.2';
   const $ = id => document.getElementById(id);
   const make = (tag, className = '', text) => {
     const node = document.createElement(tag);
@@ -389,6 +389,7 @@
   function initialize() {
     const api = window.pixelStudioWebRuntime;
     if (!api) return;
+    const presentationVisible=()=>!document.hidden&&window.pixelStudioDesktop?.isPresentationVisible?.()!==false;
     document.body.classList.add('ps-web');
     installSliderThumbFeedback();
     const brightness=$('brightness'),brightnessRange=$('brightnessRange');
@@ -451,11 +452,11 @@
     boardMotion.addEventListener('change',queueBoardPaint);
     let boardCellNodes=[],boardCellColors=[];
     function queueBoardPaint(){
-      if(boardDisposed||boardPaintRequest)return;
+      if(boardDisposed||boardPaintRequest||!presentationVisible())return;
       boardPaintRequest=requestAnimationFrame(()=>{boardPaintRequest=0;paintBoard();});
     }
     function captureBoardPixels(){
-      if(boardDisposed||!boardGeometry||!previewSource.complete||!previewSource.naturalWidth)return;
+      if(boardDisposed||!presentationVisible()||!boardGeometry||!previewSource.complete||!previewSource.naturalWidth)return;
       // A newly selected matrix must not sample a still-decoding previous size.
       if(previewSource.naturalWidth!==boardGeometry.columns||previewSource.naturalHeight!==boardGeometry.rows)return;
       boardSampler.width=boardGeometry.columns;
@@ -481,7 +482,7 @@
         element.setAttribute(name,String(value));
     }
     function paintBoard(){
-      if(!boardGeometry)return;
+      if(boardDisposed||!presentationVisible()||!boardGeometry)return;
       const {columns,rows,pitch,inset,radius,screenRadius,width,height,cad}=boardGeometry;
       const key=[columns,rows,pitch,cad].join('|');
       if(key!==boardGeometryKey){
@@ -528,11 +529,23 @@
           boardCellColors[i]=color;boardCellNodes[i].setAttribute('fill',color);
         }
       }
-      if(playing&&!boardMotion.matches&&!document.hidden)queueBoardPaint();
+      if(playing&&!boardMotion.matches&&presentationVisible())queueBoardPaint();
     }
-    const boardVisibility=()=>queueBoardPaint();
+    const boardVisibility=()=>{
+      if(boardDisposed)return;
+      if(!presentationVisible()){
+        if(boardPaintRequest)cancelAnimationFrame(boardPaintRequest);
+        boardPaintRequest=0;
+        return;
+      }
+      schedulePreviewResize();captureBoardPixels();queueBoardPaint();
+    };
     document.addEventListener('visibilitychange',boardVisibility);
-    window.addEventListener('pagehide',()=>document.removeEventListener('visibilitychange',boardVisibility),{once:true});
+    window.addEventListener('pixel-studio-presentation-change',boardVisibility);
+    window.addEventListener('pagehide',()=>{
+      document.removeEventListener('visibilitychange',boardVisibility);
+      window.removeEventListener('pixel-studio-presentation-change',boardVisibility);
+    },{once:true});
 
     // A single native dialog owns opening, closing, focus and Escape handling.
     const dialog = make('dialog', 'ps-settings');
@@ -1121,7 +1134,14 @@
       }
       const notice=api.playing?api.outputNotice:null;
       if(notice)errors.add([notice.message,notice.detail].filter(Boolean).join('\n'));
-      const value=[...errors].join('\n\n')||(document.documentElement.lang==='en'?'No active errors.':'当前没有错误。');
+      const temperatureNotice=window.pixelStudioTemperatureNotice;
+      if(temperatureNotice){
+        const description=window.pixelStudioDescribeNotice?.(temperatureNotice.message,'err');
+        errors.add(description?.detail||temperatureNotice.message);
+        if(temperatureNotice.detail)errors.add(temperatureNotice.detail);
+      }
+      const value=(window.pixelStudioMergeNoticeDetails?.(...errors) || [...errors].join('\n\n'))
+        ||(document.documentElement.lang==='en'?'No active errors.':'当前没有错误。');
       if(diagnosticsErrors.textContent!==value)diagnosticsErrors.textContent=value;
     }
     function renderDiagnostics(){
@@ -1623,7 +1643,7 @@
       shuffleOwnerObserver.disconnect();
       window.removeEventListener('pixel-studio-language-change',syncInlineShuffle);
     },{once:true});
-    // Modules own their notices; the footer combines them into one status line.
+    // Rows own content, playback/operation results, and transport readiness separately.
     const playbackFeedback = make('div', 'status ps-playback-feedback');
     playbackFeedback.setAttribute('data-update-ui', '');
     playbackFeedback.setAttribute('role', 'status');
@@ -1631,90 +1651,48 @@
     playbackFeedback.setAttribute('aria-atomic', 'true');
     for (const node of [$('status'), $('runtimeNotice')]) node.classList.add('ps-playback-source');
     messages.append(playbackFeedback, $('streamStats'));
-    const playbackActivityMessages = new Set([
-      '本地预览就绪', '动画预览中', '正在本地预览', '正在发送',
-      '正在播放视频', '正在播放图片', '视频已就绪', '图片已就绪', '已停止',
-      '正在加载视频…', '正在加载图片…', '视频已就绪，可点击开始发送',
-      '图片已就绪，可点击开始发送', '媒体模式：请选择图片或视频',
-      '已切换到文件模式，请选择图片或视频'
-    ]);
     let playbackFeedbackKey = '';
     function syncPlaybackFeedback() {
       const english = document.documentElement.lang === 'en';
-      const preview = api.previewStatus;
-      const states = english
-        ? {empty:'Choose media', loading:'Loading…', ready:'Preview', error:'Preview failed'}
-        : {empty:'请选择媒体', loading:'加载中…', ready:'本地预览', error:'预览不可用'};
       const outputNotice=api.playing?api.outputNotice:null;
       const phase=outputNotice?.phase;
-      const state = api.playing
-        ? (phase==='uncertain'?(english?'Output status unconfirmed':'输出状态待确认')
-          :phase==='recovering'?(english?'Retrying output':'正在重试输出'):(english?'Sending':'正在输出'))
-        : (states[preview] || states.empty);
-      const previewFailed = !api.playing && preview === 'error';
-      const notices = new Map(), details = new Set(), errorReasons = new Set();
-      function rememberErrorReason(description, detail = '') {
-        const reason = description?.reason || String(detail || '').split(/\r?\n/)
-          .map(line => window.pixelStudioDescribeNotice?.(line, 'err')?.reason).find(Boolean);
-        if (reason) errorReasons.add(reason);
+      const pendingOutput=phase==='recovering'||phase==='uncertain';
+      const previewFailed = !api.playing && api.previewStatus === 'error';
+      const errorDetails = [];
+      let failed = previewFailed;
+      function rememberFailure(source, detail = '') {
+        const description = window.pixelStudioDescribeNotice?.(source,'err');
+        failed = true;
+        errorDetails.push(description?.detail || description?.reason || source,detail);
       }
-      // Query on each state sync: temperature and other modules may initialize later.
+      // Only actual failures affect this row. Readiness and progress belong elsewhere.
       for (const node of messages.querySelectorAll('.ps-playback-source')) {
+        if (node.hidden || node === $('runtimeNotice') || !node.classList.contains('err')) continue;
         const source = (node.dataset.noticeSource || node.textContent).trim();
-        if (node.hidden || !source) continue;
-        const error = node.classList.contains('err');
-        if (node === $('status') && !error && playbackActivityMessages.has(source)) continue;
-        const description = window.pixelStudioDescribeNotice?.(source, error ? 'err' : '');
-        const text = description?.message || node.textContent.trim();
-        if (description?.detail) details.add(description.detail);
-        if (node.title) details.add(node.title);
-        if (error) rememberErrorReason(description, node.title);
-        // The connection row owns transport status; keep baud/port chatter in details.
-        if (!error && /^(?:已连接|串口已打开|Connected\b|Serial port opened\b|USB connected\b|Espressif native USB connected\b)/i.test(source)) {
-          details.add(description?.detail || text);
-          continue;
-        }
-        notices.set(text, error || notices.get(text) === true);
+        if (source) rememberFailure(source,node.title);
       }
-      if(outputNotice){
-        const description=window.pixelStudioDescribeNotice?.(outputNotice.message,'err');
-        const text=description?.message||outputNotice.message;
-        if(description?.detail)details.add(description.detail);
-        rememberErrorReason(description, outputNotice.detail);
-        notices.set(text,true);
+      // Temperature owns its error snapshot, not a visible paragraph in the controls.
+      const temperatureNotice = window.pixelStudioTemperatureNotice;
+      if (temperatureNotice) rememberFailure(temperatureNotice.message,temperatureNotice.detail);
+      if (outputNotice && !pendingOutput) rememberFailure(outputNotice.message,outputNotice.detail);
+      if (previewFailed && !errorDetails.some(Boolean)) {
+        errorDetails.push(english?'Unable to preview the selected media. Try another file.':'无法预览所选媒体，请尝试其他文件。');
       }
-      const entries = [...notices].sort((a, b) => Number(b[1]) - Number(a[1]));
-      const key = JSON.stringify([state, previewFailed, entries,[...details],[...errorReasons],outputNotice?.detail]);
-      if(diagnosticsDialog.open)renderDiagnosticDetails();
-      if (key === playbackFeedbackKey) return;
-      playbackFeedbackKey = key;
-      const stateText = make('span', 'ps-playback-state' + (previewFailed ? ' ps-playback-error' : ''));
-      stateText.textContent = state;
-      const errors = entries.filter(([, error]) => error);
-      const visibleEntries = (errors.length ? errors : entries).slice(0, 1);
-      const fragments = errors.length ? [] : [stateText];
-      for (const [text, error] of visibleEntries) {
-        if (fragments.length) {
-          const separator = make('span', 'ps-playback-separator');
-          separator.textContent = ' · ';
-          fragments.push(separator);
-        }
-        const notice = make('span', error ? 'ps-playback-error' : 'ps-playback-note');
-        notice.textContent = text;
-        fragments.push(notice);
-      }
-      if (errors.length > 1) {
-        const more = make('span', 'ps-playback-note');
-        more.textContent = ' · +' + (errors.length - 1);
-        fragments.push(more);
-      }
-      playbackFeedback.replaceChildren(...fragments);
-      // Hover explains only current failures, without preview/connection chatter or stacks.
-      playbackFeedback.title = errors.length || previewFailed
-        ? ([...errorReasons].join('\n') || (english
+      const state=failed?(english?'Failed':'操作失败')
+        :api.playing?(english?'Sending':'正在输出'):(english?'Preview':'本地预览');
+      const detail = failed
+        ? (window.pixelStudioMergeNoticeDetails?.(...errorDetails) || [...new Set(errorDetails.filter(Boolean))].join('\n') || (english
           ? 'No specific cause reported. See the diagnostic log.'
           : '未提供具体原因，请查看诊断日志。'))
         : '';
+      const key = JSON.stringify([state,failed,detail]);
+      if(diagnosticsDialog.open)renderDiagnosticDetails();
+      if (key === playbackFeedbackKey) return;
+      playbackFeedbackKey = key;
+      const stateText = make('span', 'ps-playback-state' + (failed ? ' ps-playback-error' : ''));
+      stateText.textContent = state;
+      playbackFeedback.replaceChildren(stateText);
+      playbackFeedback.title = detail;
     }
     $('startBtn').hidden = true; $('stopBtn').hidden = true;
     document.querySelector('.playback-actions').hidden = true;
@@ -1733,13 +1711,25 @@
       const transports={usb:'USB',ddp:'DDP'};
       // An open OS port alone is not a verified LED controller connection.
       const states=english?{disconnected:'Not Connected',checking:'Checking',unverified:'Unverified',connected:'Connected',sending:'Sending',idle:'Idle',unavailable:'Bridge unavailable'}:{disconnected:'未连接',checking:'验证中',unverified:'未验证',connected:'已连接',sending:'发送中',idle:'待发送',unavailable:'本地服务未启动'};
-      const connectionText=output.state==='disconnected'?states.disconnected:transports[output.transport]+' · '+states[output.state];
+      const indicators={disconnected:'offline',checking:'pending',unverified:'error',connected:'ready',sending:'ready',idle:'ready',unavailable:'error'};
+      const indicator=indicators[output.state]||'offline';
+      const connectionDescription=transports[output.transport]+' · '+states[output.state];
       if (!playing) {
         const stats = $('streamStats');
-        if (stats.textContent !== connectionText) stats.textContent = connectionText;
+        const connectionKey=output.transport+'|'+indicator;
+        if(stats.dataset.connectionKey!==connectionKey || !stats.querySelector('.ps-connection-dot')){
+          const dot=make('span','ps-connection-dot');
+          dot.dataset.state=indicator;
+          dot.setAttribute('aria-hidden','true');
+          stats.replaceChildren(document.createTextNode(transports[output.transport]+' '),dot);
+          stats.dataset.connectionKey=connectionKey;
+        }
         stats.title=output.transport==='usb'&&output.state==='unverified'
           ? (english?'The serial port is open, but no valid WLED response has been received. Check the selected port, baud rate and controller firmware.':'串口已打开，但未收到有效 WLED 回包。请检查所选串口、波特率和控制器固件。')
-          : connectionText;
+          : output.transport==='ddp' && output.state==='idle'
+            ? (english?'DDP service ready; device connectivity is not verified.':'DDP 服务就绪；尚未验证设备是否在线。')
+            : connectionDescription;
+        stats.setAttribute('aria-label',connectionDescription);
       }
       if (lastPlaying !== playing) {
         lastPlaying = playing;
@@ -1788,20 +1778,36 @@
     });
     let playbackSyncQueued=false,playbackSyncDisposed=false;
     function queuePlaybackSync(){
-      if(playbackSyncQueued||playbackSyncDisposed)return;
+      if(playbackSyncQueued||playbackSyncDisposed||!presentationVisible())return;
       playbackSyncQueued=true;
       // Coalesce start/stop/error writes in one turn, before intermediate text paints.
       queueMicrotask(()=>{
         playbackSyncQueued=false;
-        if(!playbackSyncDisposed)syncPlayback();
+        if(!playbackSyncDisposed&&presentationVisible())syncPlayback();
       });
     }
     window.addEventListener('pixel-studio-playback-status-change',queuePlaybackSync);
     syncPlayback();
-    const stateTimer = setInterval(() => { syncPlayback(); syncTimeValueWidth(); }, 200);
+    let stateTimer=null;
+    const syncVisiblePlayback=()=>{
+      if(playbackSyncDisposed||!presentationVisible()){
+        if(stateTimer!==null)clearInterval(stateTimer);
+        stateTimer=null;
+        return;
+      }
+      queuePlaybackSync();syncTimeValueWidth();
+      if(stateTimer===null)stateTimer=setInterval(()=>{
+        if(!presentationVisible()){syncVisiblePlayback();return;}
+        syncPlayback();syncTimeValueWidth();
+      },200);
+    };
+    document.addEventListener('visibilitychange',syncVisiblePlayback);
+    window.addEventListener('pixel-studio-presentation-change',syncVisiblePlayback);
     window.addEventListener('pagehide', () => {
       playbackSyncDisposed=true;
       window.removeEventListener('pixel-studio-playback-status-change',queuePlaybackSync);
+      document.removeEventListener('visibilitychange',syncVisiblePlayback);
+      window.removeEventListener('pixel-studio-presentation-change',syncVisiblePlayback);
       clearInterval(stateTimer);clearInterval(shuffleTimer);
     });
     function updateBoardGeometry() {
@@ -2111,9 +2117,10 @@
     }
     let pendingPreviewResize=0;
     function schedulePreviewResize(){
-      if(boardDisposed||pendingPreviewResize)return;
+      if(boardDisposed||pendingPreviewResize||!presentationVisible())return;
       pendingPreviewResize=requestAnimationFrame(()=>{
         pendingPreviewResize=0;
+        if(boardDisposed||!presentationVisible())return;
         resizePreview();
 
         updateGalleryEdges();
@@ -2141,6 +2148,8 @@
     },{once:true});
     applyCompactLayout(compactViewport.matches);
     resizePreview();
+    // Width measurement depends on searchMeasure and the completed control layout.
+    syncVisiblePlayback();
 
     // Readiness describes initialization, not a visible-window animation frame.
     document.body.dataset.studioReady = 'true';

@@ -10,6 +10,7 @@ using namespace PixelStudioSupport;
 
 void PixelStudioPanel::initializeHelper() {
     helper_ = new QProcess(this);
+    connect(outputBoard_, &PixelBoard::presentationChanged, this, &PixelStudioPanel::syncPresentation);
     helper_->setProcessChannelMode(QProcess::SeparateChannels);
     connect(helper_, &QProcess::readyReadStandardOutput, this, &PixelStudioPanel::consumeOutput);
     connect(helper_, &QProcess::readyReadStandardError, this, [this] {
@@ -40,8 +41,23 @@ void PixelStudioPanel::initializeHelper() {
     });
     heartbeat_ = new QTimer(this);
     heartbeat_->setInterval(2000);
-    connect(heartbeat_, &QTimer::timeout, this, [this] { send(QStringLiteral("ping")); });
+    connect(heartbeat_, &QTimer::timeout, this, [this] {
+        send(QStringLiteral("ping"));
+        // Retry a visibility notification if the pipe was busy. Playback and
+        // sensor work do not depend on the preview being visible.
+        syncPresentation(outputBoard_->isVisible() && outputBoard_->window()->isVisible()
+            && !outputBoard_->window()->isMinimized());
+    });
     connect(helper_, &QProcess::started, this, [this] { heartbeat_->start(); });
+}
+
+void PixelStudioPanel::syncPresentation(bool visible) {
+    if (!ready_ || closing_ || !helper_ || helper_->state() != QProcess::Running
+        || helper_->bytesToWrite() > 65536) return;
+    if (presentationKnown_ && presentationVisible_ == visible) return;
+    send(QStringLiteral("presentation"), QJsonObject{{QStringLiteral("visible"), visible}});
+    presentationKnown_ = true;
+    presentationVisible_ = visible;
 }
 
 void PixelStudioPanel::boot() {
@@ -52,6 +68,8 @@ void PixelStudioPanel::boot() {
     if (helper_->state() != QProcess::NotRunning) shutdown();
     closing_ = false;
     ready_ = false;
+    presentationKnown_ = false;
+    presentationVisible_ = false;
     busy_ = false;
     input_.clear();
     savePreferences();

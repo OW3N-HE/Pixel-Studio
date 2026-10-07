@@ -7,6 +7,7 @@
     const controls = document.querySelector('.studio-controls');
     if (!engine || !mode || !clock || !controls) return;
     const storageKey = 'pixelStudioTemperaturePreferences.v1';
+    const temperatureClientId = 'ui-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
     let saved = {};
     try { saved = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { }
     if (!saved || typeof saved !== 'object' || Array.isArray(saved)) saved = {};
@@ -28,6 +29,8 @@
       parent.append(node); return node;
     }
     Object.defineProperty(window, 'pixelStudioTemperatureSettings', {configurable:true, get:() => active() ? preferences() : {}});
+    let temperatureNotice = null, temperatureNoticeKey = '';
+    Object.defineProperty(window, 'pixelStudioTemperatureNotice', {configurable:true, get:() => active() ? temperatureNotice : null});
     window.pixelStudioTemperatureSample = null;
     const persist = () => {
       try { localStorage.setItem(storageKey, JSON.stringify(saved)); } catch { }
@@ -60,10 +63,6 @@
     sampleValue.append(sampleNumber,sampleUnit);
     sampling.append(sampleLabel,sampleRange,sampleValue); controls.querySelector('.adjustments').append(sampling);
     const speedRow = document.getElementById('animationSpeed').closest('.speed-control');
-    const status = make('output','thermal-status'); status.hidden = true; status.setAttribute('data-update-ui',''); status.setAttribute('aria-live','polite');
-    const playbackMessages = document.querySelector('.ps-playback-messages');
-    if (playbackMessages?.querySelector('.ps-playback-feedback')) status.classList.add('ps-playback-source');
-    (playbackMessages || controls.parentElement).append(status);
 
     const dialog = make('dialog','ps-settings ps-media-dialog'); dialog.id = 'thermalColorsDialog'; dialog.setAttribute('data-update-ui','');
     dialog.setAttribute('aria-labelledby','thermalColorsTitle');
@@ -84,7 +83,7 @@
     const actions = make('div','thermal-actions'), reset = make('button'), cancel = make('button'), done = make('button');
     reset.type = cancel.type = done.type = 'button'; actions.append(reset,cancel,done); body.append(actions);
     dialog.append(header,body); document.body.append(dialog);
-    let dialogMode = '', lastStatus = 'loading';
+    let dialogMode = '', lastStatus = 'loading', lastTemperatureError = null;
     function syncEnabled() { for (const input of Object.values(inputs)) input.disabled = !enabled.checked; }
     enabled.addEventListener('change',syncEnabled);
     custom.addEventListener('click', () => {
@@ -160,8 +159,26 @@
         else if (!sample?.cpu && sample?.diagnostics?.elevated === false)
           message += local(' The sampler is not elevated; CPU driver access may require administrator permission.',' 采集器未提升权限；CPU 驱动访问可能需要管理员权限。');
       }
-      status.classList.toggle('err', !['ready','loading'].includes(lastStatus));
-      status.hidden = !isActive || !message; setText(status,message);
+      if (lastTemperatureError?.code === 'no-bridge') {
+        message = local('Local temperature service is not connected. Open the Web edition using its launch script.','本地温度服务未连接，请使用网页启动脚本打开。');
+      } else if (lastTemperatureError?.code === 'request') {
+        message = lastTemperatureError.name === 'AbortError'
+          ? local('The temperature service request timed out.','温度服务请求超时。')
+          : local('Unable to read temperature data from the local service.','无法从本地服务读取温度数据。');
+      }
+      const failed = isActive && !['ready','loading'].includes(lastStatus) && !!message;
+      const technical = lastTemperatureError?.code === 'request' && lastTemperatureError.name !== 'AbortError'
+        ? lastTemperatureError.detail : '';
+      const sensorErrors = Array.isArray(sample?.diagnostics?.samplingErrors)
+        ? sample.diagnostics.samplingErrors.filter(item => typeof item === 'string') : [];
+      const detail = window.pixelStudioMergeNoticeDetails?.(message,technical,...sensorErrors)
+        || [...new Set([message,technical,...sensorErrors].filter(Boolean))].join('\n');
+      temperatureNotice = failed ? {message,detail} : null;
+      const noticeKey = JSON.stringify(temperatureNotice);
+      if (noticeKey !== temperatureNoticeKey) {
+        temperatureNoticeKey = noticeKey;
+        window.dispatchEvent(new Event('pixel-studio-playback-status-change'));
+      }
       for (const [node,id] of titleNodes) setText(node,text(id));
     }
     let busy = false, timer = null, disposed = false, generation = 0, controller = null;
@@ -171,26 +188,36 @@
       busy = true; const requestGeneration = generation;
       try {
         let sample;
+        const temperaturePath = '/api/temperature?intervalMs=' + Math.round((active() ? seconds() : 1) * 1000) + '&clientId=' + temperatureClientId;
         if (window.pixelStudioDesktop?.ddpRequest) {
-          const response = await window.pixelStudioDesktop.ddpRequest('/api/temperature',{timeout:18000});
-          if (response.status !== 200) throw new Error('Temperature request failed');
+          const response = await window.pixelStudioDesktop.ddpRequest(temperaturePath,{timeout:18000});
+          if (response.status !== 200) throw new Error('HTTP ' + response.status);
           sample = JSON.parse(response.body);
         } else {
           const token = document.querySelector('meta[name="pixel-bridge-token"]')?.content;
-          if (!token || !/^https?:$/.test(location.protocol)) { lastStatus = 'missing'; return; }
+          if (!token || !/^https?:$/.test(location.protocol)) {
+            window.pixelStudioTemperatureSample = null;
+            lastStatus = 'unavailable'; lastTemperatureError = {code:'no-bridge'};
+            return;
+          }
           controller = new AbortController();
           const timeout = setTimeout(() => controller?.abort(),18000);
           try {
-            const response = await fetch('/api/temperature',{headers:{'X-Pixel-Token':token},cache:'no-store',signal:controller.signal});
-            if (!response.ok) throw new Error('Temperature request failed');
+            const response = await fetch(temperaturePath,{headers:{'X-Pixel-Token':token},cache:'no-store',signal:controller.signal});
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             sample = await response.json();
           } finally { clearTimeout(timeout); controller = null; }
         }
         if (disposed || requestGeneration !== generation) return;
-        window.pixelStudioTemperatureSample = sample; lastStatus = sample.status;
+        window.pixelStudioTemperatureSample = sample; lastStatus = sample.status; lastTemperatureError = null;
         window.pixelStudioWebRuntime?.refreshPalette();
-      } catch {
-        if (!disposed && requestGeneration === generation) { window.pixelStudioTemperatureSample = null; lastStatus = 'unavailable'; }
+      } catch (error) {
+        // Keep the displayed snapshot while awaiting a request, not after the
+        // transport has actually failed: there is no age cutoff to hide a fault.
+        if (!disposed && requestGeneration === generation) {
+          window.pixelStudioTemperatureSample = null; lastStatus = 'unavailable';
+          lastTemperatureError = {code:'request',name:error?.name,detail:String(error?.message || '')};
+        }
       } finally { busy = false; if (!disposed) { refresh(); schedule(); } }
     }
     for (const input of [sampleRange,sampleNumber]) input.addEventListener('change', () => {
@@ -198,7 +225,7 @@
       preferences().sampleSeconds = Math.max(0.5,Math.min(3,Math.round((Number(input.value)||1)*2)/2));
       persist(); refresh(); schedule();
     });
-    mode.addEventListener('change', () => { refresh(); if (active() && !window.pixelStudioTemperatureSample) void poll(); });
+    mode.addEventListener('change', () => { refresh(); void poll(); });
     window.addEventListener('pixel-studio-language-change',refresh);
     window.addEventListener('pagehide', () => { disposed = true; generation++; clearTimeout(timer); controller?.abort(); });
     refresh(); void poll();

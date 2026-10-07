@@ -1,6 +1,6 @@
 {
   "name": "pixel-studio-development",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Development-only regression tools; not an application runtime package.",
   "engines": { "node": ">=22" },

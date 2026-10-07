@@ -35,7 +35,7 @@ void PixelStudioPanel::applyTheme() {
         const bool neutral = key == QStringLiteral("dark");
         QImage image = pixelStudioLogo(qRound(logo->width() * dpr), accent,
             QColor("#151515"), true, neutral ? QColor("#686868") : accent,
-            neutral ? QColor("#303030") : QColor("#2b2b2b"));
+            neutral ? QColor("#303030") : QColor());
         image.setDevicePixelRatio(dpr);
         logo->setPixmap(QPixmap::fromImage(image));
     }

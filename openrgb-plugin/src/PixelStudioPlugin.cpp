@@ -11,7 +11,7 @@ OpenRGBPluginInfo PixelStudioPlugin::GetPluginInfo() {
     OpenRGBPluginInfo info{};
     info.Name = "Pixel Studio";
     info.Description = "Portrait pixel art, clocks and WLED DDP. Shared with the independent web edition.";
-    info.Version = "0.2.1";
+    info.Version = "0.2.2";
     info.Commit = "local-api4";
     info.URL = "http://127.0.0.1:8766/";
     info.Location = OPENRGB_PLUGIN_LOCATION_TOP;

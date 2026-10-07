@@ -93,8 +93,8 @@ PixelStudioPanel::SettingsPageParts PixelStudioPanel::createSettingsPage(
         heading->setFont(headingFont); layout->addWidget(heading);
         const auto buildDate = QLocale::c().toDate(QString::fromLatin1(__DATE__).simplified(), QStringLiteral("MMM d yyyy")).toString(QStringLiteral("yyyy/MM/dd"));
         auto* version = new QLabel(english_
-        ? QStringLiteral("Version 0.2.1 · OpenRGB plugin\nBuilt: %1").arg(buildDate)
-        : text("版本 0.2.1 · OpenRGB 插件\n编译日期：%1").arg(buildDate), &about);
+        ? QStringLiteral("Version 0.2.2 · OpenRGB plugin\nBuilt: %1").arg(buildDate)
+        : text("版本 0.2.2 · OpenRGB 插件\n编译日期：%1").arg(buildDate), &about);
         layout->addWidget(version);
         auto* description = new QLabel(english_
             ? QStringLiteral("Small pixels. Endless imagination.\n\nA pixel animation studio for WLED. The web app and OpenRGB plugin share an animation library, with live previews, custom palettes and USB / Adalight or DDP output.\n\nAuthors & collaborators\nGPT-5.3 Codex Spark · GPT-5.6 Sol · GPT-6 Sol · GPT-6 Astra · GPT-6.1 Sol\nOWEN\n\nCreated through AI and human collaboration: AI collaborators contribute to design and development; OWEN guides the product, visual direction and device feedback.\n\nSpecial thanks: David Wang · Mango Akuma · Mark Peng · SSSSWILK · &#xff1f · 3FC\n\nIndependent project. Thanks to the WLED, OpenRGB, Qt and Node.js communities. Not an official WLED or OpenRGB release.")

@@ -261,6 +261,30 @@
     }
     return text.replace(pattern,match=>catalog[match]);
   }
+  // Merge individual lines rather than overlapping multi-line detail blocks.
+  // Normalize only known translations and explicit aliases, never broad error
+  // categories: different error codes, paths and technical causes must survive.
+  function mergeNoticeDetails(...values){
+    const seen=new Set(),lines=[];
+    for(const value of values){
+      for(const raw of String(value??'').split(/\r?\n/)){
+        let line=raw.trim();
+        if(!line)continue;
+        if(/^(?:the\s+)?temperature (?:component|module)\s+(?:is\s+)?(?:not installed|missing)[.!]?$/i.test(line)
+          || /^(?:尚未安装温度采集组件|温度组件未安装)[。.!]?$/.test(line)){
+          line='温度组件未安装。';
+        }
+        const known=englishMessages.get(line)||line;
+        const translated=Object.hasOwn(catalog,known);
+        const display=translated?(language==='en'?catalog[known]:known):line;
+        const identity=(translated?catalog[known]:line).replace(/\s+/g,' ').replace(/[。.!]+$/,'');
+        if(seen.has(identity))continue;
+        seen.add(identity);lines.push(display);
+      }
+    }
+    return lines.join('\n');
+  }
+  window.pixelStudioMergeNoticeDetails=mergeNoticeDetails;
   // Keep status labels brief; the translated explanation and source remain in detail.
   const shortErrorLabels = [
     [/未收到 WLED 响应|No WLED response/i, '串口不可用，请更换', 'Port unavailable. Choose another.'],
@@ -338,7 +362,7 @@
       }
       const summary = shortErrorLabels.find(([test]) => test.test(message + '\n' + knownBody));
       const brief = summary ? summary[language === 'en' ? 2 : 1] : (language === 'en' ? 'Failed' : '操作失败');
-      detail = [...new Set([rendered, detail, source].filter(Boolean))].join('\n');
+      detail = mergeNoticeDetails(genericErrorNotices.has(rendered)?'':rendered,detail,source);
       rendered = brief;
     }
     return {message:rendered, detail, reason};

@@ -19,6 +19,8 @@ const tests = [
   'test-output-transports.cjs',
   'test-stream-worker.cjs',
   'test-temperature-service.cjs',
+  'test-temperature-pipe.cjs',
+  'test-background-presentation.cjs',
   'test-media-thumbnails.cjs',
   'test-openrgb-preview.cjs'
 ];

@@ -138,6 +138,8 @@ void PixelStudioPanel::handleMessage(const QJsonObject& message) {
         gallery_->setCurrentItem(selected);
         retranslateUi();
         ready_ = true;
+        syncPresentation(outputBoard_->isVisible() && outputBoard_->window()->isVisible()
+            && !outputBoard_->window()->isMinimized());
         updateControls();
         updatePreview();
         const bool resume = resumeOnReady_;
@@ -160,6 +162,8 @@ void PixelStudioPanel::handleMessage(const QJsonObject& message) {
             && message.value(QStringLiteral("revision")).toInt() == previewSequence_)
             gallery_->setCurrentItem(next);
     } else if (type == QStringLiteral("frame")) {
+        // Discard an in-flight preview without decoding it after hiding the UI.
+        if (!presentationVisible_) return;
         const int w = message.value(QStringLiteral("w")).toInt();
         const int h = message.value(QStringLiteral("h")).toInt();
         if (w == width_->value() && h == height_->value()

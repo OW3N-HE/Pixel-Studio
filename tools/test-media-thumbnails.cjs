@@ -135,7 +135,7 @@ async function refreshWiring(){
     const renders=[],library={folder:'fixture',files:[{name:'first.mp4'}],truncated:false};
     const result={...library,files:changed?[{name:'next.mp4'}]:library.files};
     const context={busy:false,error:'',request:0,disposed:false,library,selected:null,libraryDirty:false,
-      grid:{scrollTop:30},bridge:{mediaLibrary:async()=>({ok:true,...result})},
+      ordering:{read:(_scope,names)=>names},mediaOrder:[],grid:{scrollTop:30},bridge:{mediaLibrary:async()=>({ok:true,...result})},
       render:({retryFailed=false}={})=>renders.push(retryFailed),
       scheduleLibraryRefresh(){},updateMediaEdges(){},restoreMediaPreview(){},en:()=>true
     };

@@ -313,6 +313,9 @@ function nowText() {
     stopLoop('设备通道已改变'); resetFrameCache(); output.state.deviceProfile = null;
   });
   document.getElementById('readDeviceSizeBtn').addEventListener('click', async () => {
+    const button=document.getElementById('readDeviceSizeBtn');
+    if(button.disabled)return;
+    button.disabled=true;
     stopLoop('读取设备尺寸');
     try {
       const profile = await readDeviceProfile(true);
@@ -320,8 +323,23 @@ function nowText() {
       if(!renderSettings.validateDimensions({width:profile.matrix.w,height:profile.matrix.h}))throw new Error(dimensionMessage());
       ui.matrixW.value = profile.matrix.w; ui.matrixH.value = profile.matrix.h;
       commitDimensions();
-      setStatus('已使用设备尺寸 ' + profile.matrix.w + '×' + profile.matrix.h, 'ok');
-    } catch (error) { setStatus(error.message, 'err'); }
+      setStatus('');
+      const english=document.documentElement.lang==='en';
+      output.showOutputError(english?'Size read successfully':'尺寸读取成功',
+        (english?'Applied size: ':'已应用尺寸：')+profile.matrix.w+' × '+profile.matrix.h+
+        (english?' (width × height)':'（宽 × 高）'));
+    } catch (error) {
+      const english=document.documentElement.lang==='en';
+      const description=window.pixelStudioDescribeNotice?.(error.message,'err');
+      const hint=english
+        ? 'Check the device address and matrix settings, or enter width and height manually.'
+        : '请检查设备地址和矩阵配置，或手动输入宽高。';
+      const detail=description?.detail||error.message;
+      const message=window.pixelStudioMergeNoticeDetails?.(hint,detail)||hint+'\n'+detail;
+      logLine((english?'Size read failed: ':'尺寸读取失败：')+error.message);
+      setStatus('');
+      output.showOutputError(english?'Unable to read size':'无法读取尺寸',message);
+    } finally { button.disabled=false; }
   });
 
   ui.stopBtn.addEventListener('click',()=>{

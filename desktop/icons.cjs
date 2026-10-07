@@ -21,7 +21,7 @@ function brandGeometry() {
       x:Number(attributes.x),y:Number(attributes.y),w:Number(attributes.width),h:Number(attributes.height),r:Number(attributes.rx),
       stroke:Number(attributes['stroke-width'] || 0),opacity:Number(attributes['stroke-opacity'] || 1)});
   }
-  if (geometry.length !== 20 || geometry.filter(rect => rect.role === 'logo-halo').length !== 10) throw new Error('Unexpected runtime logo geometry; refusing to generate fallback artwork.');
+  if (geometry.length !== 11 || geometry.filter(rect => rect.role === 'logo-halo').length !== 1) throw new Error('Unexpected runtime logo geometry; refusing to generate fallback artwork.');
   return geometry;
 }
 // Fixed branding uses ice blue; live icons follow the web header.
@@ -30,8 +30,13 @@ const accents = {
   ice:'83d5f2', mint:'8ee6ba', amber:'ffbd75', rose:'efabc6',
   ocean:'549dc5', dark:'c4c4c4', black:'4cc2ff', light:'0078d4'
 };
+// Match the theme-tinted center colors already defined in index.html.
+const centers = {
+  ice:'12212c', mint:'112018', amber:'261d14', rose:'291a24',
+  ocean:'12243e', dark:'303030', black:'101010', light:'26282c'
+};
 const themes = Object.fromEntries(Object.entries(accents).map(([theme,accent])=>[
-  theme,[accent,'151515',theme==='dark'?'303030':'2b2b2b',
+  theme,[accent,'151515',centers[theme],
     ...Array(3).fill(theme==='dark'?'686868':accent)]
 ]));
 function chunk(type, data) {
@@ -46,17 +51,15 @@ function chunk(type, data) {
   result.writeUInt32BE((crc ^ 0xffffffff) >>> 0,result.length-4);
   return result;
 }
-function iconViewport(small=false) {
-  const halo = brandGeometry().filter(rect => rect.role === 'logo-halo');
-  const highlight = halo[halo.length-1];
-  const edge = small ? highlight : halo.reduce((widest,rect) => rect.stroke > widest.stroke ? rect : widest,highlight);
+function iconViewport() {
+  const edge = brandGeometry().find(rect => rect.role === 'logo-halo');
   return {start:edge.x-edge.stroke/2-.5,size:edge.w+edge.stroke+1};
 }
 function png(theme=brandTheme, size=64) {
-  // System icons keep the crisp highlight at every size; glow belongs to the UI only.
+  // System icons retain the same crisp highlight at every size, without glow.
   const shapes = brandGeometry();
   const highlight = [...shapes].reverse().find(rect => rect.role === 'logo-halo');
-  const viewport = iconViewport(true);
+  const viewport = iconViewport();
   const viewStart = viewport.start, viewSize = viewport.size;
   const rectangles = shapes.filter(rect => rect.role !== 'logo-halo' || rect === highlight);
   const colors = (themes[theme] || themes[brandTheme]).map(hex => [0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)));

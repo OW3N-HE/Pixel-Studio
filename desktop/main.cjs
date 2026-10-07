@@ -25,6 +25,10 @@ const entry=pathToFileURL(path.join(webRoot,'index.html')).href;
 const ddpService=require('./ddp-service.cjs')(webRoot);
 const updater=require('./updater.cjs')(()=>window,()=>effectiveLanguage());
 function ownPage(contents){return window && contents===window.webContents && contents.getURL().split('#')[0]===entry;}
+function presentationVisible(){return Boolean(!quitting&&window&&!window.isDestroyed()&&window.isVisible()&&!window.isMinimized());}
+function notifyPresentation(){
+  if(window&&!window.isDestroyed()&&ownPage(window.webContents))window.webContents.send('desktop:presentation',presentationVisible());
+}
 function save(){fs.mkdirSync(path.dirname(settingsPath()),{recursive:true});fs.writeFileSync(settingsPath()+'.tmp',JSON.stringify(preferences));fs.renameSync(settingsPath()+'.tmp',settingsPath());}
 function loginOptions(){return {path:process.execPath,args:['--login-start']};}
 function state(){return {...preferences,launchAtLogin:app.isPackaged ? app.getLoginItemSettings(loginOptions()).openAtLogin : false,canLaunchAtLogin:app.isPackaged};}
@@ -123,6 +127,9 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
     if(app.isPackaged&&!hasSavedLoginPreference){app.setLoginItemSettings({...loginOptions(),openAtLogin:preferences.launchAtLogin});save();}
     window=new BrowserWindow({width:1280,height:880,minWidth:360,minHeight:720,show:false,title:'Pixel Studio',icon:icon(effectiveTheme(),64),backgroundColor:'#0c1921',autoHideMenuBar:true,webPreferences:{additionalArguments:['--pixel-studio-system-language='+systemLanguage(),'--pixel-studio-language='+preferences.language],preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false}});
     window.on('page-title-updated',event=>{event.preventDefault();window.setTitle('Pixel Studio');});
+    // Keep output timers unthrottled, but use native visibility for UI work:
+    // backgroundThrottling:false makes document.hidden stay false in Electron.
+    for(const event of ['show','hide','minimize','restore'])window.on(event,notifyPresentation);
     // Restart Manager must not turn an installer shutdown into close-to-tray.
     window.on('query-session-end',()=>{quitting=true;});
     window.on('session-end',()=>{quitting=true;void ddpService.stop();});
@@ -133,6 +140,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
     window.webContents.on('will-attach-webview',event=>event.preventDefault());
     window.webContents.on('did-finish-load',()=>{
       if(!ownPage(window.webContents))return;
+      notifyPresentation();
       const mediaScripts=['session-controller.js','media-playback.js','media-thumbnails.js','media-library-ui.js'].map(file=>fs.readFileSync(path.join(__dirname,file),'utf8')).join('\n');
       void window.webContents.executeJavaScript(mediaScripts).catch(error=>console.error('Desktop media UI:',error.message));
     });
@@ -200,6 +208,10 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
       return state();
     });
     ipcMain.on('desktop:hide',event=>{if(ownPage(event.sender))window.hide();});
+    ipcMain.handle('desktop:presentation',event=>{
+      if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)throw new Error('Untrusted caller');
+      return presentationVisible();
+    });
     ipcMain.handle('desktop:update',async(event,request)=>{
       if(!ownPage(event.sender)||event.senderFrame!==window.webContents.mainFrame)throw new Error('Untrusted caller');
       try{

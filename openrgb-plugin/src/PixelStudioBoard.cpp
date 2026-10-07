@@ -64,9 +64,11 @@ void PixelBoard::setPlaying(bool playing) {
     update();
 }
 void PixelBoard::syncGlowTimer() {
-    const bool animate = playing_ && isVisible() && !window()->isMinimized();
+    const bool visible = isVisible() && window()->isVisible() && !window()->isMinimized();
+    const bool animate = playing_ && visible;
     if (animate && !glowTimer_->isActive()) glowTimer_->start();
     else if (!animate) glowTimer_->stop();
+    emit presentationChanged(visible);
 }
 void PixelBoard::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
@@ -80,10 +82,12 @@ void PixelBoard::showEvent(QShowEvent* event) {
 }
 void PixelBoard::hideEvent(QHideEvent* event) {
     glowTimer_->stop();
+    emit presentationChanged(false);
     QWidget::hideEvent(event);
 }
 bool PixelBoard::eventFilter(QObject* watched, QEvent* event) {
     if (watched == observedWindow_.data()) {
+        if (event->type() == QEvent::Hide) emit presentationChanged(false);
         if (event->type() == QEvent::Hide || event->type() == QEvent::Close)
             glowTimer_->stop();
         else if (event->type() == QEvent::WindowStateChange || event->type() == QEvent::Show)

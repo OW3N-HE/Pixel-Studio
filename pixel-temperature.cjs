@@ -118,10 +118,9 @@
     return {cpu,gpu,divider:dim(gpu,.3)};
   }
   function temperature(value){return typeof value==='number'&&Number.isFinite(value)&&value>=-50&&value<=150?Math.round(value):null;}
-  function values(sample,now=Date.now()){
-    const at=sample?.sampledAt;
-    const fresh=typeof at==='number'&&Number.isFinite(at)&&now>=at&&now-at<=5000;
-    return {cpu:fresh?temperature(sample.cpu?.temperature):null,gpu:fresh?temperature(sample.gpu?.temperature):null};
+  function values(sample){
+    // The backend owns validity and failure state; rendering must not add an age cutoff.
+    return {cpu:temperature(sample?.cpu?.temperature),gpu:temperature(sample?.gpu?.temperature)};
   }
   function drawResponsive(paint,{w,h},mode,readings,colors,settings){
     const horizontal=w>h;
