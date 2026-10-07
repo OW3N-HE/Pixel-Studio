@@ -4,8 +4,6 @@
 
 发布日期：2026/10/07
 
-用户反馈本轮 0.2.2 TEST 看起来正常，随后准备版本匹配的正式安装器与附件；不将旧 TEST 二进制改名。
-
 ### 更新内容
 
 - 优化后台界面刷新：桌面最小化或收进托盘、网页隐藏、OpenRGB 面板隐藏时暂停不必要的预览、缩略图与界面刷新，恢复可见时同步当前内容；仍在输出时不因界面隐藏而停止发送或温度采样。
@@ -33,8 +31,6 @@ Windows x64 三合一安装包为 `PixelStudio-Setup-0.2.2.exe`，使用本轮�
 ## English
 
 Release date: 2026/10/07
-
-The user reported that this 0.2.2 TEST looked normal. Matching stable Setup and distribution assets are prepared without relabeling old TEST binaries.
 
 ### Changes
 
